@@ -1,0 +1,67 @@
+name: Build Branch
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    run-super-linter:
+        name: Run GitHub Super Linter
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-go@v2
+              with:
+                  go-version: "^1.15.15"
+            - name: Install Dependencies
+              run: |
+                  go get ./...
+            - name: Lint Code Base
+              uses: github/super-linter@v4
+              env:
+                  DEFAULT_BRANCH: main
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  VALIDATE_ALL_CODEBASE: "true"
+
+    run-codeql-analysis:
+        name: Run CodeQL Analysis
+        runs-on: ubuntu-latest
+        permissions:
+            actions: read
+            contents: read
+            security-events: write
+        strategy:
+            fail-fast: false
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v1
+              with:
+                  languages: go
+            - name: Autobuild
+              uses: github/codeql-action/autobuild@v1
+            - name: Perform CodeQL Analysis
+              uses: github/codeql-action/analyze@v1
+
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-go@v2
+              with:
+                  go-version: "^1.15.15"
+            - name: Build
+              run: |
+                  go build ./...
