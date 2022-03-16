@@ -1,0 +1,18 @@
+# Disable failing linters for Go 1.18 (https://github.com/golangci/golangci-lint/pull/2438)
+linters:
+    disable:
+        - bodyclose
+        - contextcheck
+        - gocritic
+        - gosimple
+        - govet
+        - nilerr
+        - noctx
+        - rowserrcheck
+        - sqlclosecheck
+        - staticcheck
+        - stylecheck
+        - tparallel
+        - unparam
+        - unused
+        - wastedassign
