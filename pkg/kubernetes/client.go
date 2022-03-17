@@ -13,30 +13,51 @@
 package kubernetes
 
 import (
+	"fmt"
+	"reflect"
+
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type client struct {
-	clientset *kubernetes.Clientset
+	clientset       *kubernetes.Clientset
+	informerFactory informers.SharedInformerFactory
 }
 
 var _ Interface = (*client)(nil)
 
-func NewFromKubeConfig(kubeConfigPath string) *client {
-	// use the current context in kubeconfig
+func NewFromKubeConfig() *client {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
 	}
 
-	// create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
+	informerFactory := informers.NewSharedInformerFactory(clientset, 0)
 
 	return &client{
-		clientset: clientset,
+		clientset:       clientset,
+		informerFactory: informerFactory,
 	}
+}
+
+func (c *client) Start(stopCh <-chan struct{}) error {
+	_ = c.SecretInformer()
+
+	c.informerFactory.Start(stopCh)
+	return func(results ...map[reflect.Type]bool) error {
+		for i := range results {
+			for t, ok := range results[i] {
+				if !ok {
+					return fmt.Errorf("failed to wait for cache with type %s", t)
+				}
+			}
+		}
+		return nil
+	}(c.informerFactory.WaitForCacheSync(stopCh))
 }
