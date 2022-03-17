@@ -28,7 +28,7 @@ type client struct {
 
 var _ Interface = (*client)(nil)
 
-func NewFromKubeConfig() *client {
+func NewClient() *client {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())

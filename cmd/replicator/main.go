@@ -15,20 +15,35 @@ package main
 import (
 	"log"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
+	"github.com/nadundesilva/k8s-replicator/pkg/signals"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 func main() {
-	zapConf := zap.NewDevelopmentConfig()
-	zapConf.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	zapLogger, _ := zapConf.Build()
+	stopCh := signals.SetupSignalHandler()
+
+	zapConf := zap.NewProductionConfig()
+	zapLogger, err := zapConf.Build()
+	if err != nil {
+		log.Printf("failed to build logger config: %v", err)
+	}
 	defer func() {
 		err := zapLogger.Sync()
 		if err != nil {
-			log.Printf("Failed to sync logger: %v", err)
+			log.Printf("failed to sync logger: %v", err)
 		}
 	}()
 	logger := zapLogger.Sugar()
-	logger.Infow("Starting Kubernetes Replicator")
+	logger.Infow("starting Kubernetes Replicator")
+
+	client := kubernetes.NewClient()
+	err = client.Start(stopCh)
+	if err != nil {
+		logger.Errorw("failed waiting for the informers to sync")
+	}
+
+	logger.Info("started controller")
+	<-stopCh
+	logger.Info("shutting down controller")
 }
