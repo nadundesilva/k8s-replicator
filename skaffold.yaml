@@ -8,11 +8,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM alpine:3.15.1
-
-WORKDIR /controller
-ENV HOME=/controller
-
-COPY out/replicator /controller/replicator
-
-ENTRYPOINT ["/controller/replicator"]
+apiVersion: skaffold/v2beta26
+kind: Config
+metadata:
+  name: k8s-replicator
+build:
+  artifacts:
+    - image: ghcr.io/nadundesilva/k8s-replicator
+      custom:
+        buildCommand: ./build.sh
+deploy:
+  kustomize:
+    paths:
+    - kustomize

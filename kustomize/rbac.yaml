@@ -8,11 +8,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM alpine:3.15.1
-
-WORKDIR /controller
-ENV HOME=/controller
-
-COPY out/replicator /controller/replicator
-
-ENTRYPOINT ["/controller/replicator"]
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: replicator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: replicator
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - watch
+  - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: replicator
+subjects:
+- kind: ServiceAccount
+  name: replicator
+roleRef:
+  kind: ClusterRole
+  name: replicator
+  apiGroup: rbac.authorization.k8s.io

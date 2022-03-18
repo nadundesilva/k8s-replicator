@@ -8,11 +8,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM alpine:3.15.1
-
-WORKDIR /controller
-ENV HOME=/controller
-
-COPY out/replicator /controller/replicator
-
-ENTRYPOINT ["/controller/replicator"]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replicator
+  labels:
+    controller: replicator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      controller: replicator
+  template:
+    metadata:
+      labels:
+        controller: replicator
+    spec:
+      containers:
+      - name: replicator
+        image: ghcr.io/nadundesilva/k8s-replicator
+      serviceAccount: replicator
