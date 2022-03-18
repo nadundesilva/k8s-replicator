@@ -47,6 +47,7 @@ func NewClient() *client {
 }
 
 func (c *client) Start(stopCh <-chan struct{}) error {
+	_ = c.NamespaceInformer().Informer()
 	_ = c.SecretInformer().Informer()
 
 	c.informerFactory.Start(stopCh)

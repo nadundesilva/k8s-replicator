@@ -14,7 +14,6 @@ package kubernetes
 
 import informerscorev1 "k8s.io/client-go/informers/core/v1"
 
-type ClientInterface interface {
-	NamespaceInformer() informerscorev1.NamespaceInformer
-	SecretInformer() informerscorev1.SecretInformer
+func (c *client) NamespaceInformer() informerscorev1.NamespaceInformer {
+	return c.informerFactory.Core().V1().Namespaces()
 }

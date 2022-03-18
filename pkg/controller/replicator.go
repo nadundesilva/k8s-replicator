@@ -32,7 +32,11 @@ func NewReplicator(k8sClient kubernetes.ClientInterface, logger *zap.SugaredLogg
 func (r *replicator) Start(stopCh <-chan struct{}) error {
 	r.logger.Info("starting replicator")
 
-	err := r.registerSecretInformer(stopCh)
+	err := r.registerNamespaceInformer(stopCh)
+	if err != nil {
+		return err
+	}
+	err = r.registerSecretInformer(stopCh)
 	if err != nil {
 		return err
 	}

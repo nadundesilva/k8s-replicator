@@ -30,9 +30,9 @@ func (r *replicator) registerSecretInformer(stopCh <-chan struct{}) error {
 	})
 
 	if cache.WaitForCacheSync(stopCh, secretInformer.HasSynced) {
-		r.logger.Debugw("cache sync complete")
+		r.logger.Debugw("secret cache sync complete")
 	} else {
-		return fmt.Errorf("timeout waiting for informer cache sync")
+		return fmt.Errorf("timeout waiting for secret informer cache sync")
 	}
 	return nil
 }
