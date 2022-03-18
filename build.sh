@@ -8,11 +8,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM alpine:3.15.1
+set -e
 
-WORKDIR /controller
-ENV HOME=/controller
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./out/replicator ./cmd/replicator
 
-COPY out/replicator /controller/replicator
-
-ENTRYPOINT ["/controller/replicator"]
+docker build --tag=$IMAGE .
+if $PUSH_IMAGE; then
+    docker push $IMAGE
+fi
