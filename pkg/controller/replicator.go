@@ -10,42 +10,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package main
+package controller
 
 import (
-	"log"
-
-	"github.com/nadundesilva/k8s-replicator/pkg/controller"
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
-	"github.com/nadundesilva/k8s-replicator/pkg/signals"
 	"go.uber.org/zap"
 )
 
-func main() {
-	stopCh := signals.SetupSignalHandler()
+type replicator struct {
+	k8sClient kubernetes.ClientInterface
+	logger    zap.SugaredLogger
+}
 
-	zapConf := zap.NewProductionConfig()
-	zapLogger, err := zapConf.Build()
-	if err != nil {
-		log.Printf("failed to build logger config: %v", err)
+func NewReplicator(k8sClient kubernetes.ClientInterface, logger *zap.SugaredLogger) *replicator {
+	return & replicator{
+		k8sClient: k8sClient,
+		logger: *logger,
 	}
-	defer func() {
-		err := zapLogger.Sync()
-		if err != nil {
-			log.Printf("failed to sync logger: %v", err)
-		}
-	}()
-	logger := zapLogger.Sugar()
+}
 
-	k8sClient := kubernetes.NewClient()
-	err = k8sClient.Start(stopCh)
+func (r *replicator) Start(stopCh <-chan struct{}) error {
+	r.logger.Info("starting replicator")
+
+	err := r.registerSecretInformer(stopCh)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	replicator := controller.NewReplicator(k8sClient, logger)
-	err = replicator.Start(stopCh)
-	if err != nil {
-		panic(err)
-	}
+	r.logger.Info("started replicator")
+	<-stopCh
+	r.logger.Info("shutting down replicator")
+	return nil
 }

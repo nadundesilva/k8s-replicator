@@ -26,7 +26,7 @@ type client struct {
 	informerFactory informers.SharedInformerFactory
 }
 
-var _ Interface = (*client)(nil)
+var _ ClientInterface = (*client)(nil)
 
 func NewClient() *client {
 	config, err := rest.InClusterConfig()
@@ -47,7 +47,7 @@ func NewClient() *client {
 }
 
 func (c *client) Start(stopCh <-chan struct{}) error {
-	_ = c.SecretInformer()
+	_ = c.SecretInformer().Informer()
 
 	c.informerFactory.Start(stopCh)
 	return func(results ...map[reflect.Type]bool) error {

@@ -12,5 +12,8 @@
  */
 package kubernetes
 
-type Interface interface {
+import informerscorev1 "k8s.io/client-go/informers/core/v1"
+
+type ClientInterface interface {
+	SecretInformer() informerscorev1.SecretInformer
 }
