@@ -17,6 +17,7 @@ import (
 
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	"github.com/nadundesilva/k8s-replicator/pkg/signals"
 	"go.uber.org/zap"
 )
@@ -39,8 +40,8 @@ func main() {
 
 	k8sBaseClient := kubernetes.NewBaseClient()
 
-	resourceReplicators := []replicator.ResourceReplicator{
-		replicator.NewSecretReplicator(kubernetes.NewSecretClient(k8sBaseClient), logger),
+	resourceReplicators := []resources.ResourceReplicator{
+		resources.NewSecretReplicator(kubernetes.NewSecretClient(k8sBaseClient), logger),
 	}
 	replicator := replicator.NewController(resourceReplicators, kubernetes.NewNamespaceClient(k8sBaseClient), logger)
 

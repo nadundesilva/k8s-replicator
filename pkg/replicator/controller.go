@@ -16,17 +16,18 @@ import (
 	"fmt"
 
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	"go.uber.org/zap"
 	"k8s.io/client-go/tools/cache"
 )
 
 type controller struct {
-	resourceReplicators []ResourceReplicator
+	resourceReplicators []resources.ResourceReplicator
 	namespaceClient     *kubernetes.NamespaceClient
 	logger              *zap.SugaredLogger
 }
 
-func NewController(resourceReplicators []ResourceReplicator, namespaceClient *kubernetes.NamespaceClient, logger *zap.SugaredLogger) *controller {
+func NewController(resourceReplicators []resources.ResourceReplicator, namespaceClient *kubernetes.NamespaceClient, logger *zap.SugaredLogger) *controller {
 	_ = namespaceClient.Informer()
 
 	return &controller{
@@ -41,7 +42,8 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 
 	informerSyncs := []cache.InformerSynced{}
 	for _, resourceReplicator := range r.resourceReplicators {
-		informer := resourceReplicator.GetInformer(stopCh)
+		informer := resourceReplicator.Informer()
+		informer.AddEventHandler(NewResourcesEventHandler(resourceReplicator))
 		informerSyncs = append(informerSyncs, informer.HasSynced)
 	}
 

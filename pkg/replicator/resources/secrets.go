@@ -10,12 +10,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package replicator
+package resources
 
 import (
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -35,24 +34,6 @@ func NewSecretReplicator(secretClient *kubernetes.SecretClient, logger *zap.Suga
 	}
 }
 
-func (r *secretReplicator) GetInformer(stopCh <-chan struct{}) cache.SharedInformer {
-	secretInformer := r.secretClient.Informer()
-	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: r.replicateSecret,
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			r.replicateSecret(newObj)
-		},
-		DeleteFunc: r.removeSecret,
-	})
-	return secretInformer
-}
-
-func (r *secretReplicator) replicateSecret(obj interface{}) {
-	secret := obj.(*corev1.Secret)
-	r.logger.Infow("Replicating secret", "name", secret.GetName(), "namespace", secret.GetNamespace())
-}
-
-func (r *secretReplicator) removeSecret(obj interface{}) {
-	secret := obj.(*corev1.Secret)
-	r.logger.Infow("Removing secret", "name", secret.GetName(), "namespace", secret.GetNamespace())
+func (r *secretReplicator) Informer() cache.SharedInformer {
+	return r.secretClient.Informer()
 }
