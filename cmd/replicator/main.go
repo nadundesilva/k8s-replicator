@@ -37,14 +37,14 @@ func main() {
 	}()
 	logger := zapLogger.Sugar()
 
-	k8sClient := kubernetes.NewClient()
+	k8sBaseClient := kubernetes.NewBaseClient()
 
 	resourceReplicators := []replicator.ResourceReplicator{
-		replicator.NewSecretReplicator(k8sClient, *logger),
+		replicator.NewSecretReplicator(kubernetes.NewSecretClient(k8sBaseClient), logger),
 	}
-	replicator := replicator.NewController(resourceReplicators, k8sClient, logger)
+	replicator := replicator.NewController(resourceReplicators, kubernetes.NewNamespaceClient(k8sBaseClient), logger)
 
-	err = k8sClient.Start(stopCh)
+	err = k8sBaseClient.Start(stopCh)
 	if err != nil {
 		panic(err)
 	}

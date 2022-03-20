@@ -10,11 +10,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package kubernetes
+package replicator
 
-import informerscorev1 "k8s.io/client-go/informers/core/v1"
+import "k8s.io/client-go/tools/cache"
 
-type ClientInterface interface {
-	NamespaceInformer() informerscorev1.NamespaceInformer
-	SecretInformer() informerscorev1.SecretInformer
+type ResourceReplicator interface {
+	GetInformer(stopCh <-chan struct{}) cache.SharedInformer
 }

@@ -14,27 +14,9 @@ package replicator
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
-func (r *replicator) GetNamespaceInformer(stopCh <-chan struct{}) cache.SharedInformer {
-	namespaceInformer := r.k8sClient.NamespaceInformer().Informer()
-	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: r.replicateNamespace,
-		UpdateFunc: func(oldObj, newObj interface{}) {
-			r.replicateNamespace(newObj)
-		},
-		DeleteFunc: r.removeNamespace,
-	})
-	return namespaceInformer
-}
-
-func (r *replicator) replicateNamespace(obj interface{}) {
+func (r *controller) handleNewNamespace(obj interface{}) {
 	namespace := obj.(*corev1.Namespace)
-	r.logger.Infow("Replicating namespace", "name", namespace.GetName())
-}
-
-func (r *replicator) removeNamespace(obj interface{}) {
-	namespace := obj.(*corev1.Namespace)
-	r.logger.Infow("Removing namespace", "name", namespace.GetName())
+	r.logger.Infow("Replicating to new namespace", "name", namespace.GetName())
 }

@@ -12,8 +12,20 @@
  */
 package kubernetes
 
-import informerscorev1 "k8s.io/client-go/informers/core/v1"
+import "k8s.io/client-go/tools/cache"
 
-func (c *client) SecretInformer() informerscorev1.SecretInformer {
-	return c.informerFactory.Core().V1().Secrets()
+type SecretClient struct {
+	baseClient *baseClient
+}
+
+var _ ClientInterface = (*SecretClient)(nil)
+
+func NewSecretClient(baseClient *baseClient) *SecretClient {
+	return &SecretClient{
+		baseClient: baseClient,
+	}
+}
+
+func (c *SecretClient) Informer() cache.SharedIndexInformer {
+	return c.baseClient.informerFactory.Core().V1().Secrets().Informer()
 }

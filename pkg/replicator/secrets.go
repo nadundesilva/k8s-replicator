@@ -20,23 +20,23 @@ import (
 )
 
 type secretReplicator struct {
-	k8sClient kubernetes.ClientInterface
-	logger    zap.SugaredLogger
+	secretClient *kubernetes.SecretClient
+	logger       *zap.SugaredLogger
 }
 
 var _ ResourceReplicator = (*secretReplicator)(nil)
 
-func NewSecretReplicator(k8sClient kubernetes.ClientInterface, logger zap.SugaredLogger) *secretReplicator {
-	_ = k8sClient.SecretInformer().Informer()
+func NewSecretReplicator(secretClient *kubernetes.SecretClient, logger *zap.SugaredLogger) *secretReplicator {
+	_ = secretClient.Informer()
 
 	return &secretReplicator{
-		k8sClient: k8sClient,
-		logger:    logger,
+		secretClient: secretClient,
+		logger:       logger,
 	}
 }
 
 func (r *secretReplicator) GetInformer(stopCh <-chan struct{}) cache.SharedInformer {
-	secretInformer := r.k8sClient.SecretInformer().Informer()
+	secretInformer := r.secretClient.Informer()
 	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: r.replicateSecret,
 		UpdateFunc: func(oldObj, newObj interface{}) {

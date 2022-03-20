@@ -20,27 +20,23 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-type ResourceReplicator interface {
-	GetInformer(stopCh <-chan struct{}) cache.SharedInformer
-}
-
-type replicator struct {
+type controller struct {
 	resourceReplicators []ResourceReplicator
-	k8sClient           kubernetes.ClientInterface
-	logger              zap.SugaredLogger
+	namespaceClient     *kubernetes.NamespaceClient
+	logger              *zap.SugaredLogger
 }
 
-func NewController(resourceReplicators []ResourceReplicator, k8sClient kubernetes.ClientInterface, logger *zap.SugaredLogger) *replicator {
-	_ = k8sClient.NamespaceInformer().Informer()
+func NewController(resourceReplicators []ResourceReplicator, namespaceClient *kubernetes.NamespaceClient, logger *zap.SugaredLogger) *controller {
+	_ = namespaceClient.Informer()
 
-	return &replicator{
+	return &controller{
 		resourceReplicators: resourceReplicators,
-		k8sClient:           k8sClient,
-		logger:              *logger,
+		namespaceClient:     namespaceClient,
+		logger:              logger,
 	}
 }
 
-func (r *replicator) Start(stopCh <-chan struct{}) error {
+func (r *controller) Start(stopCh <-chan struct{}) error {
 	r.logger.Info("starting replicator")
 
 	informerSyncs := []cache.InformerSynced{}
@@ -48,7 +44,12 @@ func (r *replicator) Start(stopCh <-chan struct{}) error {
 		informer := resourceReplicator.GetInformer(stopCh)
 		informerSyncs = append(informerSyncs, informer.HasSynced)
 	}
-	informerSyncs = append(informerSyncs, r.GetNamespaceInformer(stopCh).HasSynced)
+
+	namespaceInformer := r.namespaceClient.Informer()
+	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: r.handleNewNamespace,
+	})
+	informerSyncs = append(informerSyncs, namespaceInformer.HasSynced)
 
 	if cache.WaitForCacheSync(stopCh, informerSyncs...) {
 		r.logger.Infow("cache sync complete", "informersCount", len(informerSyncs))

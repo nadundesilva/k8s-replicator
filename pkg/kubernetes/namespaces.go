@@ -12,8 +12,20 @@
  */
 package kubernetes
 
-import informerscorev1 "k8s.io/client-go/informers/core/v1"
+import "k8s.io/client-go/tools/cache"
 
-func (c *client) NamespaceInformer() informerscorev1.NamespaceInformer {
-	return c.informerFactory.Core().V1().Namespaces()
+type NamespaceClient struct {
+	baseClient *baseClient
+}
+
+var _ ClientInterface = (*NamespaceClient)(nil)
+
+func NewNamespaceClient(baseClient *baseClient) *NamespaceClient {
+	return &NamespaceClient{
+		baseClient: baseClient,
+	}
+}
+
+func (c *NamespaceClient) Informer() cache.SharedIndexInformer {
+	return c.baseClient.informerFactory.Core().V1().Namespaces().Informer()
 }
