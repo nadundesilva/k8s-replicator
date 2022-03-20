@@ -10,16 +10,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controller
+package replicator
 
 import (
-	"fmt"
-
+	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
-func (r *replicator) registerSecretInformer(stopCh <-chan struct{}) error {
+type secretReplicator struct {
+	k8sClient kubernetes.ClientInterface
+	logger    zap.SugaredLogger
+}
+
+var _ ResourceReplicator = (*secretReplicator)(nil)
+
+func NewSecretReplicator(k8sClient kubernetes.ClientInterface, logger zap.SugaredLogger) *secretReplicator {
+	_ = k8sClient.SecretInformer().Informer()
+
+	return &secretReplicator{
+		k8sClient: k8sClient,
+		logger:    logger,
+	}
+}
+
+func (r *secretReplicator) GetInformer(stopCh <-chan struct{}) cache.SharedInformer {
 	secretInformer := r.k8sClient.SecretInformer().Informer()
 	secretInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: r.replicateSecret,
@@ -28,21 +44,15 @@ func (r *replicator) registerSecretInformer(stopCh <-chan struct{}) error {
 		},
 		DeleteFunc: r.removeSecret,
 	})
-
-	if cache.WaitForCacheSync(stopCh, secretInformer.HasSynced) {
-		r.logger.Debugw("secret cache sync complete")
-	} else {
-		return fmt.Errorf("timeout waiting for secret informer cache sync")
-	}
-	return nil
+	return secretInformer
 }
 
-func (r *replicator) replicateSecret(obj interface{}) {
+func (r *secretReplicator) replicateSecret(obj interface{}) {
 	secret := obj.(*corev1.Secret)
 	r.logger.Infow("Replicating secret", "name", secret.GetName(), "namespace", secret.GetNamespace())
 }
 
-func (r *replicator) removeSecret(obj interface{}) {
+func (r *secretReplicator) removeSecret(obj interface{}) {
 	secret := obj.(*corev1.Secret)
 	r.logger.Infow("Removing secret", "name", secret.GetName(), "namespace", secret.GetNamespace())
 }

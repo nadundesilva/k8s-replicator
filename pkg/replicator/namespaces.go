@@ -10,16 +10,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controller
+package replicator
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
-func (r *replicator) registerNamespaceInformer(stopCh <-chan struct{}) error {
+func (r *replicator) GetNamespaceInformer(stopCh <-chan struct{}) cache.SharedInformer {
 	namespaceInformer := r.k8sClient.NamespaceInformer().Informer()
 	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: r.replicateNamespace,
@@ -28,13 +26,7 @@ func (r *replicator) registerNamespaceInformer(stopCh <-chan struct{}) error {
 		},
 		DeleteFunc: r.removeNamespace,
 	})
-
-	if cache.WaitForCacheSync(stopCh, namespaceInformer.HasSynced) {
-		r.logger.Debugw("namespace cache sync complete")
-	} else {
-		return fmt.Errorf("timeout waiting for namespace informer cache sync")
-	}
-	return nil
+	return namespaceInformer
 }
 
 func (r *replicator) replicateNamespace(obj interface{}) {

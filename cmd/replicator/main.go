@@ -15,8 +15,8 @@ package main
 import (
 	"log"
 
-	"github.com/nadundesilva/k8s-replicator/pkg/controller"
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"github.com/nadundesilva/k8s-replicator/pkg/signals"
 	"go.uber.org/zap"
 )
@@ -38,12 +38,16 @@ func main() {
 	logger := zapLogger.Sugar()
 
 	k8sClient := kubernetes.NewClient()
+
+	resourceReplicators := []replicator.ResourceReplicator{
+		replicator.NewSecretReplicator(k8sClient, *logger),
+	}
+	replicator := replicator.NewController(resourceReplicators, k8sClient, logger)
+
 	err = k8sClient.Start(stopCh)
 	if err != nil {
 		panic(err)
 	}
-
-	replicator := controller.NewReplicator(k8sClient, logger)
 	err = replicator.Start(stopCh)
 	if err != nil {
 		panic(err)
