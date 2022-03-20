@@ -13,7 +13,7 @@ set -e
 
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./out/replicator ./cmd/replicator
 
-docker build --tag=$IMAGE .
-if $PUSH_IMAGE; then
-    docker push $IMAGE
+docker build --tag="${IMAGE}" .
+if ${PUSH_IMAGE}; then
+    docker push "${IMAGE}"
 fi

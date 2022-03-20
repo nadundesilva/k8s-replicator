@@ -24,6 +24,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
                   VALIDATE_GO: "false"
+                  KUBERNETES_KUBEVAL_OPTIONS: "--ignore-missing-schemas"
 
     run-golangci-lint:
         name: Run GoLangCI Lint
@@ -42,7 +43,7 @@ jobs:
                   go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.44.2
             - name: Lint Go Code
               run: |
-                golangci-lint run -c .github/linters/.golangci.yml
+                golangci-lint run -c .github/linters/.golangci.yml --timeout 2m
 
     run-codeql-analysis:
         name: Run CodeQL Analysis
