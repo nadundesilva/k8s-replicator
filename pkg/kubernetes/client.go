@@ -13,9 +13,49 @@
 package kubernetes
 
 import (
-	"k8s.io/client-go/tools/cache"
+	"fmt"
+	"reflect"
+
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
-type ClientInterface interface {
-	Informer() cache.SharedIndexInformer
+type client struct {
+	clientset       *kubernetes.Clientset
+	informerFactory informers.SharedInformerFactory
+}
+
+var _ ClientInterface = (*client)(nil)
+
+func NewBaseClient() *client {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	informerFactory := informers.NewSharedInformerFactory(clientset, 0)
+
+	return &client{
+		clientset:       clientset,
+		informerFactory: informerFactory,
+	}
+}
+
+func (c *client) Start(stopCh <-chan struct{}) error {
+	c.informerFactory.Start(stopCh)
+	return func(results ...map[reflect.Type]bool) error {
+		for i := range results {
+			for t, ok := range results[i] {
+				if !ok {
+					return fmt.Errorf("failed to wait for cache with type %s", t)
+				}
+			}
+		}
+		return nil
+	}(c.informerFactory.WaitForCacheSync(stopCh))
 }

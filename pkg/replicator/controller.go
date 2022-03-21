@@ -23,16 +23,16 @@ import (
 
 type controller struct {
 	resourceReplicators []resources.ResourceReplicator
-	namespaceClient     *kubernetes.NamespaceClient
+	k8sClient           kubernetes.ClientInterface
 	logger              *zap.SugaredLogger
 }
 
-func NewController(resourceReplicators []resources.ResourceReplicator, namespaceClient *kubernetes.NamespaceClient, logger *zap.SugaredLogger) *controller {
-	_ = namespaceClient.Informer()
+func NewController(resourceReplicators []resources.ResourceReplicator, k8sClient kubernetes.ClientInterface, logger *zap.SugaredLogger) *controller {
+	_ = k8sClient.NamespaceInformer()
 
 	return &controller{
 		resourceReplicators: resourceReplicators,
-		namespaceClient:     namespaceClient,
+		k8sClient:           k8sClient,
 		logger:              logger,
 	}
 }
@@ -43,11 +43,11 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 	informerSyncs := []cache.InformerSynced{}
 	for _, resourceReplicator := range r.resourceReplicators {
 		informer := resourceReplicator.Informer()
-		informer.AddEventHandler(NewResourcesEventHandler(resourceReplicator))
+		informer.AddEventHandler(NewResourcesEventHandler(resourceReplicator, r.k8sClient, r.logger))
 		informerSyncs = append(informerSyncs, informer.HasSynced)
 	}
 
-	namespaceInformer := r.namespaceClient.Informer()
+	namespaceInformer := r.k8sClient.NamespaceInformer()
 	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: r.handleNewNamespace,
 	})

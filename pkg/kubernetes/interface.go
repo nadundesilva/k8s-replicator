@@ -16,17 +16,20 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
 
-func (c *client) SecretInformer() cache.SharedIndexInformer {
-	return c.informerFactory.Core().V1().Secrets().Informer()
-}
+var defaultCreateOptions = metav1.CreateOptions{}
+var defaultGetOptions = metav1.GetOptions{}
 
-func (c *client) CreateSecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
-	return c.clientset.CoreV1().Secrets(namespace).Create(ctx, secret, defaultCreateOptions)
-}
+type ClientInterface interface {
+	SecretInformer() cache.SharedIndexInformer
+	NamespaceInformer() cache.SharedIndexInformer
 
-func (c *client) GetSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
-	return c.clientset.CoreV1().Secrets(namespace).Get(ctx, name, defaultGetOptions)
+	ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error)
+
+	CreateSecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
+	GetSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error)
 }

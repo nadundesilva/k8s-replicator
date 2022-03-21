@@ -22,10 +22,17 @@ rules:
   - ""
   resources:
   - namespaces
+  verbs:
+  - watch
+  - list
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - watch
   - list
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

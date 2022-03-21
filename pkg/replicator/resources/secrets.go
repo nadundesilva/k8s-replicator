@@ -13,27 +13,56 @@
 package resources
 
 import (
+	"context"
+
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
 type secretReplicator struct {
-	secretClient *kubernetes.SecretClient
-	logger       *zap.SugaredLogger
+	k8sClient kubernetes.ClientInterface
+	logger    *zap.SugaredLogger
 }
 
 var _ ResourceReplicator = (*secretReplicator)(nil)
 
-func NewSecretReplicator(secretClient *kubernetes.SecretClient, logger *zap.SugaredLogger) *secretReplicator {
-	_ = secretClient.Informer()
+func NewSecretReplicator(k8sClient kubernetes.ClientInterface, logger *zap.SugaredLogger) *secretReplicator {
+	_ = k8sClient.SecretInformer()
 
 	return &secretReplicator{
-		secretClient: secretClient,
-		logger:       logger,
+		k8sClient: k8sClient,
+		logger:    logger,
 	}
 }
 
 func (r *secretReplicator) Informer() cache.SharedInformer {
-	return r.secretClient.Informer()
+	return r.k8sClient.SecretInformer()
+}
+
+func (r *secretReplicator) Clone(source metav1.Object) metav1.Object {
+	sourceSecret := source.(*corev1.Secret)
+	clonedSecret := &corev1.Secret{
+		Type:       sourceSecret.Type,
+		Data:       map[string][]byte{},
+		StringData: map[string]string{},
+	}
+	for k, v := range sourceSecret.Data {
+		clonedSecret.Data[k] = v
+	}
+	for k, v := range sourceSecret.StringData {
+		clonedSecret.StringData[k] = v
+	}
+	return clonedSecret
+}
+
+func (r *secretReplicator) Create(ctx context.Context, namespace string, object metav1.Object) error {
+	_, err := r.k8sClient.CreateSecret(ctx, namespace, object.(*corev1.Secret))
+	return err
+}
+
+func (r *secretReplicator) Get(ctx context.Context, namespace, name string) (metav1.Object, error) {
+	return r.k8sClient.GetSecret(ctx, namespace, name)
 }

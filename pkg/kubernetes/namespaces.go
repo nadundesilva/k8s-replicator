@@ -12,20 +12,16 @@
  */
 package kubernetes
 
-import "k8s.io/client-go/tools/cache"
+import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/tools/cache"
+)
 
-type NamespaceClient struct {
-	baseClient *baseClient
+func (c *client) NamespaceInformer() cache.SharedIndexInformer {
+	return c.informerFactory.Core().V1().Namespaces().Informer()
 }
 
-var _ ClientInterface = (*NamespaceClient)(nil)
-
-func NewNamespaceClient(baseClient *baseClient) *NamespaceClient {
-	return &NamespaceClient{
-		baseClient: baseClient,
-	}
-}
-
-func (c *NamespaceClient) Informer() cache.SharedIndexInformer {
-	return c.baseClient.informerFactory.Core().V1().Namespaces().Informer()
+func (c *client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error) {
+	return c.informerFactory.Core().V1().Namespaces().Lister().List(selector)
 }

@@ -12,26 +12,84 @@
  */
 package replicator
 
-import "github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
+import (
+	"context"
+
+	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
+	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+)
+
+const (
+	ReplicatedResourceLabelKey   = "nadundesilva.github.io/copied-object"
+	ReplicatedResourceLabelValue = "true"
+)
 
 type ResourceEventHandler struct {
 	replicator resources.ResourceReplicator
+	k8sClient  kubernetes.ClientInterface
+	logger     *zap.SugaredLogger
 }
 
-func NewResourcesEventHandler(replicator resources.ResourceReplicator) *ResourceEventHandler {
+func NewResourcesEventHandler(replicator resources.ResourceReplicator, k8sClient kubernetes.ClientInterface, logger *zap.SugaredLogger) *ResourceEventHandler {
 	return &ResourceEventHandler{
 		replicator: replicator,
+		k8sClient:  k8sClient,
+		logger:     logger,
 	}
 }
 
 func (h *ResourceEventHandler) OnAdd(obj interface{}) {
-	// Handle Add
+	ctx := context.Background()
+	currentObj := obj.(metav1.Object)
+	clonedObj := cloneObject(h.replicator, currentObj)
+
+	namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
+	if err != nil {
+		h.logger.Errorw("failed to list namespace", "error", err)
+	} else {
+		for _, namespace := range namespaces {
+			if namespace.GetName() != currentObj.GetName() {
+				_, err := h.replicator.Get(ctx, namespace.GetName(), currentObj.GetName())
+				if err != nil {
+					if errors.IsNotFound(err) {
+						h.replicator.Create(ctx, namespace.GetName(), clonedObj)
+					} else {
+						h.logger.Errorw("failed to check if resource exists", "error", err)
+					}
+				}
+			}
+		}
+	}
 }
 
 func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
-	// Handle Update
+	h.OnAdd(newObj)
 }
 
 func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	// Handle Delete
+}
+
+func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) metav1.Object {
+	clonedObj := replicator.Clone(source)
+	clonedObj.SetName(source.GetName())
+
+	newLabels := map[string]string{}
+	for k, v := range source.GetLabels() {
+		newLabels[k] = v
+	}
+	newLabels[ReplicatedResourceLabelKey] = ReplicatedResourceLabelValue
+	clonedObj.SetLabels(newLabels)
+
+	newAnnotations := map[string]string{}
+	for k, v := range source.GetAnnotations() {
+		newAnnotations[k] = v
+	}
+	clonedObj.SetAnnotations(newAnnotations)
+
+	return clonedObj
 }

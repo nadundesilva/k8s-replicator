@@ -12,8 +12,16 @@
  */
 package resources
 
-import "k8s.io/client-go/tools/cache"
+import (
+	"context"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/cache"
+)
 
 type ResourceReplicator interface {
 	Informer() cache.SharedInformer
+	Clone(source metav1.Object) metav1.Object
+	Create(ctx context.Context, namespace string, object metav1.Object) error
+	Get(ctx context.Context, namespace, name string) (metav1.Object, error)
 }
