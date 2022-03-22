@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	ReplicatedResourceLabelKey   = "nadundesilva.github.io/copied-object"
-	ReplicatedResourceLabelValue = "true"
+	ReplicationCloneLabelKey       = "replicator.nadundesilva.github.io/replication-clone"
+	ReplicationCloneLabelTrueValue = "true"
 )
 
 type ResourceEventHandler struct {
@@ -56,7 +56,10 @@ func (h *ResourceEventHandler) OnAdd(obj interface{}) {
 				_, err := h.replicator.Get(ctx, namespace.GetName(), currentObj.GetName())
 				if err != nil {
 					if errors.IsNotFound(err) {
-						h.replicator.Create(ctx, namespace.GetName(), clonedObj)
+						err = h.replicator.Create(ctx, namespace.GetName(), clonedObj)
+						if err != nil {
+							h.logger.Errorw("failed to create new resource", "error", err)
+						}
 					} else {
 						h.logger.Errorw("failed to check if resource exists", "error", err)
 					}
@@ -82,7 +85,8 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 	for k, v := range source.GetLabels() {
 		newLabels[k] = v
 	}
-	newLabels[ReplicatedResourceLabelKey] = ReplicatedResourceLabelValue
+	newLabels[ReplicationCloneLabelKey] = ReplicationCloneLabelTrueValue
+	delete(newLabels, ReplicationSourceLabelKey) 
 	clonedObj.SetLabels(newLabels)
 
 	newAnnotations := map[string]string{}

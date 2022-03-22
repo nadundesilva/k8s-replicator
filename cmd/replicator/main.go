@@ -38,7 +38,9 @@ func main() {
 	}()
 	logger := zapLogger.Sugar()
 
-	k8sClient := kubernetes.NewBaseClient()
+	k8sClient := kubernetes.NewClient(map[string]string{
+		replicator.ReplicationSourceLabelKey: replicator.ReplicationSourceLabelTrueValue,
+	}, logger)
 
 	resourceReplicators := []resources.ResourceReplicator{
 		resources.NewSecretReplicator(k8sClient, logger),

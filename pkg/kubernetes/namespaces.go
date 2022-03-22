@@ -19,9 +19,9 @@ import (
 )
 
 func (c *client) NamespaceInformer() cache.SharedIndexInformer {
-	return c.informerFactory.Core().V1().Namespaces().Informer()
+	return c.namespaceInformerFactory.Core().V1().Namespaces().Informer()
 }
 
 func (c *client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error) {
-	return c.informerFactory.Core().V1().Namespaces().Lister().List(selector)
+	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().List(selector)
 }

@@ -20,7 +20,7 @@ import (
 )
 
 func (c *client) SecretInformer() cache.SharedIndexInformer {
-	return c.informerFactory.Core().V1().Secrets().Informer()
+	return c.resourceInformerFactory.Core().V1().Secrets().Informer()
 }
 
 func (c *client) CreateSecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {

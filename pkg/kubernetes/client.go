@@ -16,19 +16,23 @@ import (
 	"fmt"
 	"reflect"
 
+	"go.uber.org/zap"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type client struct {
-	clientset       *kubernetes.Clientset
-	informerFactory informers.SharedInformerFactory
+	clientset                *kubernetes.Clientset
+	namespaceInformerFactory informers.SharedInformerFactory
+	resourceInformerFactory  informers.SharedInformerFactory
 }
 
 var _ ClientInterface = (*client)(nil)
 
-func NewBaseClient() *client {
+func NewClient(resourceLabelSelector map[string]string, logger *zap.SugaredLogger) *client {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
@@ -38,16 +42,39 @@ func NewBaseClient() *client {
 	if err != nil {
 		panic(err.Error())
 	}
-	informerFactory := informers.NewSharedInformerFactory(clientset, 0)
+
+	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0)
+	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0,
+		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+			labelSelector, err := labels.ConvertSelectorToLabelsMap(options.LabelSelector)
+			if err != nil {
+				logger.Errorw("failed to parse label selector", "error", err)
+				return
+			}
+			for k, v := range resourceLabelSelector {
+				labelSelector[k] = v
+			}
+			options.LabelSelector = labels.FormatLabels(labelSelector)
+		}),
+	)
 
 	return &client{
-		clientset:       clientset,
-		informerFactory: informerFactory,
+		clientset:                clientset,
+		namespaceInformerFactory: namespaceInformerFactory,
+		resourceInformerFactory:  resourceInformerFactory,
 	}
 }
 
 func (c *client) Start(stopCh <-chan struct{}) error {
-	c.informerFactory.Start(stopCh)
+	err := c.startInformerFactory(stopCh, c.namespaceInformerFactory)
+	if err != nil {
+		return err
+	}
+	return c.startInformerFactory(stopCh, c.resourceInformerFactory)
+}
+
+func (c *client) startInformerFactory(stopCh <-chan struct{}, factory informers.SharedInformerFactory) error {
+	factory.Start(stopCh)
 	return func(results ...map[reflect.Type]bool) error {
 		for i := range results {
 			for t, ok := range results[i] {
@@ -57,5 +84,5 @@ func (c *client) Start(stopCh <-chan struct{}) error {
 			}
 		}
 		return nil
-	}(c.informerFactory.WaitForCacheSync(stopCh))
+	}(factory.WaitForCacheSync(stopCh))
 }
