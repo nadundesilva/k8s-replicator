@@ -22,8 +22,10 @@ import (
 )
 
 const (
-	ReplicationSourceLabelKey       = "replicator.nadundesilva.github.io/replication-source"
-	ReplicationSourceLabelTrueValue = "true"
+	ReplicationObjectTypeLabelKey         = "replicator.nadundesilva.github.io/object-type"
+	ReplicationObjectTypeLabelValueSource = "source"
+	ReplicationObjectTypeLabelValueClone  = "clone"
+	ReplicationObjectTypeLabelValueIgnore = "ignored"
 )
 
 type controller struct {

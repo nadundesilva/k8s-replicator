@@ -23,11 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
-const (
-	ReplicationCloneLabelKey       = "replicator.nadundesilva.github.io/replication-clone"
-	ReplicationCloneLabelTrueValue = "true"
-)
-
 type ResourceEventHandler struct {
 	replicator resources.ResourceReplicator
 	k8sClient  kubernetes.ClientInterface
@@ -85,8 +80,7 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 	for k, v := range source.GetLabels() {
 		newLabels[k] = v
 	}
-	newLabels[ReplicationCloneLabelKey] = ReplicationCloneLabelTrueValue
-	delete(newLabels, ReplicationSourceLabelKey) 
+	newLabels[ReplicationObjectTypeLabelKey] = ReplicationObjectTypeLabelValueClone
 	clonedObj.SetLabels(newLabels)
 
 	newAnnotations := map[string]string{}
