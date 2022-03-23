@@ -11,7 +11,6 @@
 FROM alpine:3.15.1
 
 WORKDIR /controller
-ENV HOME=/controller
 
 COPY out/replicator /controller/replicator
 
