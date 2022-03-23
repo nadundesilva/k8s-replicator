@@ -20,6 +20,9 @@ import (
 )
 
 type ResourceReplicator interface {
+	ResourceApiVersion() string
+	ResourceName() string
+
 	Informer() cache.SharedInformer
 	Clone(source metav1.Object) metav1.Object
 	Create(ctx context.Context, namespace string, object metav1.Object) error

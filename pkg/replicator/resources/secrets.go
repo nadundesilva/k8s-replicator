@@ -38,6 +38,14 @@ func NewSecretReplicator(k8sClient kubernetes.ClientInterface, logger *zap.Sugar
 	}
 }
 
+func (r *secretReplicator) ResourceApiVersion() string {
+	return "v1"
+}
+
+func (r *secretReplicator) ResourceName() string {
+	return "Secret"
+}
+
 func (r *secretReplicator) Informer() cache.SharedInformer {
 	return r.k8sClient.SecretInformer()
 }
