@@ -16,6 +16,7 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -25,6 +26,10 @@ func (c *client) SecretInformer() cache.SharedIndexInformer {
 
 func (c *client) CreateSecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
 	return c.clientset.CoreV1().Secrets(namespace).Create(ctx, secret, defaultCreateOptions)
+}
+
+func (c *client) ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error) {
+	return c.resourceInformerFactory.Core().V1().Secrets().Lister().Secrets(namespace).List(selector)
 }
 
 func (c *client) GetSecret(namespace, name string) (*corev1.Secret, error) {

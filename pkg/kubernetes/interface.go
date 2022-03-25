@@ -34,6 +34,7 @@ type ClientInterface interface {
 	ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error)
 
 	CreateSecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
+	ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error)
 	GetSecret(namespace, name string) (*corev1.Secret, error)
 	DeleteSecret(ctx context.Context, namespace, name string) error
 }

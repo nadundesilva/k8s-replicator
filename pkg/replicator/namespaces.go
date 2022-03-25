@@ -13,10 +13,40 @@
 package replicator
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 )
 
 func (r *controller) handleNewNamespace(obj interface{}) {
 	namespace := obj.(*corev1.Namespace)
-	r.logger.Infow("Replicating to new namespace", "name", namespace.GetName())
+	logger := r.logger.With("namespace", namespace.GetName())
+
+	selectorRequirement, err := labels.NewRequirement(
+		ReplicationObjectTypeLabelKey,
+		selection.In,
+		[]string{ReplicationObjectTypeLabelValueSource},
+	)
+	if err != nil {
+		logger.Errorw("failed to initialize resources filter", "error", err)
+	}
+
+	for _, replicator := range r.resourceReplicators {
+		logger := r.logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
+		objects, err := replicator.List("", labels.NewSelector().Add(*selectorRequirement))
+		if err != nil {
+			logger.Errorw("failed to list the resources")
+		}
+		for _, object := range objects {
+			clonedObj := cloneObject(replicator, object)
+			err = createObject(context.Background(), replicator, namespace.GetName(), clonedObj)
+			if err != nil {
+				logger.Errorw("failed to replicate object to new namespace")
+			} else {
+				logger.Infow("replicated object to new namespace", "object", object.GetName())
+			}
+		}
+	}
 }

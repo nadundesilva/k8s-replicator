@@ -107,7 +107,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 						logger.Errorw("failed to recreate deleted clone: failed to check namespace state", "error", err)
 					}
 				} else if namespace != nil && namespace.GetDeletionTimestamp() == nil {
-					clonedObj := h.cloneObject(h.replicator, deletedObj)
+					clonedObj := cloneObject(h.replicator, deletedObj)
 					err = h.replicator.Create(ctx, namespace.GetName(), clonedObj)
 					if err != nil {
 						logger.Errorw("failed to recreate deleted clone", "error", err)
@@ -132,7 +132,7 @@ func (h *ResourceEventHandler) isReplicationClone(obj metav1.Object) bool {
 
 func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *zap.SugaredLogger) error {
 	ctx := context.Background()
-	clonedObj := h.cloneObject(h.replicator, currentObj)
+	clonedObj := cloneObject(h.replicator, currentObj)
 
 	namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
 	if err != nil {
@@ -141,18 +141,11 @@ func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *za
 		for _, namespace := range namespaces {
 			if namespace.GetName() != currentObj.GetNamespace() {
 				logger := logger.With("targetNamespace", namespace.GetName())
-				_, err := h.replicator.Get(namespace.GetName(), currentObj.GetName())
+				err = createObject(ctx, h.replicator, namespace.GetName(), clonedObj)
 				if err != nil {
-					if errors.IsNotFound(err) {
-						err = h.replicator.Create(ctx, namespace.GetName(), clonedObj)
-						if err != nil {
-							logger.Errorw("failed to create new object", "error", err)
-						} else {
-							logger.Debugw("replicated object to namespace")
-						}
-					} else {
-						logger.Errorw("failed to check if object exists", "error", err)
-					}
+					logger.Errorw("failed to replicate object to namespace")
+				} else {
+					logger.Debugw("replicated object to namespace")
 				}
 			}
 		}
@@ -160,7 +153,7 @@ func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *za
 	return nil
 }
 
-func (h *ResourceEventHandler) cloneObject(replicator resources.ResourceReplicator, source metav1.Object) metav1.Object {
+func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) metav1.Object {
 	clonedObj := replicator.Clone(source)
 	clonedObj.SetName(source.GetName())
 
@@ -179,4 +172,19 @@ func (h *ResourceEventHandler) cloneObject(replicator resources.ResourceReplicat
 	clonedObj.SetAnnotations(newAnnotations)
 
 	return clonedObj
+}
+
+func createObject(ctx context.Context, replicator resources.ResourceReplicator, namespace string, newObject metav1.Object) error {
+	_, err := replicator.Get(namespace, newObject.GetName())
+	if err != nil {
+		if errors.IsNotFound(err) {
+			err = replicator.Create(ctx, namespace, newObject)
+			if err != nil {
+				return fmt.Errorf("failed to create new object %+w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to check if object exists %+w", err)
+		}
+	}
+	return nil
 }

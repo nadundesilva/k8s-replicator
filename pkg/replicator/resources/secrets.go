@@ -19,6 +19,7 @@ import (
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -69,6 +70,18 @@ func (r *secretReplicator) Clone(source metav1.Object) metav1.Object {
 func (r *secretReplicator) Create(ctx context.Context, namespace string, object metav1.Object) error {
 	_, err := r.k8sClient.CreateSecret(ctx, namespace, object.(*corev1.Secret))
 	return err
+}
+
+func (r *secretReplicator) List(namespace string, selector labels.Selector) ([]metav1.Object, error) {
+	secrets, err := r.k8sClient.ListSecrets(namespace,selector)
+	if err != nil {
+		return []metav1.Object{}, err
+	}
+	listObjects := []metav1.Object{}
+	for _, secret := range secrets {
+		listObjects = append(listObjects, secret)
+	}
+	return listObjects, nil
 }
 
 func (r *secretReplicator) Get(namespace, name string) (metav1.Object, error) {
