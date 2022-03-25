@@ -25,3 +25,7 @@ func (c *client) NamespaceInformer() cache.SharedIndexInformer {
 func (c *client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error) {
 	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().List(selector)
 }
+
+func (c *client) GetNamespace(name string) (*corev1.Namespace, error) {
+	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().Get(name)
+}

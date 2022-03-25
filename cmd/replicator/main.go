@@ -43,7 +43,10 @@ func main() {
 	selectorRequirement, err := labels.NewRequirement(
 		replicator.ReplicationObjectTypeLabelKey,
 		selection.In,
-		[]string{replicator.ReplicationObjectTypeLabelValueSource},
+		[]string{
+			replicator.ReplicationObjectTypeLabelValueSource,
+			replicator.ReplicationObjectTypeLabelValueClone,
+		},
 	)
 	if err != nil {
 		logger.Errorw("failed to initialize resources filter", "error", err)

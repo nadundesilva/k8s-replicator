@@ -22,7 +22,9 @@ import (
 )
 
 const (
-	ReplicationObjectTypeLabelKey         = "replicator.nadundesilva.github.io/object-type"
+	ReplicationObjectTypeLabelKey      = "replicator.nadundesilva.github.io/object-type"
+	ReplicationSourceNamespaceLabelKey = "replicator.nadundesilva.github.io/source-namespace"
+
 	ReplicationObjectTypeLabelValueSource = "source"
 	ReplicationObjectTypeLabelValueClone  = "clone"
 	ReplicationObjectTypeLabelValueIgnore = "ignored"

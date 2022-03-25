@@ -71,6 +71,10 @@ func (r *secretReplicator) Create(ctx context.Context, namespace string, object 
 	return err
 }
 
-func (r *secretReplicator) Get(ctx context.Context, namespace, name string) (metav1.Object, error) {
-	return r.k8sClient.GetSecret(ctx, namespace, name)
+func (r *secretReplicator) Get(namespace, name string) (metav1.Object, error) {
+	return r.k8sClient.GetSecret(namespace, name)
+}
+
+func (r *secretReplicator) Delete(ctx context.Context, namespace, name string) error {
+	return r.k8sClient.DeleteSecret(ctx, namespace, name)
 }

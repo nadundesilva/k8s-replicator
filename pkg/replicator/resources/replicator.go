@@ -25,6 +25,8 @@ type ResourceReplicator interface {
 
 	Informer() cache.SharedInformer
 	Clone(source metav1.Object) metav1.Object
+
 	Create(ctx context.Context, namespace string, object metav1.Object) error
-	Get(ctx context.Context, namespace, name string) (metav1.Object, error)
+	Get(namespace, name string) (metav1.Object, error)
+	Delete(ctx context.Context, namespace, name string) error
 }

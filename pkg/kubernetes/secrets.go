@@ -27,8 +27,8 @@ func (c *client) CreateSecret(ctx context.Context, namespace string, secret *cor
 	return c.clientset.CoreV1().Secrets(namespace).Create(ctx, secret, defaultCreateOptions)
 }
 
-func (c *client) GetSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
-	return c.clientset.CoreV1().Secrets(namespace).Get(ctx, name, defaultGetOptions)
+func (c *client) GetSecret(namespace, name string) (*corev1.Secret, error) {
+	return c.resourceInformerFactory.Core().V1().Secrets().Lister().Secrets(namespace).Get(name)
 }
 
 func (c *client) DeleteSecret(ctx context.Context, namespace, name string) error {
