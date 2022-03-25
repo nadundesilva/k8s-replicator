@@ -32,11 +32,11 @@ type ResourceEventHandler struct {
 
 func NewResourcesEventHandler(replicator resources.ResourceReplicator, k8sClient kubernetes.ClientInterface,
 	logger *zap.SugaredLogger) *ResourceEventHandler {
+	logger = logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
 	return &ResourceEventHandler{
 		replicator: replicator,
 		k8sClient:  k8sClient,
-		logger: logger.With("replicatingResourceApiVersion", replicator.ResourceApiVersion(),
-			"replicatingResourceName", replicator.ResourceName()),
+		logger:     logger,
 	}
 }
 

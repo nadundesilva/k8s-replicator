@@ -32,7 +32,7 @@ type client struct {
 
 var _ ClientInterface = (*client)(nil)
 
-func NewClient(resourceLabelSelector map[string]string, logger *zap.SugaredLogger) *client {
+func NewClient(resourceSelectorRequirements []labels.Requirement, logger *zap.SugaredLogger) *client {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
@@ -46,15 +46,14 @@ func NewClient(resourceLabelSelector map[string]string, logger *zap.SugaredLogge
 	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0)
 	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0,
 		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
-			labelSelector, err := labels.ConvertSelectorToLabelsMap(options.LabelSelector)
+			requirements, err := labels.ParseToRequirements(options.LabelSelector)
 			if err != nil {
 				logger.Errorw("failed to parse label selector", "error", err)
 				return
 			}
-			for k, v := range resourceLabelSelector {
-				labelSelector[k] = v
-			}
-			options.LabelSelector = labels.FormatLabels(labelSelector)
+
+			selector := labels.NewSelector().Add(requirements...).Add(resourceSelectorRequirements...)
+			options.LabelSelector = selector.String()
 		}),
 	)
 

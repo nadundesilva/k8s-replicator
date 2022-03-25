@@ -20,6 +20,8 @@ import (
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	"github.com/nadundesilva/k8s-replicator/pkg/signals"
 	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 )
 
 func main() {
@@ -38,9 +40,15 @@ func main() {
 	}()
 	logger := zapLogger.Sugar()
 
-	k8sClient := kubernetes.NewClient(map[string]string{
-		replicator.ReplicationObjectTypeLabelKey: replicator.ReplicationObjectTypeLabelValueSource,
-	}, logger)
+	selectorRequirement, err := labels.NewRequirement(
+		replicator.ReplicationObjectTypeLabelKey,
+		selection.In,
+		[]string{replicator.ReplicationObjectTypeLabelValueSource},
+	)
+	if err != nil {
+		logger.Errorw("failed to initialize resources filter", "error", err)
+	}
+	k8sClient := kubernetes.NewClient([]labels.Requirement{*selectorRequirement}, logger)
 
 	resourceReplicators := []resources.ResourceReplicator{
 		resources.NewSecretReplicator(k8sClient, logger),
