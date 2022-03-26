@@ -21,10 +21,6 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 )
 
-const (
-	namespacePrefix = "replicator-e2e-"
-)
-
 var (
 	testenv env.Environment
 )
@@ -35,6 +31,7 @@ func TestMain(m *testing.M) {
 
 	testenv.Setup(
 		envfuncs.CreateKindCluster(kindClusterName),
+		envfuncs.LoadDockerImageToCluster(kindClusterName, controllerDockerImage),
 	)
 
 	testenv.Finish(

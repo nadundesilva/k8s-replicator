@@ -80,8 +80,7 @@ jobs:
               with:
                   go-version: "^1.18"
             - name: Run E2E Tests
-              run: |
-                go test -v -race -covermode=atomic -coverprofile=./coverage.txt
+              run: make test.e2e
 
     build:
         name: Build
@@ -103,11 +102,7 @@ jobs:
               with:
                   go-version: "^1.18"
             - name: Building Controller
-              run: go build -o ./out/replicator ./cmd/replicator
-              env:
-                GOOS: linux
-                GOARCH: amd64
-                CGO_ENABLED: 0
+              run: make all
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v1
             - name: Set up Docker Buildx

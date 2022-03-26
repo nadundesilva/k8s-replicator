@@ -57,6 +57,7 @@ func TestResources(t *testing.T) {
 		feature := features.New(fmt.Sprintf("replicate when new %s is created", resource.name)).
 			WithLabel("resource", resource.name).
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				setupReplicatorController(ctx, t, cfg)
 				createSourceNamespace(ctx, t, cfg, sourceNamespaceName)
 				return ctx
 			}).
