@@ -13,21 +13,37 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
+	"path/filepath"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/config"
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	"github.com/nadundesilva/k8s-replicator/pkg/signals"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 )
 
+var configFilePath string
+
 func main() {
+	flag.Parse()
+
 	stopCh := signals.SetupSignalHandler()
+	conf, err := config.NewFromFile(configFilePath)
+	if err != nil {
+		panic(err)
+	}
 
 	zapConf := zap.NewProductionConfig()
+	logLevel, err := zapcore.ParseLevel(conf.Logging.Level)
+	zapConf.Level = zap.NewAtomicLevelAt(logLevel)
+
 	zapLogger, err := zapConf.Build()
 	if err != nil {
 		log.Printf("failed to build logger config: %v", err)
@@ -66,4 +82,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func init() {
+	defaultConfigFile := filepath.Join("/", "etc", "replicator", "config.yaml")
+	flag.StringVar(&configFilePath, "config", defaultConfigFile,
+		fmt.Sprintf("Path to config file. Defaults to %s", defaultConfigFile))
 }

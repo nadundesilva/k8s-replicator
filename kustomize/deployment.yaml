@@ -27,4 +27,11 @@ spec:
       containers:
       - name: replicator
         image: ghcr.io/nadundesilva/k8s-replicator
+        volumeMounts:
+        - name: conf-vol
+          mountPath: /etc/replicator
+      volumes:
+      - name: conf-vol
+        configMap:
+          name: replicator
       serviceAccount: replicator

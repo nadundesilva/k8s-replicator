@@ -19,3 +19,8 @@ resources:
 - namespace.yaml
 - deployment.yaml
 - rbac.yaml
+
+configMapGenerator:
+- name: replicator
+  files:
+  - config.yaml
