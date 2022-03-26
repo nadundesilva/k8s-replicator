@@ -21,7 +21,9 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-var defaultCreateOptions = metav1.CreateOptions{}
+var defaultApplyOptions = metav1.ApplyOptions{
+	FieldManager: "replicator.nadundesilva.github.io/apply",
+}
 var defaultDeleteOptions = metav1.DeleteOptions{
 	PropagationPolicy: toPointer(metav1.DeletePropagationBackground),
 }
@@ -33,7 +35,7 @@ type ClientInterface interface {
 
 	ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error)
 
-	CreateSecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
+	ApplySecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
 	ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error)
 	GetSecret(namespace, name string) (*corev1.Secret, error)
 	DeleteSecret(ctx context.Context, namespace, name string) error

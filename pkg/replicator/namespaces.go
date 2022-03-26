@@ -34,16 +34,19 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 	}
 
 	for _, replicator := range r.resourceReplicators {
-		logger := r.logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
+		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
 		objects, err := replicator.List("", labels.NewSelector().Add(*selectorRequirement))
 		if err != nil {
 			logger.Errorw("failed to list the resources")
 		}
 		for _, object := range objects {
+			logger := logger.With("targetNamespace", namespace.GetName())
 			clonedObj := cloneObject(replicator, object)
-			err = createObject(context.Background(), replicator, namespace.GetName(), clonedObj)
+
+			err = replicateToNamespace(context.Background(), object.GetNamespace(), namespace.GetName(), clonedObj,
+				replicator)
 			if err != nil {
-				logger.Errorw("failed to replicate object to new namespace")
+				logger.Errorw("failed to replicate object to new namespace", "error", err)
 			} else {
 				logger.Infow("replicated object to new namespace", "object", object.GetName())
 			}

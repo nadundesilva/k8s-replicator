@@ -108,7 +108,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 					}
 				} else if namespace != nil && namespace.GetDeletionTimestamp() == nil {
 					clonedObj := cloneObject(h.replicator, deletedObj)
-					err = h.replicator.Create(ctx, namespace.GetName(), clonedObj)
+					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
 					if err != nil {
 						logger.Errorw("failed to recreate deleted clone", "error", err)
 					} else {
@@ -139,14 +139,13 @@ func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *za
 		return fmt.Errorf("failed to list namespaces %+w", err)
 	} else {
 		for _, namespace := range namespaces {
-			if namespace.GetName() != currentObj.GetNamespace() {
-				logger := logger.With("targetNamespace", namespace.GetName())
-				err = createObject(ctx, h.replicator, namespace.GetName(), clonedObj)
-				if err != nil {
-					logger.Errorw("failed to replicate object to namespace")
-				} else {
-					logger.Debugw("replicated object to namespace")
-				}
+			logger := logger.With("targetNamespace", namespace.GetName())
+			err = replicateToNamespace(ctx, currentObj.GetNamespace(), namespace.GetName(), clonedObj,
+				h.replicator)
+			if err != nil {
+				logger.Errorw("failed to replicate object to namespace", "error", err)
+			} else {
+				logger.Debugw("replicated object to namespace")
 			}
 		}
 	}
@@ -174,17 +173,10 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 	return clonedObj
 }
 
-func createObject(ctx context.Context, replicator resources.ResourceReplicator, namespace string, newObject metav1.Object) error {
-	_, err := replicator.Get(namespace, newObject.GetName())
-	if err != nil {
-		if errors.IsNotFound(err) {
-			err = replicator.Create(ctx, namespace, newObject)
-			if err != nil {
-				return fmt.Errorf("failed to create new object %+w", err)
-			}
-		} else {
-			return fmt.Errorf("failed to check if object exists %+w", err)
-		}
+func replicateToNamespace(ctx context.Context, sourceNamespace, targetNamespace string, obj metav1.Object,
+	replicator resources.ResourceReplicator) error {
+	if sourceNamespace != targetNamespace {
+		return replicator.Apply(ctx, targetNamespace, obj)
 	}
 	return nil
 }

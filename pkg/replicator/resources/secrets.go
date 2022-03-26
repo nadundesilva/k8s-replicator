@@ -40,11 +40,11 @@ func NewSecretReplicator(k8sClient kubernetes.ClientInterface, logger *zap.Sugar
 }
 
 func (r *secretReplicator) ResourceApiVersion() string {
-	return "v1"
+	return corev1.SchemeGroupVersion.String()
 }
 
 func (r *secretReplicator) ResourceName() string {
-	return "Secret"
+	return kubernetes.KindSecret
 }
 
 func (r *secretReplicator) Informer() cache.SharedInformer {
@@ -67,8 +67,8 @@ func (r *secretReplicator) Clone(source metav1.Object) metav1.Object {
 	return clonedSecret
 }
 
-func (r *secretReplicator) Create(ctx context.Context, namespace string, object metav1.Object) error {
-	_, err := r.k8sClient.CreateSecret(ctx, namespace, object.(*corev1.Secret))
+func (r *secretReplicator) Apply(ctx context.Context, namespace string, object metav1.Object) error {
+	_, err := r.k8sClient.ApplySecret(ctx, namespace, object.(*corev1.Secret))
 	return err
 }
 
