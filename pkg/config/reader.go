@@ -52,7 +52,6 @@ func New(reader io.Reader, configType string) (*Conf, error) {
 	if err != nil {
 		return nil, err
 	}
-	viperConf.WatchConfig()
 
 	conf := &Conf{}
 	err = viperConf.Unmarshal(conf)

@@ -27,11 +27,13 @@ import (
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/klog"
 )
 
 var configFilePath string
 
 func main() {
+	klog.InitFlags(nil)
 	flag.Parse()
 
 	stopCh := signals.SetupSignalHandler()
@@ -48,12 +50,7 @@ func main() {
 	if err != nil {
 		log.Printf("failed to build logger config: %v", err)
 	}
-	defer func() {
-		err := zapLogger.Sync()
-		if err != nil {
-			log.Printf("failed to sync logger: %v", err)
-		}
-	}()
+	defer zapLogger.Sync()
 	logger := zapLogger.Sugar()
 
 	selectorRequirement, err := labels.NewRequirement(
