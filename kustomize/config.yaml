@@ -1,3 +1,7 @@
+apiVersion: replicator.nadundesilva.github.io/v1
+kind: Config
+metadata:
+  name: k8s-replicator-conf
 logging:
   level: debug
 resources:

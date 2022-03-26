@@ -22,6 +22,6 @@ type LoggingConf struct {
 }
 
 type ResourceType struct {
-	APIVersion string `mapstructure:"apiVersion"`
+	ApiVersion string `mapstructure:"apiVersion"`
 	Kind       string `mapstructure:"kind"`
 }

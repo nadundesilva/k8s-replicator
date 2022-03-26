@@ -44,13 +44,19 @@ func main() {
 
 	zapConf := zap.NewProductionConfig()
 	logLevel, err := zapcore.ParseLevel(conf.Logging.Level)
+	if err != nil {
+		log.Printf("defaulting to info log level as parsing log level %s failed: %v", conf.Logging.Level, err)
+		logLevel = zapcore.InfoLevel
+	}
 	zapConf.Level = zap.NewAtomicLevelAt(logLevel)
 
 	zapLogger, err := zapConf.Build()
 	if err != nil {
 		log.Printf("failed to build logger config: %v", err)
 	}
-	defer zapLogger.Sync()
+	defer func() {
+		_ = zapLogger.Sync()
+	}()
 	logger := zapLogger.Sugar()
 
 	selectorRequirement, err := labels.NewRequirement(

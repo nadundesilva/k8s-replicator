@@ -23,6 +23,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	configFileKind            = "Config"
+	configFileApiVersionGroup = "replicator.nadundesilva.github.io"
+	configFileApiVersionV1    = configFileApiVersionGroup + "/v1"
+)
+
 func NewFromFile(configFile string) (*Conf, error) {
 	f, err := os.Open(filepath.Clean(configFile))
 	if err != nil {
@@ -51,6 +57,15 @@ func New(reader io.Reader, configType string) (*Conf, error) {
 	err = viperConf.ReadConfig(expandedReader)
 	if err != nil {
 		return nil, err
+	}
+
+	providedConfKind := viperConf.GetString("kind")
+	if providedConfKind != configFileKind {
+		return nil, fmt.Errorf("invalid config file kind %s, expected %s", providedConfKind, configFileKind)
+	}
+	providedApiVersion := viperConf.GetString("apiVersion")
+	if providedApiVersion != configFileApiVersionV1 {
+		return nil, fmt.Errorf("invalid config file api version %s, expected %s", providedApiVersion, configFileApiVersionV1)
 	}
 
 	conf := &Conf{}
