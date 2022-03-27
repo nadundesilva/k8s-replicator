@@ -65,21 +65,106 @@ func TestResources(t *testing.T) {
 
 	testFeatures := []features.Feature{}
 	for _, resource := range resources {
-		sourceNamespaceName := envconf.RandomName(namespacePrefix+"source-ns", 32)
-		feature := features.New(fmt.Sprintf("replicate when new %s is created", resource.name)).
+		setupInitialNamspaces := func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			for i := 1; i < 5; i++ {
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+			}
+			return ctx
+		}
+		assessReplicatedResources := func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
+			return ctx
+		}
+
+		testFeatures = append(testFeatures, features.New("controller starts before initial namespaces creation").
 			WithLabel("resource", resource.name).
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				setupReplicatorController(ctx, t, cfg)
-				createSourceNamespace(ctx, t, cfg, sourceNamespaceName)
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
 				return ctx
 			}).
-			Assess("new resource added to existing namespace", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				createSourceObject(ctx, t, cfg, sourceNamespaceName, resource.sourceObject)
-				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
+			Teardown(cleanupTestObjects).
+			Assess("replicated objects", assessReplicatedResources).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New(fmt.Sprintf("controller starts netween initial namespaces creation and source namespace %s creation", resource.name)).
+			WithLabel("resource", resource.name).
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
 				return ctx
 			}).
-			Feature()
-		testFeatures = append(testFeatures, feature)
+			Teardown(cleanupTestObjects).
+			Assess("replicated objects", assessReplicatedResources).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New(fmt.Sprintf("controller starts between source namespace creation and source object %s creation", resource.name)).
+			WithLabel("resource", resource.name).
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("replicated objects", assessReplicatedResources).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New(fmt.Sprintf("controller starts between source object %s creation and first new namespace creation", resource.name)).
+			WithLabel("resource", resource.name).
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("replicated objects", assessReplicatedResources).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller starts between first new namespace creation and second new namespace creation").
+			WithLabel("resource", resource.name).
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("replicated objects", assessReplicatedResources).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller starts after second new namespace creation").
+			WithLabel("resource", resource.name).
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				_, ctx = createRandomNamespace(ctx, t, cfg)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("replicated objects", assessReplicatedResources).
+			Feature())
 	}
 
 	testenv.Test(t, testFeatures...)

@@ -22,6 +22,7 @@ import (
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,9 +40,10 @@ const (
 	kustomizeDirName      = "kustomize"
 	namespacePrefix       = "replicator-e2e-"
 	controllerDockerImage = "ghcr.io/nadundesilva/k8s-replicator:test"
+	testObjectsContextKey = "__test_objects__"
 )
 
-func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.Config) {
+func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	kustomizeDir, err := filepath.Abs(filepath.Join("..", "..", kustomizeDirName))
 	if err != nil {
 		t.Fatalf("failed to resolve kustomize dir %s: %v", kustomizeDirName, err)
@@ -76,9 +78,15 @@ func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.C
 		}
 
 		kind := groupVersionKind.String()
-		if deploymentObj, ok := obj.(*appsv1.Deployment); ok {
-			deploymentObj.Spec.Template.Spec.Containers[0].Image = controllerDockerImage
-			controllerDeployment = deploymentObj
+		if deployment, ok := obj.(*appsv1.Deployment); ok {
+			deployment.Spec.Template.Spec.Containers[0].Image = controllerDockerImage
+			controllerDeployment = deployment
+		} else if namespace, ok := obj.(*corev1.Namespace); ok {
+			ctx = addTestObjectToContext(ctx, namespace)
+		} else if clusterrole, ok := obj.(*rbacv1.ClusterRole); ok {
+			ctx = addTestObjectToContext(ctx, clusterrole)
+		} else if clusterrolebinding, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
+			ctx = addTestObjectToContext(ctx, clusterrolebinding)
 		}
 		err = cfg.Client().Resources().Create(ctx, obj.(k8s.Object))
 		if err != nil {
@@ -96,18 +104,20 @@ func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.C
 	if err != nil {
 		t.Fatalf("failed to wait for controller deployment to be ready: %v", err)
 	}
+	return ctx
 }
 
-func createSourceNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, name string) {
-	sourceNamespace := &corev1.Namespace{
+func createRandomNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (*corev1.Namespace, context.Context) {
+	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: envconf.RandomName(namespacePrefix+"source-ns", 32),
 		},
 	}
-	err := cfg.Client().Resources().Create(ctx, sourceNamespace)
+	err := cfg.Client().Resources().Create(ctx, namespace)
 	if err != nil {
-		t.Fatalf("failed to create source namespace %s: %v", sourceNamespace.GetName(), err)
+		t.Fatalf("failed to create namespace %s: %v", namespace.GetName(), err)
 	}
+	return namespace, addTestObjectToContext(ctx, namespace)
 }
 
 func createSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
@@ -115,7 +125,7 @@ func createSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 	labels := obj.GetLabels()
 	labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
 
-	err := cfg.Client().Resources(namespace).Create(ctx, obj)
+	err := cfg.Client().Resources(namespace).Create(ctx, obj.DeepCopyObject().(k8s.Object))
 	if err != nil {
 		t.Fatalf("failed to create source object: %v", err)
 	}
@@ -134,11 +144,14 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	listItems := []runtime.Object{}
 	for _, ns := range nsList.Items {
 		obj := sourceObject.DeepCopyObject()
-		metaObj := obj.(metav1.Object)
+		metaObj := obj.(k8s.Object)
 		metaObj.SetNamespace(ns.GetName())
 		listItems = append(listItems, obj)
 	}
-	meta.SetList(objectList, listItems)
+	err = meta.SetList(objectList, listItems)
+	if err != nil {
+		t.Fatalf("failed to create list of objects to wait for: %v", err)
+	}
 
 	err = wait.For(conditions.New(cfg.Client().Resources()).ResourcesMatch(
 		objectList,
@@ -205,4 +218,36 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	if err != nil {
 		t.Fatalf("failed to wait for replicated objects: %v", err)
 	}
+}
+
+func addTestObjectToContext(ctx context.Context, object k8s.Object) context.Context {
+	ctxValue := ctx.Value(testObjectsContextKey)
+	var objects []k8s.Object
+	if ctxValue == nil {
+		objects = []k8s.Object{}
+	} else {
+		objects = ctxValue.([]k8s.Object)
+	}
+	objects = append(objects, object)
+	return context.WithValue(ctx, testObjectsContextKey, objects)
+}
+
+func cleanupTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	ctxValue := ctx.Value(testObjectsContextKey)
+	if ctxValue != nil {
+		objects := ctxValue.([]k8s.Object)
+		for _, object := range objects {
+			err := cfg.Client().Resources().Delete(ctx, object)
+			if err != nil {
+				t.Fatalf("failed to delete test object %s: %v", object.GetName(), err)
+			}
+
+			err = wait.For(conditions.New(cfg.Client().Resources()).ResourceDeleted(object))
+			if err != nil {
+				t.Fatalf("failed to wait for objects to delete: %v", err)
+			}
+		}
+		ctx = context.WithValue(ctx, testObjectsContextKey, nil)
+	}
+	return ctx
 }
