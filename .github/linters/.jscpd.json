@@ -1,0 +1,5 @@
+{
+    "configurations": {
+        "ignore": ["test/e2e/**"]
+    }
+}

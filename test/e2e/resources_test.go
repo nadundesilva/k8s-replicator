@@ -66,7 +66,7 @@ func TestResources(t *testing.T) {
 	testFeatures := []features.Feature{}
 	for _, resource := range resources {
 		setupInitialNamspaces := func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-			for i := 1; i < 5; i++ {
+			for i := 1; i < 10; i++ {
 				_, ctx = createRandomNamespace(ctx, t, cfg)
 			}
 			return ctx

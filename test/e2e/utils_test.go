@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
+	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -42,6 +43,12 @@ const (
 	controllerDockerImage = "ghcr.io/nadundesilva/k8s-replicator:test"
 	testObjectsContextKey = "__test_objects__"
 )
+
+type testObjects struct {
+	namespaces          corev1.NamespaceList
+	clusterRoles        rbacv1.ClusterRoleList
+	clusterRoleBindings rbacv1.ClusterRoleBindingList
+}
 
 func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	kustomizeDir, err := filepath.Abs(filepath.Join("..", "..", kustomizeDirName))
@@ -82,11 +89,11 @@ func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.C
 			deployment.Spec.Template.Spec.Containers[0].Image = controllerDockerImage
 			controllerDeployment = deployment
 		} else if namespace, ok := obj.(*corev1.Namespace); ok {
-			ctx = addTestObjectToContext(ctx, namespace)
+			ctx = addTestObjectToContext(ctx, t, namespace)
 		} else if clusterrole, ok := obj.(*rbacv1.ClusterRole); ok {
-			ctx = addTestObjectToContext(ctx, clusterrole)
+			ctx = addTestObjectToContext(ctx, t, clusterrole)
 		} else if clusterrolebinding, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-			ctx = addTestObjectToContext(ctx, clusterrolebinding)
+			ctx = addTestObjectToContext(ctx, t, clusterrolebinding)
 		}
 		err = cfg.Client().Resources().Create(ctx, obj.(k8s.Object))
 		if err != nil {
@@ -117,7 +124,7 @@ func createRandomNamespace(ctx context.Context, t *testing.T, cfg *envconf.Confi
 	if err != nil {
 		t.Fatalf("failed to create namespace %s: %v", namespace.GetName(), err)
 	}
-	return namespace, addTestObjectToContext(ctx, namespace)
+	return namespace, addTestObjectToContext(ctx, t, namespace)
 }
 
 func createSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
@@ -220,33 +227,57 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	}
 }
 
-func addTestObjectToContext(ctx context.Context, object k8s.Object) context.Context {
+func addTestObjectToContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
 	ctxValue := ctx.Value(testObjectsContextKey)
-	var objects []k8s.Object
+	var objects *testObjects
 	if ctxValue == nil {
-		objects = []k8s.Object{}
+		objects = &testObjects{}
 	} else {
-		objects = ctxValue.([]k8s.Object)
+		objects = ctxValue.(*testObjects)
 	}
-	objects = append(objects, object)
+
+	if namespace, ok := object.(*corev1.Namespace); ok {
+		objects.namespaces.Items = append(objects.namespaces.Items, *namespace)
+	} else if clusterrole, ok := object.(*rbacv1.ClusterRole); ok {
+		objects.clusterRoles.Items = append(objects.clusterRoles.Items, *clusterrole)
+	} else if clusterrolebinding, ok := object.(*rbacv1.ClusterRoleBinding); ok {
+		objects.clusterRoleBindings.Items = append(objects.clusterRoleBindings.Items, *clusterrolebinding)
+	} else {
+		t.Fatalf("cannot add unknown object type %s as test object", object.GetObjectKind().GroupVersionKind().String())
+	}
 	return context.WithValue(ctx, testObjectsContextKey, objects)
 }
 
 func cleanupTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	ctxValue := ctx.Value(testObjectsContextKey)
 	if ctxValue != nil {
-		objects := ctxValue.([]k8s.Object)
-		for _, object := range objects {
-			err := cfg.Client().Resources().Delete(ctx, object)
+		deleteObjs := func(object k8s.Object) {
+			err := cfg.Client().Resources().Delete(ctx, object,
+				resources.WithDeletePropagation("Background"))
 			if err != nil {
-				t.Fatalf("failed to delete test object %s: %v", object.GetName(), err)
+				t.Errorf("failed to delete test object %s: %v", object.GetName(), err)
 			}
-
-			err = wait.For(conditions.New(cfg.Client().Resources()).ResourceDeleted(object))
+		}
+		waitForDeleteObjs := func(objList k8s.ObjectList) {
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesDeleted(objList))
 			if err != nil {
 				t.Fatalf("failed to wait for objects to delete: %v", err)
 			}
 		}
+
+		objects := ctxValue.(*testObjects)
+		for _, obj := range objects.namespaces.Items {
+			deleteObjs(&obj)
+		}
+		for _, obj := range objects.clusterRoles.Items {
+			deleteObjs(&obj)
+		}
+		for _, obj := range objects.clusterRoleBindings.Items {
+			deleteObjs(&obj)
+		}
+		waitForDeleteObjs(&objects.namespaces)
+		waitForDeleteObjs(&objects.clusterRoles)
+		waitForDeleteObjs(&objects.clusterRoleBindings)
 		ctx = context.WithValue(ctx, testObjectsContextKey, nil)
 	}
 	return ctx
