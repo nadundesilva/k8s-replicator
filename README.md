@@ -1,5 +1,7 @@
 # Kubernetes Replicator
 
+[![Build Branch](https://github.com/nadundesilva/k8s-replicator/actions/workflows/build-branch.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/build-branch.yaml)
+
 Replicator for Kubernetes resources across namespaces. This controller was written keeping exptendability in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
 
 * Secrets
