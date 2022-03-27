@@ -138,6 +138,14 @@ func createSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 	}
 }
 
+func deleteObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
+	obj.SetNamespace(namespace)
+	err := cfg.Client().Resources(namespace).Delete(ctx, obj.DeepCopyObject().(k8s.Object))
+	if err != nil {
+		t.Fatalf("failed to delete object: %v", err)
+	}
+}
+
 type objectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
 
 func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
@@ -224,6 +232,22 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	)
 	if err != nil {
 		t.Fatalf("failed to wait for replicated objects: %v", err)
+	}
+}
+
+func validateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object) {
+	nsList := &corev1.NamespaceList{}
+	err := cfg.Client().Resources().List(ctx, nsList)
+	if err != nil {
+		t.Fatalf("failed to list namespaces: %v", err)
+	}
+	for _, namespace := range nsList.Items {
+		obj := sourceObject.DeepCopyObject().(k8s.Object)
+		obj.SetNamespace(namespace.GetName())
+		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(obj))
+		if err != nil {
+			t.Fatalf("failed to wait for replicated objects: %v", err)
+		}
 	}
 }
 
