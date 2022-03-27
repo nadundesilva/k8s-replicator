@@ -28,7 +28,6 @@ import (
 
 type resourcesCreationTestData struct {
 	name         string
-	typeMeta     metav1.Object
 	objectList   k8s.ObjectList
 	sourceObject k8s.Object
 	matcher      objectMatcher
@@ -203,12 +202,71 @@ func TestResourcesDeletion(t *testing.T) {
 				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
 				ctx = setupReplicatorController(ctx, t, cfg)
 				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
-				deleteObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				deleteObjectWithWait(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
 				return ctx
 			}).
 			Teardown(cleanupTestObjects).
 			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validateResourceDeletion(ctx, t, cfg, resource.sourceObject)
+				return ctx
+			}).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller deletes all clones when namespace with source object is deleted").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "delete").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
+				ctx = deleteNamespaceWithWait(ctx, t, cfg, sourceNamespace)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validateResourceDeletion(ctx, t, cfg, resource.sourceObject)
+				return ctx
+			}).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller recreated deleted clones").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "delete").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				cloneNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
+				deleteObject(ctx, t, cfg, cloneNamespace.GetName(), resource.sourceObject)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("recreated clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
+				return ctx
+			}).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller allows namespace with clone to be deleted").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "delete").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				createSourceObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = setupReplicatorController(ctx, t, cfg)
+				cloneNamespace, ctx := createRandomNamespace(ctx, t, cfg)
+				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
+				ctx = deleteNamespaceWithWait(ctx, t, cfg, cloneNamespace)
+				return ctx
+			}).
+			Teardown(cleanupTestObjects).
+			Assess("remaining clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
 				return ctx
 			}).
 			Feature())

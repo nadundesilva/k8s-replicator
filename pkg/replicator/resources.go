@@ -108,6 +108,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 					}
 				} else if namespace != nil && namespace.GetDeletionTimestamp() == nil {
 					clonedObj := cloneObject(h.replicator, deletedObj)
+					clonedObj.GetLabels()[ReplicationSourceNamespaceLabelKey] = sourceNamespaceName
 					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
 					if err != nil {
 						logger.Errorw("failed to recreate deleted clone", "error", err)

@@ -117,7 +117,7 @@ func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.C
 func createRandomNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config) (*corev1.Namespace, context.Context) {
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: envconf.RandomName(namespacePrefix+"source-ns", 32),
+			Name: envconf.RandomName(namespacePrefix+"ns", 32),
 		},
 	}
 	err := cfg.Client().Resources().Create(ctx, namespace)
@@ -129,21 +129,56 @@ func createRandomNamespace(ctx context.Context, t *testing.T, cfg *envconf.Confi
 
 func createSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
 	obj.SetNamespace(namespace)
-	labels := obj.GetLabels()
+	clonedObj := obj.DeepCopyObject().(k8s.Object)
+	labels := clonedObj.GetLabels()
 	labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
 
-	err := cfg.Client().Resources(namespace).Create(ctx, obj.DeepCopyObject().(k8s.Object))
+	err := cfg.Client().Resources(namespace).Create(ctx, clonedObj)
 	if err != nil {
 		t.Fatalf("failed to create source object: %v", err)
 	}
 }
 
 func deleteObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
-	obj.SetNamespace(namespace)
-	err := cfg.Client().Resources(namespace).Delete(ctx, obj.DeepCopyObject().(k8s.Object))
+	clonedObj := obj.DeepCopyObject().(k8s.Object)
+	clonedObj.SetNamespace(namespace)
+
+	err := cfg.Client().Resources(namespace).Delete(ctx, clonedObj)
 	if err != nil {
 		t.Fatalf("failed to delete object: %v", err)
 	}
+}
+
+func deleteObjectWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
+	clonedObj := obj.DeepCopyObject().(k8s.Object)
+	clonedObj.SetNamespace(namespace)
+	deleteObject(ctx, t, cfg, namespace, clonedObj)
+
+	err := wait.For(conditions.New(cfg.Client().Resources(namespace)).ResourceDeleted(clonedObj))
+	if err != nil {
+		t.Fatalf("failed to wait for object to delete: %v", err)
+	}
+}
+
+func deleteNamespace(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace *corev1.Namespace) context.Context {
+	clonedNamespace := namespace.DeepCopyObject().(k8s.Object)
+
+	err := cfg.Client().Resources().Delete(ctx, clonedNamespace)
+	if err != nil {
+		t.Fatalf("failed to delete namespace: %v", err)
+	}
+	return removeTestObjectFromContext(ctx, t, clonedNamespace)
+}
+
+func deleteNamespaceWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace *corev1.Namespace) context.Context {
+	clonedNamespace := namespace.DeepCopyObject().(k8s.Object)
+	ctx = deleteNamespace(ctx, t, cfg, namespace)
+
+	err := wait.For(conditions.New(cfg.Client().Resources()).ResourceDeleted(clonedNamespace))
+	if err != nil {
+		t.Fatalf("failed to wait for namespace to delete: %v", err)
+	}
+	return ctx
 }
 
 type objectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
@@ -158,10 +193,9 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 
 	listItems := []runtime.Object{}
 	for _, ns := range nsList.Items {
-		obj := sourceObject.DeepCopyObject()
-		metaObj := obj.(k8s.Object)
-		metaObj.SetNamespace(ns.GetName())
-		listItems = append(listItems, obj)
+		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
+		clonedObj.SetNamespace(ns.GetName())
+		listItems = append(listItems, clonedObj)
 	}
 	err = meta.SetList(objectList, listItems)
 	if err != nil {
@@ -169,7 +203,7 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	}
 
 	err = wait.For(conditions.New(cfg.Client().Resources()).ResourcesMatch(
-		objectList,
+		objectList.DeepCopyObject().(k8s.ObjectList),
 		func(object k8s.Object) bool {
 			matchMap := func(sourceMap map[string]string, targetMap map[string]string) error {
 				for k, v := range sourceMap {
@@ -178,51 +212,53 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 					}
 					if value, ok := targetMap[k]; ok {
 						if value != v {
-							return fmt.Errorf("source object value %s for key %s does not exist in cloned object in namespace %s",
-								v, k, object.GetNamespace())
+							return fmt.Errorf("source object %s/%s value %s for key %s does not exist in cloned object",
+								sourceObject.GetNamespace(), sourceObject.GetName(), v, k)
 						}
 					} else {
-						return fmt.Errorf("source object key %s does not exist in cloned object in namespace %s",
-							k, object.GetNamespace())
+						return fmt.Errorf("source object %s/%s key %s does not exist in cloned object",
+							sourceObject.GetNamespace(), sourceObject.GetName(), k)
 					}
 				}
 				return nil
 			}
 			err := matchMap(sourceObject.GetLabels(), object.GetLabels())
 			if err != nil {
-				t.Errorf("labels are not matching %v", err)
+				t.Errorf("object %s/%s labels are not matching %v", object.GetNamespace(), object.GetName(), err)
 			}
 			err = matchMap(sourceObject.GetAnnotations(), object.GetAnnotations())
 			if err != nil {
-				t.Errorf("annotations are not matching %v", err)
+				t.Errorf("object %s/%s annotations are not matching %v", object.GetNamespace(), object.GetName(), err)
 			}
 
 			objType, objTypeOk := object.GetLabels()[replicator.ReplicationObjectTypeLabelKey]
 			if !objTypeOk {
-				t.Errorf("object does not contain label key %s", replicator.ReplicationObjectTypeLabelKey)
+				t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
+					replicator.ReplicationObjectTypeLabelKey)
 			}
 			if sourceObject.GetNamespace() == object.GetNamespace() {
 				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueSource {
-					t.Errorf("object label %s does not contain the expected value; want %s, got %s",
-						replicator.ReplicationObjectTypeLabelKey, replicator.ReplicationObjectTypeLabelValueSource,
-						objType)
+					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
+						object.GetNamespace(), object.GetName(), replicator.ReplicationObjectTypeLabelKey,
+						replicator.ReplicationObjectTypeLabelValueSource, objType)
 				}
 			} else {
 				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueClone {
-					t.Errorf("object label %s does not contain the expected value; want %s, got %s",
-						replicator.ReplicationObjectTypeLabelKey, replicator.ReplicationObjectTypeLabelValueClone,
-						objType)
+					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
+						object.GetNamespace(), object.GetName(), replicator.ReplicationObjectTypeLabelKey,
+						replicator.ReplicationObjectTypeLabelValueClone, objType)
 				}
 
 				sourceNs, sourceNsOk := object.GetLabels()[replicator.ReplicationSourceNamespaceLabelKey]
 				if sourceNsOk {
 					if sourceNs != sourceObject.GetNamespace() {
-						t.Errorf("object label %s does not contain the clone source namespace; want %s, got %s",
-							replicator.ReplicationSourceNamespaceLabelKey, sourceObject.GetNamespace(),
-							sourceNs)
+						t.Errorf("object %s/%s label %s does not contain the source namespace; want %s, got %s",
+							object.GetNamespace(), object.GetName(), replicator.ReplicationSourceNamespaceLabelKey,
+							sourceObject.GetNamespace(), sourceNs)
 					}
 				} else {
-					t.Errorf("object does not contain label key %s", replicator.ReplicationSourceNamespaceLabelKey)
+					t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
+						replicator.ReplicationSourceNamespaceLabelKey)
 				}
 			}
 			objMatcher(sourceObject, object)
@@ -242,9 +278,9 @@ func validateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 		t.Fatalf("failed to list namespaces: %v", err)
 	}
 	for _, namespace := range nsList.Items {
-		obj := sourceObject.DeepCopyObject().(k8s.Object)
-		obj.SetNamespace(namespace.GetName())
-		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(obj))
+		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
+		clonedObj.SetNamespace(namespace.GetName())
+		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj))
 		if err != nil {
 			t.Fatalf("failed to wait for replicated objects: %v", err)
 		}
@@ -272,18 +308,80 @@ func addTestObjectToContext(ctx context.Context, t *testing.T, object k8s.Object
 	return context.WithValue(ctx, testObjectsContextKey, objects)
 }
 
+func removeTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
+	ctxValue := ctx.Value(testObjectsContextKey)
+	var objects *testObjects
+	if ctxValue == nil {
+		objects = &testObjects{}
+	} else {
+		objects = ctxValue.(*testObjects)
+	}
+
+	removeItemFromContext := func(testObjList []runtime.Object, obj runtime.Object) []runtime.Object {
+		var index *int
+		for i, testObject := range testObjList {
+			if testObject.(metav1.Object).GetName() == obj.(metav1.Object).GetName() {
+				index = &i
+				break
+			}
+		}
+		if index == nil {
+			t.Fatalf("test object to be removed from context not present")
+		} else {
+			testObjList = append(testObjList[:*index], testObjList[*index+1:]...)
+		}
+		return testObjList
+	}
+
+	if namespace, ok := object.(*corev1.Namespace); ok {
+		objList, err := meta.ExtractList(&objects.namespaces)
+		if err != nil {
+			t.Fatalf("failed to extract namespaces list: %v", err)
+		}
+		objList = removeItemFromContext(objList, namespace)
+		err = meta.SetList(&objects.namespaces, objList)
+		if err != nil {
+			t.Fatalf("failed to set the new reduced list: %v", err)
+		}
+	} else if clusterrole, ok := object.(*rbacv1.ClusterRole); ok {
+		objList, err := meta.ExtractList(&objects.clusterRoles)
+		if err != nil {
+			t.Fatalf("failed to extract cluster roles list: %v", err)
+		}
+		objList = removeItemFromContext(objList, clusterrole)
+		err = meta.SetList(&objects.clusterRoles, objList)
+		if err != nil {
+			t.Fatalf("failed to set the new reduced list: %v", err)
+		}
+	} else if clusterrolebinding, ok := object.(*rbacv1.ClusterRoleBinding); ok {
+		objList, err := meta.ExtractList(&objects.clusterRoleBindings)
+		if err != nil {
+			t.Fatalf("failed to extract cluster role bindings list: %v", err)
+		}
+		objList = removeItemFromContext(objList, clusterrolebinding)
+		err = meta.SetList(&objects.clusterRoleBindings, objList)
+		if err != nil {
+			t.Fatalf("failed to set the new reduced list: %v", err)
+		}
+	} else {
+		t.Fatalf("cannot remove unknown object type %s as test object", object.GetObjectKind().GroupVersionKind().String())
+	}
+	return context.WithValue(ctx, testObjectsContextKey, objects)
+}
+
 func cleanupTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	ctxValue := ctx.Value(testObjectsContextKey)
 	if ctxValue != nil {
 		deleteObjs := func(object k8s.Object) {
-			err := cfg.Client().Resources().Delete(ctx, object,
+			err := cfg.Client().Resources().Delete(ctx, object.DeepCopyObject().(k8s.Object),
 				resources.WithDeletePropagation("Background"))
 			if err != nil {
 				t.Errorf("failed to delete test object %s: %v", object.GetName(), err)
 			}
 		}
 		waitForDeleteObjs := func(objList k8s.ObjectList) {
-			err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesDeleted(objList))
+			clonedObjList := objList.DeepCopyObject().(k8s.ObjectList)
+			err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesDeleted(clonedObjList))
 			if err != nil {
 				t.Fatalf("failed to wait for objects to delete: %v", err)
 			}
