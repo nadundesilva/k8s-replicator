@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"reflect"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -28,12 +29,14 @@ import (
 func TestResources(t *testing.T) {
 	resources := []struct {
 		name         string
-		objectsList  k8s.ObjectList
+		typeMeta     metav1.Object
+		objectList   k8s.ObjectList
 		sourceObject k8s.Object
+		matcher      objectMatcher
 	}{
 		{
-			name:        "secret",
-			objectsList: &corev1.PodList{},
+			name:       "secret",
+			objectList: &corev1.SecretList{},
 			sourceObject: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: envconf.RandomName("source-secret", 32),
@@ -48,12 +51,21 @@ func TestResources(t *testing.T) {
 					"data-item-one-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-one-value"))),
 				},
 			},
+			matcher: func(sourceObject k8s.Object, targetObject k8s.Object) bool {
+				sourceSecret := sourceObject.(*corev1.Secret)
+				targetSecret := targetObject.(*corev1.Secret)
+				if !reflect.DeepEqual(sourceSecret.Data, targetSecret.Data) {
+					t.Errorf("secret data not equal; want %s, got %s",
+						sourceSecret.Data, targetSecret.Data)
+				}
+				return true
+			},
 		},
 	}
 
 	testFeatures := []features.Feature{}
 	for _, resource := range resources {
-		const sourceNamespaceName = namespacePrefix + "source-ns"
+		sourceNamespaceName := envconf.RandomName(namespacePrefix+"source-ns", 32)
 		feature := features.New(fmt.Sprintf("replicate when new %s is created", resource.name)).
 			WithLabel("resource", resource.name).
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -63,7 +75,7 @@ func TestResources(t *testing.T) {
 			}).
 			Assess("new resource added to existing namespace", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				createSourceObject(ctx, t, cfg, sourceNamespaceName, resource.sourceObject)
-				validateReplication(ctx, t, cfg, resource.objectsList)
+				validateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList, resource.matcher)
 				return ctx
 			}).
 			Feature()

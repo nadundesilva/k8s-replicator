@@ -14,14 +14,17 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -72,35 +75,18 @@ func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.C
 			t.Fatalf("failed parse kustomization output yaml: %v", err)
 		}
 
-		kind := groupVersionKind.Version + ":" + groupVersionKind.Kind
-		if len(groupVersionKind.Group) > 0 {
-			kind = groupVersionKind.Group + "/" + kind
-		}
-
-		var newObj k8s.Object
-		switch kind {
-		case "v1:Namespace":
-			newObj = obj.(*corev1.Namespace)
-		case "apps/v1:Deployment":
-			deploymentObj := obj.(*appsv1.Deployment)
+		kind := groupVersionKind.String()
+		if deploymentObj, ok := obj.(*appsv1.Deployment); ok {
 			deploymentObj.Spec.Template.Spec.Containers[0].Image = controllerDockerImage
 			controllerDeployment = deploymentObj
-			newObj = deploymentObj
-		case "v1:ServiceAccount":
-			newObj = obj.(*corev1.ServiceAccount)
-		case "rbac.authorization.k8s.io/v1:ClusterRole":
-			newObj = obj.(*rbacv1.ClusterRole)
-		case "rbac.authorization.k8s.io/v1:ClusterRoleBinding":
-			newObj = obj.(*rbacv1.ClusterRoleBinding)
-		case "v1:ConfigMap":
-			newObj = obj.(*corev1.ConfigMap)
-		default:
-			t.Fatalf("unknown kind: %s", kind)
 		}
-		err = cfg.Client().Resources().Create(ctx, newObj)
+		err = cfg.Client().Resources().Create(ctx, obj.(k8s.Object))
 		if err != nil {
 			t.Fatalf("failed to create controller resource of kind %s: %v", kind, err)
 		}
+	}
+	if controllerDeployment == nil {
+		t.Fatalf("controller deployment not found in controller kustomize files")
 	}
 
 	err = wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(controllerDeployment, func(object k8s.Object) bool {
@@ -120,27 +106,103 @@ func createSourceNamespace(ctx context.Context, t *testing.T, cfg *envconf.Confi
 	}
 	err := cfg.Client().Resources().Create(ctx, sourceNamespace)
 	if err != nil {
-		t.Errorf("failed to create source namespace %s: %v", sourceNamespace.GetName(), err)
+		t.Fatalf("failed to create source namespace %s: %v", sourceNamespace.GetName(), err)
 	}
 }
 
 func createSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
 	obj.SetNamespace(namespace)
+	labels := obj.GetLabels()
+	labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
+
 	err := cfg.Client().Resources(namespace).Create(ctx, obj)
 	if err != nil {
-		t.Errorf("failed to create source object: %v", err)
+		t.Fatalf("failed to create source object: %v", err)
 	}
 }
 
-func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config, objList k8s.ObjectList) {
+type objectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
+
+func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
+	sourceObject k8s.Object, objectList k8s.ObjectList, objMatcher objectMatcher) {
 	nsList := &corev1.NamespaceList{}
 	err := cfg.Client().Resources().List(ctx, nsList)
 	if err != nil {
-		t.Errorf("failed to list namespaces: %v", err)
+		t.Fatalf("failed to list namespaces: %v", err)
 	}
 
-	err = cfg.Client().Resources().List(ctx, objList)
+	listItems := []runtime.Object{}
+	for _, ns := range nsList.Items {
+		obj := sourceObject.DeepCopyObject()
+		metaObj := obj.(metav1.Object)
+		metaObj.SetNamespace(ns.GetName())
+		listItems = append(listItems, obj)
+	}
+	meta.SetList(objectList, listItems)
+
+	err = wait.For(conditions.New(cfg.Client().Resources()).ResourcesMatch(
+		objectList,
+		func(object k8s.Object) bool {
+			matchMap := func(sourceMap map[string]string, targetMap map[string]string) error {
+				for k, v := range sourceMap {
+					if k == replicator.ReplicationObjectTypeLabelKey {
+						continue
+					}
+					if value, ok := targetMap[k]; ok {
+						if value != v {
+							return fmt.Errorf("source object value %s for key %s does not exist in cloned object in namespace %s",
+								v, k, object.GetNamespace())
+						}
+					} else {
+						return fmt.Errorf("source object key %s does not exist in cloned object in namespace %s",
+							k, object.GetNamespace())
+					}
+				}
+				return nil
+			}
+			err := matchMap(sourceObject.GetLabels(), object.GetLabels())
+			if err != nil {
+				t.Errorf("labels are not matching %v", err)
+			}
+			err = matchMap(sourceObject.GetAnnotations(), object.GetAnnotations())
+			if err != nil {
+				t.Errorf("annotations are not matching %v", err)
+			}
+
+			objType, objTypeOk := object.GetLabels()[replicator.ReplicationObjectTypeLabelKey]
+			if !objTypeOk {
+				t.Errorf("object does not contain label key %s", replicator.ReplicationObjectTypeLabelKey)
+			}
+			if sourceObject.GetNamespace() == object.GetNamespace() {
+				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueSource {
+					t.Errorf("object label %s does not contain the expected value; want %s, got %s",
+						replicator.ReplicationObjectTypeLabelKey, replicator.ReplicationObjectTypeLabelValueSource,
+						objType)
+				}
+			} else {
+				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueClone {
+					t.Errorf("object label %s does not contain the expected value; want %s, got %s",
+						replicator.ReplicationObjectTypeLabelKey, replicator.ReplicationObjectTypeLabelValueClone,
+						objType)
+				}
+
+				sourceNs, sourceNsOk := object.GetLabels()[replicator.ReplicationSourceNamespaceLabelKey]
+				if sourceNsOk {
+					if sourceNs != sourceObject.GetNamespace() {
+						t.Errorf("object label %s does not contain the clone source namespace; want %s, got %s",
+							replicator.ReplicationSourceNamespaceLabelKey, sourceObject.GetNamespace(),
+							sourceNs)
+					}
+				} else {
+					t.Errorf("object does not contain label key %s", replicator.ReplicationSourceNamespaceLabelKey)
+				}
+			}
+			objMatcher(sourceObject, object)
+			return true
+		}),
+		wait.WithTimeout(time.Minute),
+	)
 	if err != nil {
-		t.Errorf("failed to list resource: %v", err)
+		t.Fatalf("failed to wait for replicated objects: %v", err)
 	}
 }
