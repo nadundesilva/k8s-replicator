@@ -12,11 +12,16 @@
 PROJECT_PKG := github.com/nadundesilva/k8s-replicator
 GIT_REVISION := $(shell git rev-parse --verify HEAD)
 
+VERSION ?= $(GIT_REVISION)
+
 ifeq ("$(CONTROLLER_IMAGE)", "")
-	CONTROLLER_IMAGE=nadunrds/k8s-replicator:$(GIT_REVISION)
+	CONTROLLER_IMAGE=nadunrds/k8s-replicator:$(VERSION)
 endif
 
-GO_LDFLAGS := -X $(PROJECT_PKG)/test/e2e.controllerDockerImage=$(CONTROLLER_IMAGE)
+GO_LDFLAGS := -X $(PROJECT_PKG)/pkg/version.buildVersion=$(VERSION)
+GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildGitRevision=$(GIT_REVISION)
+GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildTime=$(shell date +%Y-%m-%dT%H:%M:%S%z)
+GO_LDFLAGS += -X $(PROJECT_PKG)/test/e2e.controllerImage=$(CONTROLLER_IMAGE)
 
 all: build
 

@@ -85,7 +85,7 @@ func setupReplicatorController(ctx context.Context, t *testing.T, cfg *envconf.C
 
 		kind := groupVersionKind.String()
 		if deployment, ok := obj.(*appsv1.Deployment); ok {
-			deployment.Spec.Template.Spec.Containers[0].Image = controllerDockerImage
+			deployment.Spec.Template.Spec.Containers[0].Image = controllerImage
 			controllerDeployment = deployment
 		} else if namespace, ok := obj.(*corev1.Namespace); ok {
 			ctx = addTestObjectToContext(ctx, t, namespace)

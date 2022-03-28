@@ -17,6 +17,7 @@ import (
 
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
+	"github.com/nadundesilva/k8s-replicator/pkg/version"
 	"go.uber.org/zap"
 	"k8s.io/client-go/tools/cache"
 )
@@ -47,7 +48,9 @@ func NewController(resourceReplicators []resources.ResourceReplicator, k8sClient
 }
 
 func (r *controller) Start(stopCh <-chan struct{}) error {
-	r.logger.Info("starting replicator")
+	r.logger.Infow("starting replicator", "buildVersion", version.GetBuildVersion(),
+		"buildGitRevision", version.GetBuildGitRevision(), "buildTime", version.GetBuildTime(),
+		"buildGoLangVersion", version.GetGoLangVersion())
 
 	informerSyncs := []cache.InformerSynced{}
 	for _, resourceReplicator := range r.resourceReplicators {
