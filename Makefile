@@ -13,7 +13,7 @@ PROJECT_PKG := github.com/nadundesilva/k8s-replicator
 GIT_REVISION := $(shell git rev-parse --verify HEAD)
 
 ifeq ("$(CONTROLLER_IMAGE)", "")
-	CONTROLLER_IMAGE=ghcr.io/nadundesilva/k8s-replicator:$(GIT_REVISION)
+	CONTROLLER_IMAGE=nadunrds/k8s-replicator:$(GIT_REVISION)
 endif
 
 GO_LDFLAGS := -X $(PROJECT_PKG)/test/e2e.controllerDockerImage=$(CONTROLLER_IMAGE)
@@ -30,15 +30,15 @@ build: clean
 
 .PHONY: docker
 docker: build
-ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
-	echo "Controller image build skipped"
-else
 	docker build -t $(CONTROLLER_IMAGE) .
-endif
 
 .PHONY: test
 test: test.e2e
 
 .PHONY: test.e2e
+ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
+test.e2e:
+else
 test.e2e: docker
+endif
 	go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 30m ./test/e2e/...

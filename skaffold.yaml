@@ -14,7 +14,7 @@ metadata:
   name: k8s-replicator
 build:
   artifacts:
-    - image: ghcr.io/nadundesilva/k8s-replicator
+    - image: nadunrds/k8s-replicator
       custom:
         buildCommand: ./build.sh
 deploy:

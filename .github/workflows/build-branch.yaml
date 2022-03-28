@@ -90,8 +90,6 @@ jobs:
             - run-golangci-lint
             - run-codeql-analysis
             - run-e2e-tests
-        permissions:
-            packages: write
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -115,19 +113,18 @@ jobs:
             - name: Login to the Container registry
               uses: docker/login-action@v1
               with:
-                  registry: ghcr.io
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
+                  username: nadunrds
+                  password: ${{ secrets.DOCKER_HUB_TOKEN }}
             - name: Build Docker Image for scanning
               uses: docker/build-push-action@v2
               with:
                   context: .
                   load: true
-                  tags: ghcr.io/${{ github.repository_owner }}/k8s-replicator:${{ github.sha }}
+                  tags: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Run Trivy vulnerability scanner
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: ghcr.io/${{ github.repository_owner }}/k8s-replicator:${{ github.sha }}
+                  image-ref: nadunrds/k8s-replicator:${{ github.sha }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -136,7 +133,8 @@ jobs:
               with:
                   context: .
                   platforms: linux/amd64,linux/arm64,linux/arm/v7
-                  push: true
+                  push: ${{ github.event_name == 'branch' && github.repository_owner == 'nadundesilva' }}
                   tags: |
-                    ghcr.io/${{ github.repository_owner }}/k8s-replicator:latest
-                    ghcr.io/${{ github.repository_owner }}/k8s-replicator:${{ github.sha }}
+                    nadunrds/k8s-replicator:latest
+                    nadunrds/k8s-replicator:${{ github.ref_name }}
+                    nadunrds/k8s-replicator:${{ github.sha }}
