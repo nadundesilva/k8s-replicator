@@ -137,4 +137,3 @@ jobs:
                   tags: |
                     nadunrds/k8s-replicator:${{ github.sha }}
                     nadunrds/k8s-replicator:${{ github.ref_name }}
-                    nadunrds/k8s-replicator:latest
