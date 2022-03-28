@@ -30,11 +30,11 @@ build: clean
 
 .PHONY: docker
 docker: build
-	ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
-		echo "Controller image build disabled"
-	else
-		docker build -t $(CONTROLLER_IMAGE) .
-	endif
+ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
+	echo "Controller image build skipped"
+else
+	docker build -t $(CONTROLLER_IMAGE) .
+endif
 
 .PHONY: test
 test: test.e2e
