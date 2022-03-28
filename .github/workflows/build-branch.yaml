@@ -135,6 +135,6 @@ jobs:
                   platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: ${{ github.event_name == 'push' && github.repository_owner == 'nadundesilva' }}
                   tags: |
-                    nadunrds/k8s-replicator:latest
-                    nadunrds/k8s-replicator:${{ github.ref_name }}
                     nadunrds/k8s-replicator:${{ github.sha }}
+                    nadunrds/k8s-replicator:${{ github.ref_name }}
+                    nadunrds/k8s-replicator:latest
