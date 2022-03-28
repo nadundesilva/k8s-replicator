@@ -9,6 +9,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PROJECT_PKG := github.com/nadundesilva/k8s-replicator
+GIT_REVISION := $(shell git rev-parse --verify HEAD)
+
+ifeq ("$(CONTROLLER_IMAGE)", "")
+	CONTROLLER_IMAGE=ghcr.io/nadundesilva/k8s-replicator:$(GIT_REVISION)
+endif
+
+GO_LDFLAGS := -X $(PROJECT_PKG)/test/e2e.controllerDockerImage=$(CONTROLLER_IMAGE)
+
 all: build
 
 .PHONY: clean
@@ -21,11 +30,15 @@ build: clean
 
 .PHONY: docker
 docker: build
-	docker build -t ghcr.io/nadundesilva/k8s-replicator:test .
+	ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
+		echo "Controller image build disabled"
+	else
+		docker build -t $(CONTROLLER_IMAGE) .
+	endif
 
 .PHONY: test
 test: test.e2e
 
 .PHONY: test.e2e
 test.e2e: docker
-	go test -v -race -timeout 30m ./test/e2e/...
+	go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 30m ./test/e2e/...

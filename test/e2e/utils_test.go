@@ -40,7 +40,6 @@ import (
 const (
 	kustomizeDirName      = "kustomize"
 	namespacePrefix       = "replicator-e2e-"
-	controllerDockerImage = "ghcr.io/nadundesilva/k8s-replicator:test"
 	testObjectsContextKey = "__test_objects__"
 )
 

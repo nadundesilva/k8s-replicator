@@ -123,11 +123,11 @@ jobs:
               with:
                   context: .
                   load: true
-                  tags: ghcr.io/nadundesilva/k8s-replicator:${{ github.sha }}
+                  tags: ghcr.io/${{ github.repository_owner }}/k8s-replicator:${{ github.sha }}
             - name: Run Trivy vulnerability scanner
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: ghcr.io/nadundesilva/k8s-replicator:${{ github.sha }}
+                  image-ref: ghcr.io/${{ github.repository_owner }}/k8s-replicator:${{ github.sha }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -138,5 +138,5 @@ jobs:
                   platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: true
                   tags: |
-                    ghcr.io/nadundesilva/k8s-replicator:latest
-                    ghcr.io/nadundesilva/k8s-replicator:${{ github.sha }}
+                    ghcr.io/${{ github.repository_owner }}/k8s-replicator:latest
+                    ghcr.io/${{ github.repository_owner }}/k8s-replicator:${{ github.sha }}

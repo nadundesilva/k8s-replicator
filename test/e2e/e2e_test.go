@@ -13,6 +13,7 @@
 package e2e
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -23,9 +24,12 @@ import (
 
 var (
 	testenv env.Environment
+	controllerDockerImage = "ghcr.io/nadundesilva/k8s-replicator:test"
 )
 
 func TestMain(m *testing.M) {
+	fmt.Printf("Running E2E tests on controller image: %s", controllerDockerImage)
+
 	testenv = env.New()
 	kindClusterName := envconf.RandomName("replicator-e2e-tests-cluster", 32)
 
