@@ -10,6 +10,18 @@ jobs:
         name: Publish Release
         runs-on: ubuntu-latest
         steps:
+            - name: Generate Version
+              run: |
+                TAG_VERSION="$(echo -n "${{ github.ref_name }}" | cut -c2-)"
+                MAJOR="$(echo -n "${TAG_VERSION}" | cut -d "." -f1)"
+                MINOR="$(echo -n "${TAG_VERSION}" | cut -d "." -f2)"
+                PATCH="$(echo -n "${TAG_VERSION}" | cut -d "." -f3)"
+
+                echo "RELEASE_VERSION=${MAJOR}.${MINOR}.${PATCH}" >> "${GITHUB_ENV}"
+                echo "RELEASE_MINOR_VERSION=${MAJOR}.${MINOR}" >> "${GITHUB_ENV}"
+
+                echo "Release Version: ${RELEASE_VERSION}"
+                echo "Release Minor Version: ${RELEASE_MINOR_VERSION}"
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
@@ -58,5 +70,5 @@ jobs:
                   platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: ${{ github.repository_owner == 'nadundesilva' }}
                   tags: |
-                    nadunrds/k8s-replicator:${{ github.ref_name }}
+                    nadunrds/k8s-replicator:${{ env.RELEASE_VERSION }}
                     nadunrds/k8s-replicator:latest
