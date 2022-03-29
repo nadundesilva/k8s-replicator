@@ -13,7 +13,9 @@
 package validation
 
 type Options struct {
-	objectMatcher       ObjectMatcher
+	objectMatcher        ObjectMatcher
+	ignoreedNamespaces   []string
+	replicatedNamespaces []string
 }
 
 type Option func(*Options)
@@ -21,5 +23,17 @@ type Option func(*Options)
 func WithObjectMatcher(objectMatcher ObjectMatcher) Option {
 	return func(options *Options) {
 		options.objectMatcher = objectMatcher
+	}
+}
+
+func WithIgnoredNamespaces(namespaces ...string) Option {
+	return func(options *Options) {
+		options.ignoreedNamespaces = append(options.ignoreedNamespaces, namespaces...)
+	}
+}
+
+func WithReplicatedNamespaces(namespaces ...string) Option {
+	return func(options *Options) {
+		options.replicatedNamespaces = append(options.replicatedNamespaces, namespaces...)
 	}
 }

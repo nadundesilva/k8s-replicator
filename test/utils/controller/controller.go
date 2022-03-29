@@ -61,13 +61,13 @@ func GetNamspace(ctx context.Context) string {
 
 func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...Option) context.Context {
 	opts := &Options{
-		namespacePrefix: defaultTestNamespacePrefix,
+		labels: map[string]string{},
 	}
 	for _, option := range options {
 		option(opts)
 	}
 
-	namespace := envconf.RandomName(opts.namespacePrefix, 32)
+	namespace := envconf.RandomName(defaultTestNamespacePrefix, 32)
 	ctx = context.WithValue(ctx, controllerNamespaceContextKey, namespace)
 
 	kustomizeDir, err := filepath.Abs(filepath.Join("..", "..", kustomizeDirName))
@@ -121,6 +121,9 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 		} else if ns, ok := obj.(*corev1.Namespace); ok {
 			if ns.GetName() == defaulControllerNamespace {
 				ns.SetName(namespace)
+				for k, v := range opts.labels {
+					ns.GetLabels()[k] = v
+				}
 			}
 			ctx = cleanup.AddTestObjectToContext(ctx, t, ns)
 		} else if clusterrole, ok := obj.(*rbacv1.ClusterRole); ok {

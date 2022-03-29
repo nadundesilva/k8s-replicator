@@ -10,18 +10,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controller
+package namespaces
 
-type Options struct {
-	labels map[string]string
+type CreateOptions struct {
+	namespacePrefix string
+	labels          map[string]string
 }
 
-type Option func(*Options)
+type CreateOption func(*CreateOptions)
 
-func WithNamespaceLabels(labels map[string]string) Option {
-	return func(options *Options) {
+func WithLabels(labels map[string]string) CreateOption {
+	return func(options *CreateOptions) {
 		for k, v := range labels {
 			options.labels[k] = v
 		}
+	}
+}
+
+func WithPrefix(prefix string) CreateOption {
+	return func(options *CreateOptions) {
+		options.namespacePrefix = prefix
 	}
 }

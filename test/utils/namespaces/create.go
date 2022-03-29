@@ -23,13 +23,22 @@ import (
 )
 
 const (
-	namespacePrefix = "replicator-e2e-"
+	namespacePrefix = "replicator-e2e-ns"
 )
 
-func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config) (*corev1.Namespace, context.Context) {
+func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CreateOption) (*corev1.Namespace, context.Context) {
+	opts := &CreateOptions{
+		namespacePrefix: namespacePrefix,
+		labels:          map[string]string{},
+	}
+	for _, option := range options {
+		option(opts)
+	}
+
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: envconf.RandomName(namespacePrefix+"ns", 32),
+			Name:   envconf.RandomName(opts.namespacePrefix, 32),
+			Labels: opts.labels,
 		},
 	}
 	err := cfg.Client().Resources().Create(ctx, namespace)

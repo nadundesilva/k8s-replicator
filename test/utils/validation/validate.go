@@ -47,10 +47,21 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 
 	listItems := []runtime.Object{}
 	for _, ns := range nsList.Items {
-		val, ok := ns.GetLabels()[replicator.ReplicationTargetNamespaceTypeLabelKey]
-		if (ok && val == replicator.ReplicationTargetNamespaceTypeLabelValueIgnored) ||
-			((!ok || val != replicator.ReplicationTargetNamespaceTypeLabelValueReplicated) &&
-				(strings.HasPrefix(ns.GetName(), "kube-") || ns.GetName() == controller.GetNamspace(ctx))) {
+		var ignored bool
+		for _, ignoredNs := range opts.ignoreedNamespaces {
+			if ns.GetName() == ignoredNs {
+				ignored = true
+			}
+		}
+		if strings.HasPrefix(ns.GetName(), "kube-") || ns.GetName() == controller.GetNamspace(ctx) {
+			ignored = true
+			for _, replicatedNs := range opts.replicatedNamespaces {
+				if ns.GetName() == replicatedNs {
+					ignored = false
+				}
+			}
+		}
+		if ignored {
 			continue
 		}
 
