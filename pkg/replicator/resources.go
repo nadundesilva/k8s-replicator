@@ -19,6 +19,7 @@ import (
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -42,7 +43,7 @@ func NewResourcesEventHandler(replicator resources.ResourceReplicator, k8sClient
 
 func (h *ResourceEventHandler) OnAdd(obj interface{}) {
 	newObj := obj.(metav1.Object)
-	if !h.isReplicationSource(newObj) {
+	if !isReplicationSource(newObj) {
 		return
 	}
 
@@ -57,7 +58,7 @@ func (h *ResourceEventHandler) OnAdd(obj interface{}) {
 
 func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 	updatedObj := newObj.(metav1.Object)
-	if !h.isReplicationSource(updatedObj) {
+	if !isReplicationSource(updatedObj) {
 		return
 	}
 
@@ -73,7 +74,7 @@ func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	ctx := context.Background()
 	deletedObj := obj.(metav1.Object)
-	if h.isReplicationSource(deletedObj) {
+	if isReplicationSource(deletedObj) {
 		logger := h.logger.With("sourceNamespace", deletedObj.GetNamespace(), "name", deletedObj.GetName())
 		namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
 		if err != nil {
@@ -92,7 +93,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 			}
 			logger.Infow("completed deleting object")
 		}
-	} else if h.isReplicationClone(deletedObj) {
+	} else if isReplicationClone(deletedObj) {
 		if sourceNamespaceName, ok := deletedObj.GetLabels()[ReplicationSourceNamespaceLabelKey]; ok {
 			_, err := h.replicator.Get(sourceNamespaceName, deletedObj.GetName())
 			if err != nil {
@@ -121,16 +122,6 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	}
 }
 
-func (h *ResourceEventHandler) isReplicationSource(obj metav1.Object) bool {
-	val, ok := obj.GetLabels()[ReplicationObjectTypeLabelKey]
-	return ok && val == ReplicationObjectTypeLabelValueSource
-}
-
-func (h *ResourceEventHandler) isReplicationClone(obj metav1.Object) bool {
-	val, ok := obj.GetLabels()[ReplicationObjectTypeLabelKey]
-	return ok && val == ReplicationObjectTypeLabelValueClone
-}
-
 func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *zap.SugaredLogger) error {
 	ctx := context.Background()
 	clonedObj := cloneObject(h.replicator, currentObj)
@@ -141,7 +132,7 @@ func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *za
 	} else {
 		for _, namespace := range namespaces {
 			logger := logger.With("targetNamespace", namespace.GetName())
-			err = replicateToNamespace(ctx, currentObj.GetNamespace(), namespace.GetName(), clonedObj,
+			err = replicateToNamespace(ctx, logger, currentObj.GetNamespace(), namespace, clonedObj,
 				h.replicator)
 			if err != nil {
 				logger.Errorw("failed to replicate object to namespace", "error", err)
@@ -174,10 +165,20 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 	return clonedObj
 }
 
-func replicateToNamespace(ctx context.Context, sourceNamespace, targetNamespace string, obj metav1.Object,
-	replicator resources.ResourceReplicator) error {
-	if sourceNamespace != targetNamespace {
-		return replicator.Apply(ctx, targetNamespace, obj)
+func replicateToNamespace(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
+	targetNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) error {
+	if sourceNamespace != targetNamespace.GetName() && isReplicationTargetNamespace(logger, targetNamespace) {
+		return replicator.Apply(ctx, targetNamespace.GetName(), obj)
 	}
 	return nil
+}
+
+func isReplicationSource(obj metav1.Object) bool {
+	val, ok := obj.GetLabels()[ReplicationObjectTypeLabelKey]
+	return ok && val == ReplicationObjectTypeLabelValueSource
+}
+
+func isReplicationClone(obj metav1.Object) bool {
+	val, ok := obj.GetLabels()[ReplicationObjectTypeLabelKey]
+	return ok && val == ReplicationObjectTypeLabelValueClone
 }

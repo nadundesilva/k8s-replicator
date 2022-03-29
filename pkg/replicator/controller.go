@@ -28,7 +28,6 @@ const (
 
 	ReplicationObjectTypeLabelValueSource = "source"
 	ReplicationObjectTypeLabelValueClone  = "clone"
-	ReplicationObjectTypeLabelValueIgnore = "ignored"
 )
 
 type controller struct {

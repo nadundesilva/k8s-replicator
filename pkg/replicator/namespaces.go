@@ -14,10 +14,24 @@ package replicator
 
 import (
 	"context"
+	"os"
+	"strings"
 
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+)
+
+const (
+	ReplicationTargetNamespaceTypeLabelKey = "replicator.nadundesilva.github.io/target-namespace-replication"
+
+	ReplicationTargetNamespaceTypeLabelValueReplicated = "replicated"
+	ReplicationTargetNamespaceTypeLabelValueIgnored    = "ignored"
+)
+
+var (
+	controllerNamespace = os.Getenv("CONTROLLER_NAMESPACE")
 )
 
 func (r *controller) handleNewNamespace(obj interface{}) {
@@ -43,7 +57,7 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 			logger := logger.With("targetNamespace", namespace.GetName())
 			clonedObj := cloneObject(replicator, object)
 
-			err = replicateToNamespace(context.Background(), object.GetNamespace(), namespace.GetName(), clonedObj,
+			err = replicateToNamespace(context.Background(), logger, object.GetNamespace(), namespace, clonedObj,
 				replicator)
 			if err != nil {
 				logger.Errorw("failed to replicate object to new namespace", "error", err)
@@ -52,4 +66,19 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 			}
 		}
 	}
+}
+
+func isReplicationTargetNamespace(logger *zap.SugaredLogger, namespace *corev1.Namespace) bool {
+	val, ok := namespace.GetLabels()[ReplicationTargetNamespaceTypeLabelKey]
+	if ok {
+		if val == ReplicationTargetNamespaceTypeLabelValueReplicated {
+			return true
+		} else if val == ReplicationTargetNamespaceTypeLabelValueIgnored {
+			return false
+		} else {
+			logger.Warnw("ignored unrecorgnized label in target namespace",
+				"labelKey", ReplicationTargetNamespaceTypeLabelKey, "labelValue", val)
+		}
+	}
+	return !strings.HasPrefix(namespace.GetName(), "kube-") && namespace.GetName() != controllerNamespace
 }
