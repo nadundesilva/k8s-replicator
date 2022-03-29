@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -192,6 +193,13 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 
 	listItems := []runtime.Object{}
 	for _, ns := range nsList.Items {
+		val, ok := ns.GetLabels()[replicator.ReplicationTargetNamespaceTypeLabelKey]
+		if (ok && val == replicator.ReplicationTargetNamespaceTypeLabelValueIgnored) ||
+			((!ok || val != replicator.ReplicationTargetNamespaceTypeLabelValueReplicated) &&
+			(strings.HasPrefix(ns.GetName(), "kube-") || ns.GetName() == "k8s-replicator")) {
+			continue
+		}
+
 		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
 		clonedObj.SetNamespace(ns.GetName())
 		listItems = append(listItems, clonedObj)
