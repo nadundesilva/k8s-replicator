@@ -14,56 +14,12 @@ package e2e
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
-	"reflect"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
-
-type resourcesCreationTestData struct {
-	name         string
-	objectList   k8s.ObjectList
-	sourceObject k8s.Object
-	matcher      objectMatcher
-}
-
-func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData {
-	return []resourcesCreationTestData{
-		{
-			name:       "secret",
-			objectList: &corev1.SecretList{},
-			sourceObject: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: envconf.RandomName("source-secret", 32),
-					Labels: map[string]string{
-						"e2e-tests.replicator.io/test-label-key": "test-label-value",
-					},
-					Annotations: map[string]string{
-						"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
-					},
-				},
-				Data: map[string][]byte{
-					"data-item-one-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-one-value"))),
-				},
-			},
-			matcher: func(sourceObject k8s.Object, targetObject k8s.Object) bool {
-				sourceSecret := sourceObject.(*corev1.Secret)
-				targetSecret := targetObject.(*corev1.Secret)
-				if !reflect.DeepEqual(sourceSecret.Data, targetSecret.Data) {
-					t.Errorf("secret data not equal; want %s, got %s",
-						sourceSecret.Data, targetSecret.Data)
-				}
-				return true
-			},
-		},
-	}
-}
 
 func TestResourcesCreation(t *testing.T) {
 	resources := generateResourcesCreationTestData(t)

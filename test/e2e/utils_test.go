@@ -181,8 +181,6 @@ func deleteNamespaceWithWait(ctx context.Context, t *testing.T, cfg *envconf.Con
 	return ctx
 }
 
-type objectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
-
 func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	sourceObject k8s.Object, objectList k8s.ObjectList, objMatcher objectMatcher) {
 	nsList := &corev1.NamespaceList{}
@@ -196,7 +194,7 @@ func validateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		val, ok := ns.GetLabels()[replicator.ReplicationTargetNamespaceTypeLabelKey]
 		if (ok && val == replicator.ReplicationTargetNamespaceTypeLabelValueIgnored) ||
 			((!ok || val != replicator.ReplicationTargetNamespaceTypeLabelValueReplicated) &&
-			(strings.HasPrefix(ns.GetName(), "kube-") || ns.GetName() == "k8s-replicator")) {
+				(strings.HasPrefix(ns.GetName(), "kube-") || ns.GetName() == "k8s-replicator")) {
 			continue
 		}
 
