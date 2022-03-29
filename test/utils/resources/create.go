@@ -10,37 +10,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package e2e
+package resources
 
 import (
-	"fmt"
-	"os"
+	"context"
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
-	"sigs.k8s.io/e2e-framework/pkg/env"
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 )
 
-var (
-	testenv env.Environment
-)
+func CreateSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
+	obj.SetNamespace(namespace)
+	clonedObj := obj.DeepCopyObject().(k8s.Object)
+	labels := clonedObj.GetLabels()
+	labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
 
-func TestMain(m *testing.M) {
-	fmt.Printf("Running E2E tests on controller image: %s\n", controller.GetImage())
-
-	testenv = env.New()
-	kindClusterName := envconf.RandomName("replicator-e2e-tests-cluster", 32)
-
-	testenv.Setup(
-		envfuncs.CreateKindCluster(kindClusterName),
-		envfuncs.LoadDockerImageToCluster(kindClusterName, controller.GetImage()),
-	)
-
-	testenv.Finish(
-		envfuncs.DestroyKindCluster(kindClusterName),
-	)
-
-	os.Exit(testenv.Run(m))
+	err := cfg.Client().Resources(namespace).Create(ctx, clonedObj)
+	if err != nil {
+		t.Fatalf("failed to create source object: %v", err)
+	}
 }

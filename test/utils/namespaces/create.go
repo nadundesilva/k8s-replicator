@@ -10,37 +10,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package e2e
+package namespaces
 
 import (
-	"fmt"
-	"os"
+	"context"
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
-	"sigs.k8s.io/e2e-framework/pkg/env"
+	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
 )
 
-var (
-	testenv env.Environment
+const (
+	namespacePrefix = "replicator-e2e-"
 )
 
-func TestMain(m *testing.M) {
-	fmt.Printf("Running E2E tests on controller image: %s\n", controller.GetImage())
-
-	testenv = env.New()
-	kindClusterName := envconf.RandomName("replicator-e2e-tests-cluster", 32)
-
-	testenv.Setup(
-		envfuncs.CreateKindCluster(kindClusterName),
-		envfuncs.LoadDockerImageToCluster(kindClusterName, controller.GetImage()),
-	)
-
-	testenv.Finish(
-		envfuncs.DestroyKindCluster(kindClusterName),
-	)
-
-	os.Exit(testenv.Run(m))
+func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config) (*corev1.Namespace, context.Context) {
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: envconf.RandomName(namespacePrefix+"ns", 32),
+		},
+	}
+	err := cfg.Client().Resources().Create(ctx, namespace)
+	if err != nil {
+		t.Fatalf("failed to create namespace %s: %v", namespace.GetName(), err)
+	}
+	return namespace, cleanup.AddTestObjectToContext(ctx, t, namespace)
 }

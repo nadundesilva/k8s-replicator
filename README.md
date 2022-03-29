@@ -46,7 +46,7 @@ If you want to override this behavior and specifically replicate to a namespace,
 replicator.nadundesilva.github.io/target-namespace=replicated
 ```
 
-### Additional labels used by the controller
+## Additional labels used by the controller
 
 The folloing labels are used by the controller to track the replication of resources.
 

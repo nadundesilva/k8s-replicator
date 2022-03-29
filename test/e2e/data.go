@@ -17,19 +17,18 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type objectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
-
 type resourcesCreationTestData struct {
 	name         string
 	objectList   k8s.ObjectList
 	sourceObject k8s.Object
-	matcher      objectMatcher
+	matcher      validation.ObjectMatcher
 }
 
 func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData {

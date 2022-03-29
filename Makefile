@@ -21,7 +21,6 @@ endif
 GO_LDFLAGS := -X $(PROJECT_PKG)/pkg/version.buildVersion=$(VERSION)
 GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildGitRevision=$(GIT_REVISION)
 GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildTime=$(shell date +%Y-%m-%dT%H:%M:%S%z)
-GO_LDFLAGS += -X $(PROJECT_PKG)/test/e2e.controllerImage=$(CONTROLLER_IMAGE)
 
 all: build
 
@@ -46,4 +45,4 @@ test.e2e:
 else
 test.e2e: docker
 endif
-	go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 30m ./test/e2e/...
+	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 30m ./test/e2e/...
