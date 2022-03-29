@@ -15,6 +15,7 @@ package kubernetes
 import (
 	"fmt"
 	"reflect"
+	"time"
 
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,8 +44,8 @@ func NewClient(resourceSelectorRequirements []labels.Requirement, logger *zap.Su
 		panic(err.Error())
 	}
 
-	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0)
-	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, 0,
+	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute * 5)
+	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute * 5,
 		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
 			requirements, err := labels.ParseToRequirements(options.LabelSelector)
 			if err != nil {
