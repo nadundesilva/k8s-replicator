@@ -73,6 +73,7 @@ jobs:
                     nadunrds/k8s-replicator:${{ env.RELEASE_VERSION }}
                     nadunrds/k8s-replicator:latest
             - name: Create Release
+              id: create-release
               uses: actions/create-release@v1
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -84,3 +85,15 @@ jobs:
                   for instructions on how to use the controller.
                 draft: false
                 prerelease: false
+            - name: Create deployment artifacts zip
+              run: |
+                zip k8s-replicator ./kustomize/**
+            - name: Upload Release Asset
+              uses: actions/upload-release-asset@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                upload_url: ${{ steps.create-release.outputs.upload_url }}
+                asset_path: ./k8s-replicator.zip
+                asset_name: k8s-replicator-${{ github.ref_name }}.zip
+                asset_content_type: application/zip
