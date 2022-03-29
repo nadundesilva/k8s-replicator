@@ -80,9 +80,7 @@ jobs:
               with:
                 tag_name: ${{ github.ref }}
                 release_name: Kubernetes Replicator ${{ github.ref_name }}
-                body: |
-                  Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/${{ github.ref_name }}#how-to-use)
-                  for instructions on how to use the controller.
+                body_path: .github/RELEASE_NOTE.md
                 draft: false
                 prerelease: false
             - name: Create deployment artifacts zip
