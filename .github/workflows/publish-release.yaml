@@ -72,3 +72,15 @@ jobs:
                   tags: |
                     nadunrds/k8s-replicator:${{ env.RELEASE_VERSION }}
                     nadunrds/k8s-replicator:latest
+            - name: Create Release
+              uses: actions/create-release@v1
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tag_name: ${{ github.ref }}
+                release_name: Kubernetes Replicator ${{ github.ref_name }}
+                body: |
+                  Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/${{ github.ref_name }}#how-to-use)
+                  for instructions on how to use the controller.
+                draft: false
+                prerelease: false
