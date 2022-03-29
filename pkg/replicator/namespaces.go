@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	ReplicationTargetNamespaceTypeLabelKey = "replicator.nadundesilva.github.io/target-namespace-replication"
+	ReplicationTargetNamespaceTypeLabelKey = "replicator.nadundesilva.github.io/target-namespace"
 
 	ReplicationTargetNamespaceTypeLabelValueReplicated = "replicated"
 	ReplicationTargetNamespaceTypeLabelValueIgnored    = "ignored"

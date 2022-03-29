@@ -28,3 +28,33 @@ replicator.nadundesilva.github.io/object-type=source
 ```
 
 All objects with the above label will replicated into all namespaces.
+
+### Ignored namespaces
+
+The following namespaces are ignored by default.
+
+* The namespace in which controller resides
+* Namespaces with the name starting with `kube-` prefix
+* Namespaces with the label
+  ```properties
+  replicator.nadundesilva.github.io/target-namespace=ignored
+  ```
+
+If you want to override this behavior and specifically replicate to a namespace, add the following label
+
+```properties
+replicator.nadundesilva.github.io/target-namespace=replicated
+```
+
+### Additional labels used by the controller
+
+The folloing labels are used by the controller to track the replication of resources.
+
+* The following label with the value `clone` is used to mark the replicated objects.
+  ```properties
+  replicator.nadundesilva.github.io/object-type=clone
+  ```
+* The following label is used to mark a replicated resource's source namespace.
+  ```properties
+  replicator.nadundesilva.github.io/source-namespace=<namespace>
+  ```
