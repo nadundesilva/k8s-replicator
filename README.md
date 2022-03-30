@@ -11,9 +11,20 @@ Replicator for Kubernetes resources across namespaces. This controller was writt
 
 ### How to Setup Controller
 
+#### Quickstart
+
+Run the following command to apply the controller to your cluster. The `<VERSION>` should be replaced with the release version
+to be used and kubectl should be configured pointing to the cluter in which the controller needs to be started.
+
+```bash
+curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/install.sh | bash -s <VERSION>
+```
+
+#### Advanced
+
 * Clone this repository.
 * Update the configuration (`<REPOSITORY_ROOT>/kustomize/config.yaml`) to match your needs.
-* Apply the controller into your cluster.
+* Apply the controller into your cluster by running the following command.
 
   ```bash
   kubectl apply -k kustomize
@@ -46,7 +57,7 @@ If you want to override this behavior and specifically replicate to a namespace,
 replicator.nadundesilva.github.io/target-namespace=replicated
 ```
 
-## Additional labels used by the controller
+### Additional labels used by the controller
 
 The folloing labels are used by the controller to track the replication of resources.
 
@@ -57,6 +68,15 @@ The folloing labels are used by the controller to track the replication of resou
 * The following label is used to mark a replicated resource's source namespace.
   ```properties
   replicator.nadundesilva.github.io/source-namespace=<namespace>
+  ```
+
+### How to Cleanup Controller
+
+* Clone this repository.
+* Remove the controller into your cluster by running the following command.
+
+  ```bash
+  kubectl delete -k kustomize
   ```
 
 ## Support
