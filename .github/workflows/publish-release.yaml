@@ -9,19 +9,29 @@ jobs:
     publish-release:
         name: Publish Release
         runs-on: ubuntu-latest
+        permissions:
+            pull-requests: write
         steps:
             - name: Generate Version
               run: |
+                echo "GitHub Tag: ${{ github.ref_name }}"
+
                 TAG_VERSION="$(echo -n "${{ github.ref_name }}" | cut -c2-)"
                 MAJOR="$(echo -n "${TAG_VERSION}" | cut -d "." -f1)"
                 MINOR="$(echo -n "${TAG_VERSION}" | cut -d "." -f2)"
                 PATCH="$(echo -n "${TAG_VERSION}" | cut -d "." -f3)"
 
-                echo "RELEASE_VERSION=${MAJOR}.${MINOR}.${PATCH}" >> "${GITHUB_ENV}"
-                echo "RELEASE_MINOR_VERSION=${MAJOR}.${MINOR}" >> "${GITHUB_ENV}"
+                RELEASE_MAJOR_VERSION="${MAJOR}"
+                RELEASE_MINOR_VERSION="${MAJOR}.${MINOR}"
+                RELEASE_PATCH_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
-                echo "Release Version: ${RELEASE_VERSION}"
+                echo "RELEASE_MAJOR_VERSION=${RELEASE_MAJOR_VERSION}" >> "${GITHUB_ENV}"
+                echo "RELEASE_MINOR_VERSION=${RELEASE_MINOR_VERSION}" >> "${GITHUB_ENV}"
+                echo "RELEASE_PATCH_VERSION=${RELEASE_PATCH_VERSION}" >> "${GITHUB_ENV}"
+
+                echo "Release Major Version: ${RELEASE_MAJOR_VERSION}"
                 echo "Release Minor Version: ${RELEASE_MINOR_VERSION}"
+                echo "Release Patch Version: ${RELEASE_PATCH_VERSION}"
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
@@ -70,7 +80,9 @@ jobs:
                   platforms: linux/amd64,linux/arm64,linux/arm/v7
                   push: ${{ github.repository_owner == 'nadundesilva' }}
                   tags: |
-                    nadunrds/k8s-replicator:${{ env.RELEASE_VERSION }}
+                    nadunrds/k8s-replicator:${{ env.RELEASE_MAJOR_VERSION }}
+                    nadunrds/k8s-replicator:${{ env.RELEASE_MINOR_VERSION }}
+                    nadunrds/k8s-replicator:${{ env.RELEASE_PATCH_VERSION }}
                     nadunrds/k8s-replicator:latest
             - name: Create Release
               id: create-release
@@ -97,16 +109,31 @@ jobs:
                 asset_content_type: application/zip
             - name: Prepare for next release cycle
               run: |
-                echo "#### How to use
+                addToReleaseNote() {
+                  echo "${1}" >> ".github/RELEASE_NOTE"
+                }
 
-                Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#how-to-use) for instructions on how to use the controller.
+                echo -n "" > ".github/RELEASE_NOTE"
+                addToReleaseNote "#### How to use"
+                addToReleaseNote ""
+                addToReleaseNote "Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#how-to-use) for instructions on how to use the controller."
+                addToReleaseNote ""
+                addToReleaseNote "#### Changelog:"
+                addToReleaseNote ""
+                addToReleaseNote "- "
 
-                #### Changelog:
-
-                - " > .github/RELEASE_NOTE
-
-                git config --global user.name ${{ github.actor }}
+                git config --global user.name "${{ github.actor }}"
                 git config --global user.email nadunrds@gmail.com
                 git add .github/RELEASE_NOTE
                 git commit -m "[Automated] Preparing for next development iteration"
-                git push origin main
+
+                git checkout -b "release-${RELEASE_PATCH_VERSION}"
+                git push origin release-${RELEASE_PATCH_VERSION}
+            - name: Create Release Sync Pull Request
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                gh pr create --base main \
+                  --assignee "@me" --head "release-${RELEASE_PATCH_VERSION}" \
+                  --title "[Automated] Release Sync after ${{ github.ref_name }}" \
+                  --body "Sync changes with master after release ${{ github.ref_name }}"
