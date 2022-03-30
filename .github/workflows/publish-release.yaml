@@ -80,7 +80,7 @@ jobs:
               with:
                 tag_name: ${{ github.ref }}
                 release_name: Kubernetes Replicator ${{ github.ref_name }}
-                body_path: .github/RELEASE_NOTE.md
+                body_path: .github/RELEASE_NOTE
                 draft: false
                 prerelease: false
             - name: Create deployment artifacts zip
@@ -95,3 +95,18 @@ jobs:
                 asset_path: ./k8s-replicator.zip
                 asset_name: k8s-replicator-${{ github.ref_name }}.zip
                 asset_content_type: application/zip
+            - name: Prepare for next release cycle
+              run: |
+                echo "#### How to use
+
+                Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#how-to-use) for instructions on how to use the controller.
+
+                #### Changelog:
+
+                - " > .github/RELEASE_NOTE
+
+                git config --global user.name ${{ github.actor }}
+                git config --global user.email nadunrds@gmail.com
+                git add .github/RELEASE_NOTE
+                git commit -m "[Automated] Preparing for next development iteration"
+                git push origin main

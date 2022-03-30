@@ -1,0 +1,22 @@
+#### How to use
+
+Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#how-to-use) for instructions on how to use the controller.
+
+#### Changelog:
+
+- Replicating resources across namespaces
+  - Supported resources
+    - Secret
+  - Supported replication scenarios
+    - Replicating a new or updated secret into existing namespaces
+    - Replicating to a newly added namespaces
+    - Deleting all replicated resources upon deletion of the source resources
+    - Re-creating clones upon deletion
+  - Resource labels
+    - replicator.nadundesilva.github.io/object-type=\<source | clone>
+    - replicator.nadundesilva.github.io/source-namespace=\<namespace>
+- Automatically ignoring relevant namespaces
+  - controller namespace
+  - `kube-` prefixed namespaces
+- Overriding "ignored" or "replicated" behavior of namespaces using labels
+  - replicator.nadundesilva.github.io/target-namespace=\<ignored | replicated>
