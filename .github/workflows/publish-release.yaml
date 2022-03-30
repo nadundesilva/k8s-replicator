@@ -9,8 +9,6 @@ jobs:
     publish-release:
         name: Publish Release
         runs-on: ubuntu-latest
-        permissions:
-            pull-requests: write
         steps:
             - name: Generate Version
               run: |
@@ -25,9 +23,12 @@ jobs:
                 RELEASE_MINOR_VERSION="${MAJOR}.${MINOR}"
                 RELEASE_PATCH_VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
-                echo "RELEASE_MAJOR_VERSION=${RELEASE_MAJOR_VERSION}" >> "${GITHUB_ENV}"
-                echo "RELEASE_MINOR_VERSION=${RELEASE_MINOR_VERSION}" >> "${GITHUB_ENV}"
-                echo "RELEASE_PATCH_VERSION=${RELEASE_PATCH_VERSION}" >> "${GITHUB_ENV}"
+                addEnvVar() {
+                  echo "${1}=${2}" >> "${GITHUB_ENV}"
+                }
+                addEnvVar "RELEASE_MAJOR_VERSION" "${RELEASE_MAJOR_VERSION}"
+                addEnvVar "RELEASE_MINOR_VERSION" "${RELEASE_MINOR_VERSION}"
+                addEnvVar "RELEASE_PATCH_VERSION" "${RELEASE_PATCH_VERSION}"
 
                 echo "Release Major Version: ${RELEASE_MAJOR_VERSION}"
                 echo "Release Minor Version: ${RELEASE_MINOR_VERSION}"
@@ -128,12 +129,12 @@ jobs:
                 git commit -m "[Automated] Preparing for next development iteration"
 
                 git checkout -b "release-${RELEASE_PATCH_VERSION}"
-                git push origin release-${RELEASE_PATCH_VERSION}
+                git push origin "release-${RELEASE_PATCH_VERSION}"
             - name: Create Release Sync Pull Request
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                gh pr create --base main \
-                  --assignee "@me" --head "release-${RELEASE_PATCH_VERSION}" \
+                gh pr create --assignee "${{ github.actor }}" \
+                  --base main --head "release-${RELEASE_PATCH_VERSION}" \
                   --title "[Automated] Release Sync after ${{ github.ref_name }}" \
                   --body "Sync changes with master after release ${{ github.ref_name }}"

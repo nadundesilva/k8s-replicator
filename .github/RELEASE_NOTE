@@ -20,3 +20,6 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#h
   - `kube-` prefixed namespaces
 - Overriding "ignored" or "replicated" behavior of namespaces using labels
   - replicator.nadundesilva.github.io/target-namespace=\<ignored | replicated>
+- Testing
+  - E2E tests covering resource creation and deletion
+  - E2E tests covering namespaces labels
