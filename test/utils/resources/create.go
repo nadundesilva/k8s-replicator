@@ -21,21 +21,21 @@ import (
 )
 
 func CreateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
-	obj.SetNamespace(namespace)
 	clonedObj := obj.DeepCopyObject().(k8s.Object)
+	clonedObj.SetNamespace(namespace)
 
 	err := cfg.Client().Resources(namespace).Create(ctx, clonedObj)
 	if err != nil {
-		t.Fatalf("failed to create source object: %v", err)
+		t.Fatalf("failed to create object: %v", err)
 	}
 }
 
 func UpdateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
-	obj.SetNamespace(namespace)
 	clonedObj := obj.DeepCopyObject().(k8s.Object)
+	clonedObj.SetNamespace(namespace)
 
 	err := cfg.Client().Resources(namespace).Update(ctx, clonedObj)
 	if err != nil {
-		t.Fatalf("failed to update source object: %v", err)
+		t.Fatalf("failed to update object: %v", err)
 	}
 }

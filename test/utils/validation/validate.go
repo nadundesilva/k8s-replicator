@@ -21,6 +21,7 @@ import (
 
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -85,11 +86,11 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 					if value, ok := targetMap[k]; ok {
 						if value != v {
 							return fmt.Errorf("source object %s/%s value %s for key %s does not exist in cloned object",
-								sourceObject.GetNamespace(), sourceObject.GetName(), v, k)
+								namespaces.GetSource(ctx).GetName(), sourceObject.GetName(), v, k)
 						}
 					} else {
 						return fmt.Errorf("source object %s/%s key %s does not exist in cloned object",
-							sourceObject.GetNamespace(), sourceObject.GetName(), k)
+							namespaces.GetSource(ctx).GetName(), sourceObject.GetName(), k)
 					}
 				}
 				return nil
@@ -108,7 +109,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 				t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
 					replicator.ReplicationObjectTypeLabelKey)
 			}
-			if sourceObject.GetNamespace() == object.GetNamespace() {
+			if namespaces.GetSource(ctx).GetName() == object.GetNamespace() {
 				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueSource {
 					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
 						object.GetNamespace(), object.GetName(), replicator.ReplicationObjectTypeLabelKey,
@@ -123,10 +124,10 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 
 				sourceNs, sourceNsOk := object.GetLabels()[replicator.ReplicationSourceNamespaceLabelKey]
 				if sourceNsOk {
-					if sourceNs != sourceObject.GetNamespace() {
+					if sourceNs != namespaces.GetSource(ctx).GetName() {
 						t.Errorf("object %s/%s label %s does not contain the source namespace; want %s, got %s",
 							object.GetNamespace(), object.GetName(), replicator.ReplicationSourceNamespaceLabelKey,
-							sourceObject.GetNamespace(), sourceNs)
+							namespaces.GetSource(ctx).GetName(), sourceNs)
 					}
 				} else {
 					t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),

@@ -39,8 +39,8 @@ func TestNamespaceLabels(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithLabels(map[string]string{
 					replicator.ReplicationTargetNamespaceTypeLabelKey: replicator.ReplicationTargetNamespaceTypeLabelValueIgnored,
@@ -61,8 +61,8 @@ func TestNamespaceLabels(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube"))
 				return ctx
@@ -81,8 +81,8 @@ func TestNamespaceLabels(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube"),
 					namespaces.WithLabels(map[string]string{
@@ -103,8 +103,8 @@ func TestNamespaceLabels(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx
@@ -125,8 +125,8 @@ func TestNamespaceLabels(t *testing.T) {
 				ctx = controller.SetupReplicator(ctx, t, cfg, controller.WithNamespaceLabels(map[string]string{
 					replicator.ReplicationTargetNamespaceTypeLabelKey: replicator.ReplicationTargetNamespaceTypeLabelValueReplicated,
 				}))
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx

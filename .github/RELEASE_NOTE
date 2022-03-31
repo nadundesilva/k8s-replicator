@@ -4,4 +4,7 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#h
 
 #### Changelog:
 
-- 
+- Add quick install and uninstall scripts
+- E2E tests
+  - Updating resources
+  - Removal of type label

@@ -51,8 +51,8 @@ func TestResourcesCreation(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx
@@ -67,8 +67,8 @@ func TestResourcesCreation(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx
@@ -82,9 +82,9 @@ func TestResourcesCreation(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx
@@ -98,8 +98,8 @@ func TestResourcesCreation(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
@@ -114,8 +114,8 @@ func TestResourcesCreation(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
@@ -130,8 +130,8 @@ func TestResourcesCreation(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
@@ -167,12 +167,12 @@ func TestResourcesUpdation(t *testing.T) {
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				resources.UpdateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObjectUpdate)
+				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObjectUpdate)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
@@ -184,8 +184,8 @@ func TestResourcesUpdation(t *testing.T) {
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
@@ -193,13 +193,13 @@ func TestResourcesUpdation(t *testing.T) {
 				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
 				delete(sourceObjectLabels, replicator.ReplicationObjectTypeLabelKey)
-				resources.UpdateObject(ctx, t, cfg, sourceNamespace.GetName(), updatedObject)
+				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), updatedObject)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject,
-					validation.WithDeletionIgnoredNamespaces(resource.sourceObject.GetNamespace()))
+					validation.WithDeletionIgnoredNamespaces(namespaces.GetSource(ctx).GetName()))
 				return ctx
 			}).
 			Feature())
@@ -209,8 +209,8 @@ func TestResourcesUpdation(t *testing.T) {
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
@@ -218,13 +218,13 @@ func TestResourcesUpdation(t *testing.T) {
 				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
 				sourceObjectLabels[replicator.ReplicationObjectTypeLabelKey] = "ignored"
-				resources.UpdateObject(ctx, t, cfg, sourceNamespace.GetName(), updatedObject)
+				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), updatedObject)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject,
-					validation.WithDeletionIgnoredNamespaces(resource.sourceObject.GetNamespace()))
+					validation.WithDeletionIgnoredNamespaces(namespaces.GetSource(ctx).GetName()))
 				return ctx
 			}).
 			Feature())
@@ -250,12 +250,12 @@ func TestResourcesDeletion(t *testing.T) {
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
-				resources.DeleteObjectWithWait(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				resources.DeleteObjectWithWait(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
@@ -270,12 +270,12 @@ func TestResourcesDeletion(t *testing.T) {
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
-				ctx = namespaces.DeleteWithWait(ctx, t, cfg, sourceNamespace)
+				ctx = namespaces.DeleteWithWait(ctx, t, cfg, namespaces.GetSource(ctx))
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
@@ -290,8 +290,8 @@ func TestResourcesDeletion(t *testing.T) {
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				cloneNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
@@ -312,8 +312,8 @@ func TestResourcesDeletion(t *testing.T) {
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
-				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				cloneNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,

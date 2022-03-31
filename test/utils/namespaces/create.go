@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	namespacePrefix = "replicator-e2e-ns"
+	namespacePrefix           = "replicator-e2e-ns"
+	sourceNamespaceContextKey = "__source_namespace__"
 )
 
 func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CreateOption) (*corev1.Namespace, context.Context) {
@@ -46,4 +47,14 @@ func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, option
 		t.Fatalf("failed to create namespace %s: %v", namespace.GetName(), err)
 	}
 	return namespace, cleanup.AddTestObjectToContext(ctx, t, namespace)
+}
+
+func CreateSource(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CreateOption) context.Context {
+	ns, ctx := CreateRandom(ctx, t, cfg, options...)
+	ctx = context.WithValue(ctx, sourceNamespaceContextKey, ns)
+	return ctx
+}
+
+func GetSource(ctx context.Context) *corev1.Namespace {
+	return ctx.Value(sourceNamespaceContextKey).(*corev1.Namespace)
 }
