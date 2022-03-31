@@ -20,12 +20,12 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func CreateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
+func UpdateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
 	clonedObj := obj.DeepCopyObject().(k8s.Object)
 	clonedObj.SetNamespace(namespace)
 
-	err := cfg.Client().Resources(namespace).Create(ctx, clonedObj)
+	err := cfg.Client().Resources(namespace).Update(ctx, clonedObj)
 	if err != nil {
-		t.Fatalf("failed to create object: %v", err)
+		t.Fatalf("failed to update object: %v", err)
 	}
 }

@@ -139,6 +139,54 @@ func TestNamespaceLabels(t *testing.T) {
 				return ctx
 			}).
 			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller deletes clone when ignore label is added to namespace").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "create").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = controller.SetupReplicator(ctx, t, cfg)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
+				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList)
+
+				testedNs.GetLabels()[replicator.ReplicationTargetNamespaceTypeLabelKey] = replicator.ReplicationTargetNamespaceTypeLabelValueIgnored
+				namespaces.Update(ctx, t, cfg, testedNs)
+				return ctx
+			}).
+			Teardown(cleanup.CleanTestObjects).
+			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
+					validation.WithObjectMatcher(resource.matcher),
+					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
+				return ctx
+			}).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller creates clone when replicate label is added to ignored namespace").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "create").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = controller.SetupReplicator(ctx, t, cfg)
+				ctx = namespaces.CreateSource(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
+				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube-"))
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList)
+
+				testedNs.GetLabels()[replicator.ReplicationTargetNamespaceTypeLabelKey] = replicator.ReplicationTargetNamespaceTypeLabelValueReplicated
+				namespaces.Update(ctx, t, cfg, testedNs)
+				return ctx
+			}).
+			Teardown(cleanup.CleanTestObjects).
+			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
+					validation.WithObjectMatcher(resource.matcher),
+					validation.WithReplicatedNamespaces(testedNs.GetName()))
+				return ctx
+			}).
+			Feature())
 	}
 
 	testenv.Test(t, testFeatures...)

@@ -93,7 +93,7 @@ func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
 				logger.Errorw("failed to list the resources")
 			}
 			for _, object := range objects {
-				replicator.Delete(ctx, newNamespace.GetName(), object.GetName())
+				err = replicator.Delete(ctx, newNamespace.GetName(), object.GetName())
 				if err != nil {
 					logger.Errorw("failed to delete object from namespace", "error", err)
 				} else {
