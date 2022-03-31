@@ -17,6 +17,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,14 +26,15 @@ import (
 )
 
 type resourcesCreationTestData struct {
-	name         string
-	objectList   k8s.ObjectList
-	sourceObject k8s.Object
-	matcher      validation.ObjectMatcher
+	name               string
+	objectList         k8s.ObjectList
+	sourceObject       k8s.Object
+	sourceObjectUpdate k8s.Object
+	matcher            validation.ObjectMatcher
 }
 
 func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData {
-	return []resourcesCreationTestData{
+	resources := []resourcesCreationTestData{
 		{
 			name:       "secret",
 			objectList: &corev1.SecretList{},
@@ -50,6 +52,19 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 					"data-item-one-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-one-value"))),
 				},
 			},
+			sourceObjectUpdate: &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					},
+					Annotations: map[string]string{
+						"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					},
+				},
+				Data: map[string][]byte{
+					"data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-two-value"))),
+				},
+			},
 			matcher: func(sourceObject k8s.Object, targetObject k8s.Object) bool {
 				sourceSecret := sourceObject.(*corev1.Secret)
 				targetSecret := targetObject.(*corev1.Secret)
@@ -61,4 +76,16 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 			},
 		},
 	}
+
+	for _, resource := range resources {
+		resource.sourceObjectUpdate.SetName(resource.sourceObject.GetName())
+
+		updateSourceObjectLabels := func(sourceObject k8s.Object) {
+			labels := sourceObject.GetLabels()
+			labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
+		}
+		updateSourceObjectLabels(resource.sourceObject)
+		updateSourceObjectLabels(resource.sourceObjectUpdate)
+	}
+	return resources
 }

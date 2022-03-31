@@ -16,19 +16,26 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func CreateSourceObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
+func CreateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
 	obj.SetNamespace(namespace)
 	clonedObj := obj.DeepCopyObject().(k8s.Object)
-	labels := clonedObj.GetLabels()
-	labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
 
 	err := cfg.Client().Resources(namespace).Create(ctx, clonedObj)
 	if err != nil {
 		t.Fatalf("failed to create source object: %v", err)
+	}
+}
+
+func UpdateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
+	obj.SetNamespace(namespace)
+	clonedObj := obj.DeepCopyObject().(k8s.Object)
+
+	err := cfg.Client().Resources(namespace).Update(ctx, clonedObj)
+	if err != nil {
+		t.Fatalf("failed to update source object: %v", err)
 	}
 }
