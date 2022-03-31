@@ -60,7 +60,8 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 
 	namespaceInformer := r.k8sClient.NamespaceInformer()
 	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: r.handleNewNamespace,
+		AddFunc:    r.handleNewNamespace,
+		UpdateFunc: r.handleUpdateNamespace,
 	})
 	informerSyncs = append(informerSyncs, namespaceInformer.HasSynced)
 
