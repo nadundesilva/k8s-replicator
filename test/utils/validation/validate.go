@@ -33,8 +33,8 @@ import (
 type ObjectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
 
 func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
-	sourceObject k8s.Object, objectList k8s.ObjectList, options ...Option) {
-	opts := &Options{}
+	sourceObject k8s.Object, objectList k8s.ObjectList, options ...ReplicationOption) {
+	opts := &ReplicationOptions{}
 	for _, option := range options {
 		option(opts)
 	}
@@ -145,13 +145,29 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	}
 }
 
-func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object) {
+func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object,
+	options ...DeletionOption) {
+	opts := &DeletionOptions{}
+	for _, option := range options {
+		option(opts)
+	}
+
 	nsList := &corev1.NamespaceList{}
 	err := cfg.Client().Resources().List(ctx, nsList)
 	if err != nil {
 		t.Fatalf("failed to list namespaces: %v", err)
 	}
 	for _, namespace := range nsList.Items {
+		var ignored bool
+		for _, ignoredNs := range opts.ignoreedNamespaces {
+			if namespace.GetName() == ignoredNs {
+				ignored = true
+			}
+		}
+		if ignored {
+			continue
+		}
+
 		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
 		clonedObj.SetNamespace(namespace.GetName())
 		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj))

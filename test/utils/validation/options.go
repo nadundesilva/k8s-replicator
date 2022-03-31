@@ -12,28 +12,40 @@
  */
 package validation
 
-type Options struct {
+type ReplicationOptions struct {
 	objectMatcher        ObjectMatcher
 	ignoreedNamespaces   []string
 	replicatedNamespaces []string
 }
 
-type Option func(*Options)
+type ReplicationOption func(*ReplicationOptions)
 
-func WithObjectMatcher(objectMatcher ObjectMatcher) Option {
-	return func(options *Options) {
+func WithObjectMatcher(objectMatcher ObjectMatcher) ReplicationOption {
+	return func(options *ReplicationOptions) {
 		options.objectMatcher = objectMatcher
 	}
 }
 
-func WithIgnoredNamespaces(namespaces ...string) Option {
-	return func(options *Options) {
+func WithReplicationIgnoredNamespaces(namespaces ...string) ReplicationOption {
+	return func(options *ReplicationOptions) {
 		options.ignoreedNamespaces = append(options.ignoreedNamespaces, namespaces...)
 	}
 }
 
-func WithReplicatedNamespaces(namespaces ...string) Option {
-	return func(options *Options) {
+func WithReplicatedNamespaces(namespaces ...string) ReplicationOption {
+	return func(options *ReplicationOptions) {
 		options.replicatedNamespaces = append(options.replicatedNamespaces, namespaces...)
+	}
+}
+
+type DeletionOptions struct {
+	ignoreedNamespaces []string
+}
+
+type DeletionOption func(*DeletionOptions)
+
+func WithDeletionIgnoredNamespaces(namespaces ...string) DeletionOption {
+	return func(options *DeletionOptions) {
+		options.ignoreedNamespaces = append(options.ignoreedNamespaces, namespaces...)
 	}
 }

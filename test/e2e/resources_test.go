@@ -17,11 +17,13 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
 	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
 	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
 	"github.com/nadundesilva/k8s-replicator/test/utils/resources"
 	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
+	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
@@ -162,7 +164,7 @@ func TestResourcesUpdation(t *testing.T) {
 
 		testFeatures = append(testFeatures, features.New("controller updates clones when source object is updated").
 			WithLabel("resource", resource.name).
-			WithLabel("operation", "create").
+			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
 				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
@@ -175,6 +177,56 @@ func TestResourcesUpdation(t *testing.T) {
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("updated clone objects", assessResourcesReplication).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller removes clones when source object source type label is removed").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "update").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				ctx = controller.SetupReplicator(ctx, t, cfg)
+				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+
+				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
+				sourceObjectLabels := updatedObject.GetLabels()
+				delete(sourceObjectLabels, replicator.ReplicationObjectTypeLabelKey)
+				resources.UpdateObject(ctx, t, cfg, sourceNamespace.GetName(), updatedObject)
+				return ctx
+			}).
+			Teardown(cleanup.CleanTestObjects).
+			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject,
+					validation.WithDeletionIgnoredNamespaces(resource.sourceObject.GetNamespace()))
+				return ctx
+			}).
+			Feature())
+
+		testFeatures = append(testFeatures, features.New("controller removes clones when source object type is set to different value").
+			WithLabel("resource", resource.name).
+			WithLabel("operation", "update").
+			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx = setupInitialNamspaces(ctx, t, cfg)
+				sourceNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
+				resources.CreateObject(ctx, t, cfg, sourceNamespace.GetName(), resource.sourceObject)
+				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				ctx = controller.SetupReplicator(ctx, t, cfg)
+				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+
+				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
+				sourceObjectLabels := updatedObject.GetLabels()
+				sourceObjectLabels[replicator.ReplicationObjectTypeLabelKey] = "ignored"
+				resources.UpdateObject(ctx, t, cfg, sourceNamespace.GetName(), updatedObject)
+				return ctx
+			}).
+			Teardown(cleanup.CleanTestObjects).
+			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject,
+					validation.WithDeletionIgnoredNamespaces(resource.sourceObject.GetNamespace()))
+				return ctx
+			}).
 			Feature())
 	}
 

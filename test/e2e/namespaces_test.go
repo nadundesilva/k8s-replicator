@@ -50,7 +50,8 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
-					validation.WithObjectMatcher(resource.matcher), validation.WithIgnoredNamespaces(testedNs.GetName()))
+					validation.WithObjectMatcher(resource.matcher),
+					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
 			Feature())
@@ -69,7 +70,8 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
-					validation.WithObjectMatcher(resource.matcher), validation.WithIgnoredNamespaces(testedNs.GetName()))
+					validation.WithObjectMatcher(resource.matcher),
+					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
 			Feature())
@@ -111,7 +113,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher),
-					validation.WithIgnoredNamespaces(controller.GetNamspace(ctx)))
+					validation.WithReplicationIgnoredNamespaces(controller.GetNamspace(ctx)))
 				return ctx
 			}).
 			Feature())
