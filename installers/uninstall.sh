@@ -11,12 +11,8 @@
 # limitations under the License.
 set -e
 
-if [ "${1}" == "" ]; then
-    echo "✋ Expected version argument not provided"
-    exit 1
-else
-    VERSION="${1}"
-fi
+VERSION="$(kubectl get deployment/replicator -n k8s-replicator -o jsonpath='{.metadata.annotations.installer\.replicator\.nadundesilva\.github\.io/release}')"
+echo "✨ Detected K8s Replicator ${VERSION}"
 
 TEMP_DIR=$(mktemp -d)
 echo "🌟 Using temporary directory ${TEMP_DIR}"
@@ -34,13 +30,12 @@ echo
 unzip "${DOWNLOAD_DIR}.zip" -d "${DOWNLOAD_DIR}"
 echo
 
-echo "🐳 Applying K8s Replicator to cluster (context: $(kubectl config current-context))"
-kubectl apply -k "${DOWNLOAD_DIR}/kustomize"
-kubectl annotate deployment/replicator -n k8s-replicator "installer.replicator.nadundesilva.github.io/release=${VERSION}"
+echo "🛑 Removing K8s Replicator to cluster (context: $(kubectl config current-context))"
+kubectl delete -k "${DOWNLOAD_DIR}/kustomize"
 echo
 
-echo "🔎 Waiting for K8s Replicator to be ready"
-kubectl wait deployment/replicator -n k8s-replicator --for condition=available
+echo "🔎 Waiting for K8s Replicator to be removed"
+kubectl wait deployment/replicator -n k8s-replicator --for delete
 echo
 
-echo "🏄 Completed! K8s Replicator is ready in the cluster"
+echo "✋ Completed! K8s Replicator is removed from the cluster"

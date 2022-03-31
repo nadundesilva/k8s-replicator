@@ -14,13 +14,13 @@ Replicator for Kubernetes resources across namespaces. This controller was writt
 #### Quickstart
 
 Run the following command to apply the controller to your cluster. The `<VERSION>` should be replaced with the release version
-to be used and kubectl should be configured pointing to the cluter in which the controller needs to be started.
+to be used and kubectl CLI should be configured pointing to the cluter in which the controller needs to be started.
 
 ```bash
 curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/install.sh | bash -s <VERSION>
 ```
 
-#### Advanced
+#### Manual Applying
 
 * Clone this repository.
 * Update the configuration (`<REPOSITORY_ROOT>/kustomize/config.yaml`) to match your needs.
@@ -71,6 +71,18 @@ The folloing labels are used by the controller to track the replication of resou
   ```
 
 ### How to Cleanup Controller
+
+#### Quick Remove
+
+Run the following command to remove the controller from your cluster. Kubectl CLI should be configured pointing to the cluter in which the controller needs to be started.
+
+**Note:** This approach would only work if you used the Quickstart option for setting up the controller.
+
+```bash
+curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/uninstall.sh | bash -s
+```
+
+#### Manual Removal
 
 * Clone this repository.
 * Remove the controller into your cluster by running the following command.
