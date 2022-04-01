@@ -33,7 +33,7 @@ type client struct {
 
 var _ ClientInterface = (*client)(nil)
 
-func NewClient(resourceSelectorRequirements []labels.Requirement, logger *zap.SugaredLogger) *client {
+func NewClient(resourceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) *client {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
@@ -44,19 +44,22 @@ func NewClient(resourceSelectorRequirements []labels.Requirement, logger *zap.Su
 		panic(err.Error())
 	}
 
-	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute * 5)
-	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute * 5,
-		informers.WithTweakListOptions(func(options *metav1.ListOptions) {
+	withNewRequirements := func(newReqs []labels.Requirement) informers.SharedInformerOption {
+		return informers.WithTweakListOptions(func(options *metav1.ListOptions) {
 			requirements, err := labels.ParseToRequirements(options.LabelSelector)
 			if err != nil {
 				logger.Errorw("failed to parse label selector", "error", err)
 				return
 			}
 
-			selector := labels.NewSelector().Add(requirements...).Add(resourceSelectorRequirements...)
+			selector := labels.NewSelector().Add(requirements...).Add(newReqs...)
 			options.LabelSelector = selector.String()
-		}),
-	)
+		})
+	}
+
+	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute*5)
+	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute*5,
+		withNewRequirements(resourceSelectorReqs))
 
 	return &client{
 		clientset:                clientset,

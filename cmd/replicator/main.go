@@ -59,7 +59,7 @@ func main() {
 	}()
 	logger := zapLogger.Sugar()
 
-	selectorRequirement, err := labels.NewRequirement(
+	resourceSelectorReq, err := labels.NewRequirement(
 		replicator.ReplicationObjectTypeLabelKey,
 		selection.In,
 		[]string{
@@ -70,7 +70,7 @@ func main() {
 	if err != nil {
 		logger.Errorw("failed to initialize resources filter", "error", err)
 	}
-	k8sClient := kubernetes.NewClient([]labels.Requirement{*selectorRequirement}, logger)
+	k8sClient := kubernetes.NewClient([]labels.Requirement{*resourceSelectorReq}, logger)
 
 	resourceReplicators := []resources.ResourceReplicator{
 		resources.NewSecretReplicator(k8sClient, logger),

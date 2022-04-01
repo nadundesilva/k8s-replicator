@@ -83,11 +83,13 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 			for _, namespace := range namespaces {
 				if namespace.GetName() != deletedObj.GetNamespace() {
 					logger := logger.With("targerNamespace", namespace.GetName())
-					err := h.replicator.Delete(ctx, namespace.GetName(), deletedObj.GetName())
-					if err != nil && !errors.IsNotFound(err) {
-						logger.Errorw("failed to delete secret", "error", err)
-					} else {
-						logger.Debugw("deleted object from namespace")
+					deletionAttempted, err := deleteReplica(ctx, logger, namespace.GetName(), deletedObj.GetName(), h.replicator)
+					if deletionAttempted {
+						if err != nil && !errors.IsNotFound(err) {
+							logger.Errorw("failed to delete secret", "error", err)
+						} else {
+							logger.Debugw("deleted object from namespace")
+						}
 					}
 				}
 			}
@@ -132,12 +134,14 @@ func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *za
 	} else {
 		for _, namespace := range namespaces {
 			logger := logger.With("targetNamespace", namespace.GetName())
-			err = replicateToNamespace(ctx, logger, currentObj.GetNamespace(), namespace, clonedObj,
+			replicationAttempted, err := replicateToNamespace(ctx, logger, currentObj.GetNamespace(), namespace, clonedObj,
 				h.replicator)
-			if err != nil {
-				logger.Errorw("failed to replicate object to namespace", "error", err)
-			} else {
-				logger.Debugw("replicated object to namespace")
+			if replicationAttempted {
+				if err != nil {
+					logger.Errorw("failed to replicate object to namespace", "error", err)
+				} else {
+					logger.Debugw("replicated object to namespace")
+				}
 			}
 		}
 	}
@@ -166,11 +170,24 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 }
 
 func replicateToNamespace(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
-	targetNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) error {
-	if sourceNamespace != targetNamespace.GetName() && isReplicationTargetNamespace(logger, targetNamespace) {
-		return replicator.Apply(ctx, targetNamespace.GetName(), obj)
+	targetNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
+	if sourceNamespace == targetNamespace.GetName() || !isReplicationTargetNamespace(logger, targetNamespace) {
+		return false, nil
 	}
-	return nil
+	return true, replicator.Apply(ctx, targetNamespace.GetName(), obj)
+}
+
+func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, name string,
+	replicator resources.ResourceReplicator) (bool, error) {
+	_, err := replicator.Get(namespace, name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return false, nil
+		} else {
+			logger.Warnw("failed to check if object replica exists", "error", err)
+		}
+	}
+	return true, replicator.Delete(ctx, namespace, name)
 }
 
 func isReplicationSource(obj metav1.Object) bool {
