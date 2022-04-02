@@ -62,6 +62,7 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc:    r.handleNewNamespace,
 		UpdateFunc: r.handleUpdateNamespace,
+		DeleteFunc: r.handleDeleteNamespace,
 	})
 	informerSyncs = append(informerSyncs, namespaceInformer.HasSynced)
 

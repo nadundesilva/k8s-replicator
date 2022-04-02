@@ -70,7 +70,23 @@ func main() {
 	if err != nil {
 		logger.Errorw("failed to initialize resources filter", "error", err)
 	}
-	k8sClient := kubernetes.NewClient([]labels.Requirement{*resourceSelectorReq}, logger)
+
+	namespaceSelectorReq, err := labels.NewRequirement(
+		replicator.ReplicationTargetNamespaceTypeLabelKey,
+		selection.NotEquals,
+		[]string{
+			replicator.ReplicationTargetNamespaceTypeLabelValueIgnored,
+		},
+	)
+	if err != nil {
+		logger.Errorw("failed to initialize namespace filter", "error", err)
+	}
+
+	k8sClient := kubernetes.NewClient(
+		[]labels.Requirement{*resourceSelectorReq},
+		[]labels.Requirement{*namespaceSelectorReq},
+		logger,
+	)
 
 	resourceReplicators := []resources.ResourceReplicator{
 		resources.NewSecretReplicator(k8sClient, logger),

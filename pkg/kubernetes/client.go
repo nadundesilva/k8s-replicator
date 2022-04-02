@@ -33,7 +33,7 @@ type client struct {
 
 var _ ClientInterface = (*client)(nil)
 
-func NewClient(resourceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) *client {
+func NewClient(resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) *client {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())
@@ -57,7 +57,8 @@ func NewClient(resourceSelectorReqs []labels.Requirement, logger *zap.SugaredLog
 		})
 	}
 
-	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute*5)
+	namespaceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute*5,
+		withNewRequirements(namespaceSelectorReqs))
 	resourceInformerFactory := informers.NewSharedInformerFactoryWithOptions(clientset, time.Minute*5,
 		withNewRequirements(resourceSelectorReqs))
 

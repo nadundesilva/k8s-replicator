@@ -71,7 +71,6 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 }
 
 func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
-	ctx := context.Background()
 	prevNamespace := prevObj.(*corev1.Namespace)
 	newNamespace := newObj.(*corev1.Namespace)
 	logger := r.logger.With("targetNamespace", newNamespace.GetName())
@@ -79,29 +78,37 @@ func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
 	if !isReplicationTargetNamespace(logger, prevNamespace) && isReplicationTargetNamespace(logger, newNamespace) {
 		r.handleNewNamespace(newObj)
 	} else if isReplicationTargetNamespace(logger, prevNamespace) && !isReplicationTargetNamespace(logger, newNamespace) {
-		clonesSelectorRequirement, err := labels.NewRequirement(
-			ReplicationObjectTypeLabelKey,
-			selection.Equals,
-			[]string{ReplicationObjectTypeLabelValueClone},
-		)
-		if err != nil {
-			logger.Errorw("failed to initialize cloned objects filter", "error", err)
-		}
+		
+	}
+}
 
-		for _, replicator := range r.resourceReplicators {
-			logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
-			objects, err := replicator.List(newNamespace.GetName(), labels.NewSelector().Add(*clonesSelectorRequirement))
-			if err != nil {
-				logger.Errorw("failed to list the resources")
-			}
-			for _, object := range objects {
-				deletionAttempted, err := deleteReplica(ctx, logger, newNamespace.GetName(), object.GetName(), replicator)
-				if deletionAttempted {
-					if err != nil {
-						logger.Errorw("failed to delete object from namespace", "error", err)
-					} else {
-						logger.Infow("deleted object from namespace", "object", object.GetName())
-					}
+func (r *controller) handleDeleteNamespace(obj interface{}) {
+	ctx := context.Background()
+	deletedNamespace := obj.(*corev1.Namespace)
+	logger := r.logger.With("targetNamespace", deletedNamespace.GetName())
+
+	clonesSelectorRequirement, err := labels.NewRequirement(
+		ReplicationObjectTypeLabelKey,
+		selection.Equals,
+		[]string{ReplicationObjectTypeLabelValueClone},
+	)
+	if err != nil {
+		logger.Errorw("failed to initialize cloned objects filter", "error", err)
+	}
+
+	for _, replicator := range r.resourceReplicators {
+		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
+		objects, err := replicator.List(deletedNamespace.GetName(), labels.NewSelector().Add(*clonesSelectorRequirement))
+		if err != nil {
+			logger.Errorw("failed to list the resources")
+		}
+		for _, object := range objects {
+			deletionAttempted, err := deleteReplica(ctx, logger, deletedNamespace.GetName(), object.GetName(), replicator)
+			if deletionAttempted {
+				if err != nil {
+					logger.Errorw("failed to delete object from namespace", "error", err)
+				} else {
+					logger.Infow("deleted object from namespace", "object", object.GetName())
 				}
 			}
 		}
@@ -113,8 +120,6 @@ func isReplicationTargetNamespace(logger *zap.SugaredLogger, namespace *corev1.N
 	if ok {
 		if val == ReplicationTargetNamespaceTypeLabelValueReplicated {
 			return true
-		} else if val == ReplicationTargetNamespaceTypeLabelValueIgnored {
-			return false
 		} else {
 			logger.Warnw("ignored unrecorgnized label in target namespace",
 				"labelKey", ReplicationTargetNamespaceTypeLabelKey, "labelValue", val)
