@@ -57,7 +57,7 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 		for _, object := range objects {
 			clonedObj := cloneObject(replicator, object)
 
-			replicationAttempted, err := replicateToNamespace(ctx, logger, object.GetNamespace(), namespace, clonedObj,
+			replicationAttempted, err := createReplica(ctx, logger, object.GetNamespace(), namespace, clonedObj,
 				replicator)
 			if replicationAttempted {
 				if err != nil {

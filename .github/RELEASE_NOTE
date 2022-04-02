@@ -7,6 +7,7 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#h
 - Add quick install and uninstall scripts
 - Handle adding/removing replicator labels to/from namespaces
 - Remove unwanted logs printed for namespaces which has no updates
+- Handle cache syncs in resources
 - E2E tests - New test cases
   - Updating resources
   - Removal of type label from resources

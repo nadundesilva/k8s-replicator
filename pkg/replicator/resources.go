@@ -41,33 +41,17 @@ func NewResourcesEventHandler(replicator resources.ResourceReplicator, k8sClient
 	}
 }
 
-func (h *ResourceEventHandler) OnAdd(obj interface{}) {
-	newObj := obj.(metav1.Object)
-	if !isReplicationSource(newObj) {
-		return
-	}
-
-	logger := h.logger.With("sourceNamespace", newObj.GetNamespace(), "name", newObj.GetName())
-	err := h.handleUpdate(newObj, logger)
+func (h *ResourceEventHandler) OnAdd(newObj interface{}) {
+	err := h.handleUpdate(newObj)
 	if err != nil {
-		logger.Errorw("failed to handle replicating added object", "error", err)
-	} else {
-		logger.Infow("completed replicating added object")
+		h.logger.Errorw("failed to handle added object", "error", err)
 	}
 }
 
 func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
-	updatedObj := newObj.(metav1.Object)
-	if !isReplicationSource(updatedObj) {
-		return
-	}
-
-	logger := h.logger.With("sourceNamespace", updatedObj.GetNamespace(), "name", updatedObj.GetName())
-	err := h.handleUpdate(updatedObj, logger)
+	err := h.handleUpdate(newObj)
 	if err != nil {
-		logger.Errorw("failed to handle replicating updated object", "error", err)
-	} else {
-		logger.Infow("completed replicating updated object")
+		h.logger.Errorw("failed to handle updated object", "error", err)
 	}
 }
 
@@ -124,23 +108,46 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	}
 }
 
-func (h *ResourceEventHandler) handleUpdate(currentObj metav1.Object, logger *zap.SugaredLogger) error {
+func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 	ctx := context.Background()
-	clonedObj := cloneObject(h.replicator, currentObj)
+	object := newObj.(metav1.Object)
 
-	namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
-	if err != nil {
-		return fmt.Errorf("failed to list namespaces %+w", err)
-	} else {
-		for _, namespace := range namespaces {
-			logger := logger.With("targetNamespace", namespace.GetName())
-			replicationAttempted, err := replicateToNamespace(ctx, logger, currentObj.GetNamespace(), namespace, clonedObj,
-				h.replicator)
-			if replicationAttempted {
-				if err != nil {
-					logger.Errorw("failed to replicate object to namespace", "error", err)
+	if isReplicationSource(object) {
+		logger := h.logger.With("sourceNamespace", object.GetNamespace(), "name", object.GetName())
+		namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
+		if err != nil {
+			return fmt.Errorf("failed to list namespaces: %w", err)
+		} else {
+			clonedObj := cloneObject(h.replicator, object)
+			for _, namespace := range namespaces {
+				logger := logger.With("targetNamespace", namespace.GetName())
+				replicationAttempted, err := createReplica(ctx, logger, object.GetNamespace(), namespace, clonedObj,
+					h.replicator)
+				if replicationAttempted {
+					if err != nil {
+						return fmt.Errorf("failed to create replica in namespace: %w", err)
+					} else {
+						logger.Debugw("created replica in namespace")
+					}
+				}
+			}
+		}
+	} else if isReplicationClone(object) {
+		logger := h.logger.With("targetNamespace", object.GetNamespace(), "name", object.GetName())
+		if val, ok := object.GetAnnotations()[ReplicationSourceNamespaceLabelKey]; ok {
+			_, err := h.k8sClient.GetNamespace(val)
+			if err != nil {
+				if errors.IsNotFound(err) {
+					deletionAttempted, err := deleteReplica(ctx, logger, object.GetNamespace(), object.GetName(), h.replicator)
+					if deletionAttempted {
+						if err != nil {
+							return fmt.Errorf("failed to delete replica with no source: %w", err)
+						} else {
+							logger.Debugw("deleted replica with no source")
+						}
+					}
 				} else {
-					logger.Debugw("replicated object to namespace")
+					return fmt.Errorf("failed to get source namespace: %w", err)
 				}
 			}
 		}
@@ -169,7 +176,7 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 	return clonedObj
 }
 
-func replicateToNamespace(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
+func createReplica(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
 	targetNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
 	if sourceNamespace == targetNamespace.GetName() || !isReplicationTargetNamespace(logger, targetNamespace) {
 		return false, nil
