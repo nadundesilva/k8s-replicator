@@ -87,7 +87,7 @@ jobs:
                     nadunrds/k8s-replicator:latest
             - name: Prepare Release Note
               run: |
-                sed -i 's/${VERSION_TAG}/${{ github.ref_name }}/g' .github/RELEASE_NOTE
+                sed -i 's/{{VERSION_TAG}}/${{ github.ref_name }}/g' .github/RELEASE_NOTE
             - name: Create Release
               id: create-release
               uses: actions/create-release@v1
@@ -120,7 +120,7 @@ jobs:
                 echo -n "" > ".github/RELEASE_NOTE"
                 addToReleaseNote "#### How to use"
                 addToReleaseNote ""
-                addToReleaseNote "Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/${VERSION_TAG}#how-to-use) for instructions on how to use the controller."
+                addToReleaseNote "Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#how-to-use) for instructions on how to use the controller."
                 addToReleaseNote ""
                 addToReleaseNote "#### Changelog:"
                 addToReleaseNote ""

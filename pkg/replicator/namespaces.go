@@ -26,8 +26,8 @@ import (
 const (
 	NamespaceTypeLabelKey = "replicator.nadundesilva.github.io/namespace-type"
 
-	NamespaceTypeLabelValueReplicated = "replication-target"
-	NamespaceTypeLabelValueIgnored    = "ignored"
+	NamespaceTypeLabelValueManaged = "managed"
+	NamespaceTypeLabelValueIgnored = "ignored"
 )
 
 var (
@@ -75,9 +75,9 @@ func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
 	newNamespace := newObj.(*corev1.Namespace)
 	logger := r.logger.With("targetNamespace", newNamespace.GetName())
 
-	if !isReplicationTargetNamespace(logger, prevNamespace) && isReplicationTargetNamespace(logger, newNamespace) {
+	if !isManagedNamespace(logger, prevNamespace) && isManagedNamespace(logger, newNamespace) {
 		r.handleNewNamespace(newObj)
-	} else if isReplicationTargetNamespace(logger, prevNamespace) && !isReplicationTargetNamespace(logger, newNamespace) {
+	} else if isManagedNamespace(logger, prevNamespace) && !isManagedNamespace(logger, newNamespace) {
 		r.handleDeleteNamespace(newObj)
 	}
 }
@@ -86,6 +86,11 @@ func (r *controller) handleDeleteNamespace(obj interface{}) {
 	ctx := context.Background()
 	deletedNamespace := obj.(*corev1.Namespace)
 	logger := r.logger.With("targetNamespace", deletedNamespace.GetName())
+
+	if deletedNamespace.GetDeletionTimestamp() != nil {
+		return
+	}
+	// Namespaces which are removed only due to being marked as ignored needs to be cleaned up
 
 	replicaSelectorRequirement, err := labels.NewRequirement(
 		ObjectTypeLabelKey,
@@ -115,10 +120,13 @@ func (r *controller) handleDeleteNamespace(obj interface{}) {
 	}
 }
 
-func isReplicationTargetNamespace(logger *zap.SugaredLogger, namespace *corev1.Namespace) bool {
+func isManagedNamespace(logger *zap.SugaredLogger, namespace *corev1.Namespace) bool {
+	if namespace == nil || namespace.GetDeletionTimestamp() != nil {
+		return false
+	}
 	val, ok := namespace.GetLabels()[NamespaceTypeLabelKey]
 	if ok {
-		if val == NamespaceTypeLabelValueReplicated {
+		if val == NamespaceTypeLabelValueManaged {
 			return true
 		} else {
 			logger.Warnw("ignored unrecorgnized label in target namespace",

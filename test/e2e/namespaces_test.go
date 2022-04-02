@@ -86,7 +86,7 @@ func TestNamespaceLabels(t *testing.T) {
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube"),
 					namespaces.WithLabels(map[string]string{
-						replicator.NamespaceTypeLabelKey: replicator.NamespaceTypeLabelValueReplicated,
+						replicator.NamespaceTypeLabelKey: replicator.NamespaceTypeLabelValueManaged,
 					}))
 				return ctx
 			}).
@@ -118,12 +118,12 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller ignores controller namespace with replicate label").
+		testFeatures = append(testFeatures, features.New("controller creates replica in controller namespace with replicate label").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg, controller.WithNamespaceLabels(map[string]string{
-					replicator.NamespaceTypeLabelKey: replicator.NamespaceTypeLabelValueReplicated,
+					replicator.NamespaceTypeLabelKey: replicator.NamespaceTypeLabelValueManaged,
 				}))
 				ctx = namespaces.CreateSource(ctx, t, cfg)
 				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
@@ -175,7 +175,7 @@ func TestNamespaceLabels(t *testing.T) {
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube-"))
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList)
 
-				testedNs.GetLabels()[replicator.NamespaceTypeLabelKey] = replicator.NamespaceTypeLabelValueReplicated
+				testedNs.GetLabels()[replicator.NamespaceTypeLabelKey] = replicator.NamespaceTypeLabelValueManaged
 				namespaces.Update(ctx, t, cfg, testedNs)
 				return ctx
 			}).

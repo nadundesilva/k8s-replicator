@@ -54,7 +54,7 @@ The following namespaces are ignored by default.
 If you want to override this behavior and specifically replicate to a namespace, add the following label
 
 ```properties
-replicator.nadundesilva.github.io/namespace-type=replication-target
+replicator.nadundesilva.github.io/namespace-type=managed
 ```
 
 ### Additional labels used by the controller

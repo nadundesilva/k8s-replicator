@@ -42,6 +42,7 @@ type ResourceEventHandler struct {
 func NewResourcesEventHandler(replicator resources.ResourceReplicator, k8sClient kubernetes.ClientInterface,
 	logger *zap.SugaredLogger) *ResourceEventHandler {
 	logger = logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
+
 	return &ResourceEventHandler{
 		replicator: replicator,
 		k8sClient:  k8sClient,
@@ -66,8 +67,11 @@ func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	ctx := context.Background()
 	deletedObj := obj.(metav1.Object)
+	logger := h.logger.With("name", deletedObj.GetName())
+
 	if isReplicationSource(deletedObj) {
-		logger := h.logger.With("sourceNamespace", deletedObj.GetNamespace(), "name", deletedObj.GetName())
+		logger := logger.With("sourceNamespace", deletedObj.GetNamespace())
+
 		namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
 		if err != nil {
 			logger.Errorw("failed to handle deleting object: failed to list namespaces", "error", err)
@@ -75,33 +79,37 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 			for _, namespace := range namespaces {
 				if namespace.GetName() != deletedObj.GetNamespace() {
 					logger := logger.With("targerNamespace", namespace.GetName())
+
 					deletionAttempted, err := deleteReplica(ctx, logger, namespace.GetName(), deletedObj.GetName(), h.replicator)
 					if deletionAttempted {
 						if err != nil && !errors.IsNotFound(err) {
-							logger.Errorw("failed to delete secret", "error", err)
+							logger.Errorw("failed to delete object", "error", err)
 						} else {
 							logger.Debugw("deleted object from namespace")
 						}
 					}
 				}
 			}
-			logger.Infow("completed deleting object")
+			logger.Infow("completed deleting source object replicas")
 		}
 	} else if isReplica(deletedObj) {
 		if sourceNamespaceName, ok := deletedObj.GetLabels()[SourceNamespaceLabelKey]; ok {
+			logger := logger.With("sourceNamespace", sourceNamespaceName)
+
 			_, err := h.replicator.Get(sourceNamespaceName, deletedObj.GetName())
 			if err != nil {
 				if !errors.IsNotFound(err) {
-					h.logger.Errorw("failed to get source secret", "error", err, "sourceNamespace", sourceNamespaceName)
+					logger.Errorw("failed to get source object of replica", "error", err)
 				}
 			} else {
-				logger := h.logger.With("replicaNamespace", deletedObj.GetNamespace(), "name", deletedObj.GetName())
+				logger := logger.With("replicaNamespace", deletedObj.GetNamespace(), "name", deletedObj.GetName())
+
 				namespace, err := h.k8sClient.GetNamespace(deletedObj.GetNamespace())
 				if err != nil {
 					if !errors.IsNotFound(err) {
-						logger.Errorw("failed to recreate deleted replica: failed to check namespace state", "error", err)
+						logger.Errorw("failed to check if source namespace of replica exists", "error", err)
 					}
-				} else if namespace != nil && isReplicationTargetNamespace(logger, namespace) && namespace.GetDeletionTimestamp() == nil {
+				} else if isManagedNamespace(logger, namespace) {
 					clonedObj := cloneObject(h.replicator, deletedObj)
 					clonedObj.GetLabels()[SourceNamespaceLabelKey] = sourceNamespaceName
 					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
@@ -112,53 +120,83 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 					}
 				}
 			}
+		} else {
+			logger.Errorw("deleted replica does not contain label %s", SourceNamespaceLabelKey)
 		}
+	} else {
+		logger.Errorw("ignored object's event received by replicator")
 	}
 }
 
 func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 	ctx := context.Background()
 	object := newObj.(metav1.Object)
+	logger := h.logger.With("name", object.GetName())
 
 	if isReplicationSource(object) {
-		logger := h.logger.With("sourceNamespace", object.GetNamespace(), "name", object.GetName())
-		namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
+		logger := h.logger.With("sourceNamespace", object.GetNamespace())
+
+		sourceNamespace, err := h.k8sClient.GetNamespace(object.GetNamespace())
 		if err != nil {
-			return fmt.Errorf("failed to list namespaces: %w", err)
-		} else {
-			clonedObj := cloneObject(h.replicator, object)
-			for _, namespace := range namespaces {
-				logger := logger.With("targetNamespace", namespace.GetName())
-				replicationAttempted, err := createReplica(ctx, logger, object.GetNamespace(), namespace, clonedObj,
-					h.replicator)
-				if replicationAttempted {
-					if err != nil {
-						return fmt.Errorf("failed to create replica in namespace: %w", err)
-					} else {
-						logger.Debugw("created replica in namespace")
+			if errors.IsNotFound(err) {
+				logger.Warnw("object marked as a replication source in an non-existent/ignored namespace")
+			} else {
+				return fmt.Errorf("failed to get source namespace: %w", err)
+			}
+		} else if isManagedNamespace(logger, sourceNamespace) {
+			namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
+			if err != nil {
+				return fmt.Errorf("failed to list namespaces: %w", err)
+			} else {
+				clonedObj := cloneObject(h.replicator, object)
+				for _, namespace := range namespaces {
+					logger := logger.With("targetNamespace", namespace.GetName())
+					replicationAttempted, err := createReplica(ctx, logger, object.GetNamespace(), namespace, clonedObj,
+						h.replicator)
+					if replicationAttempted {
+						if err != nil {
+							return fmt.Errorf("failed to create replica in namespace: %w", err)
+						} else {
+							logger.Debugw("created replica in namespace")
+						}
 					}
 				}
 			}
+		} else {
+			logger.Warnw("object marked as a replication source in an ignored namespace")
 		}
 	} else if isReplica(object) {
-		logger := h.logger.With("targetNamespace", object.GetNamespace(), "name", object.GetName())
-		if val, ok := object.GetAnnotations()[SourceNamespaceLabelKey]; ok {
-			_, err := h.k8sClient.GetNamespace(val)
+		logger = h.logger.With("targetNamespace", object.GetNamespace())
+		if sourceNamespaceName, ok := object.GetAnnotations()[SourceNamespaceLabelKey]; ok {
+			logger = h.logger.With("sourceNamespace", sourceNamespaceName)
+
+			deletionRequired := false
+			sourceNamespace, err := h.k8sClient.GetNamespace(sourceNamespaceName)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					deletionAttempted, err := deleteReplica(ctx, logger, object.GetNamespace(), object.GetName(), h.replicator)
-					if deletionAttempted {
-						if err != nil {
-							return fmt.Errorf("failed to delete replica with no source: %w", err)
-						} else {
-							logger.Debugw("deleted replica with no source")
-						}
-					}
+					deletionRequired = true
 				} else {
 					return fmt.Errorf("failed to get source namespace: %w", err)
 				}
+			} else if !isManagedNamespace(logger, sourceNamespace) {
+				deletionRequired = true
 			}
+
+			if deletionRequired {
+				deletionAttempted, err := deleteReplica(ctx, logger, object.GetNamespace(), object.GetName(), h.replicator)
+				if deletionAttempted {
+					if err != nil {
+						return fmt.Errorf("failed to delete replica with no source: %w", err)
+					} else {
+						logger.Debugw("deleted replica with no source")
+					}
+				}
+			}
+		} else {
+			logger.Errorw("replica does not contain label %s", SourceNamespaceLabelKey)
 		}
+	} else {
+		logger.Errorw("ignored object's event received by replicator", "namespace", object.GetNamespace())
 	}
 	return nil
 }
@@ -186,7 +224,7 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 
 func createReplica(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
 	targetNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
-	if sourceNamespace == targetNamespace.GetName() || !isReplicationTargetNamespace(logger, targetNamespace) {
+	if sourceNamespace == targetNamespace.GetName() || !isManagedNamespace(logger, targetNamespace) {
 		return false, nil
 	}
 	return true, replicator.Apply(ctx, targetNamespace.GetName(), obj)
@@ -194,13 +232,16 @@ func createReplica(ctx context.Context, logger *zap.SugaredLogger, sourceNamespa
 
 func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, name string,
 	replicator resources.ResourceReplicator) (bool, error) {
-	_, err := replicator.Get(namespace, name)
+	replica, err := replicator.Get(namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return false, nil
 		} else {
 			logger.Warnw("failed to check if object replica exists", "error", err)
 		}
+	}
+	if !isReplica(replica) {
+		return false, nil
 	}
 	return true, replicator.Delete(ctx, namespace, name)
 }
