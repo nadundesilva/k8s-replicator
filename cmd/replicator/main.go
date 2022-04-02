@@ -88,8 +88,28 @@ func main() {
 		logger,
 	)
 
-	resourceReplicators := []resources.ResourceReplicator{
-		resources.NewSecretReplicator(k8sClient, logger),
+	resourceReplicators := []resources.ResourceReplicator{}
+	if len(conf.Resources) == 0 {
+		logger.Fatalw("no resources specified in configuration to replicate")
+	} else {
+		availableResourceReplicators := []resources.ResourceReplicator{
+			resources.NewSecretReplicator(k8sClient, logger),
+		}
+		for _, resource := range conf.Resources {
+			found := false
+			for _, resourceReplicator := range availableResourceReplicators {
+				if resourceReplicator.ResourceApiVersion() == resource.ApiVersion &&
+					resourceReplicator.ResourceKind() == resource.Kind {
+					resourceReplicators = append(resourceReplicators, resourceReplicator)
+					found = true
+					break
+				}
+			}
+			if !found {
+				logger.Fatalw("unsupported resource specified in configuration to be replicated", "apiVersion", resource.ApiVersion,
+					"kind", resource.Kind)
+			}
+		}
 	}
 	replicator := replicator.NewController(resourceReplicators, k8sClient, logger)
 

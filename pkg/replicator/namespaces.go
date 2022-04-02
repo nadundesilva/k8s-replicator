@@ -49,7 +49,7 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 	}
 
 	for _, replicator := range r.resourceReplicators {
-		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
+		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
 		objects, err := replicator.List("", labels.NewSelector().Add(*sourceSelectorRequirement))
 		if err != nil {
 			logger.Errorw("failed to list the resources")
@@ -97,7 +97,7 @@ func (r *controller) handleDeleteNamespace(obj interface{}) {
 	}
 
 	for _, replicator := range r.resourceReplicators {
-		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
+		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
 		objects, err := replicator.List(deletedNamespace.GetName(), labels.NewSelector().Add(*replicaSelectorRequirement))
 		if err != nil {
 			logger.Errorw("failed to list the resources")

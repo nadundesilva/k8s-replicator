@@ -43,7 +43,7 @@ func (r *secretReplicator) ResourceApiVersion() string {
 	return corev1.SchemeGroupVersion.String()
 }
 
-func (r *secretReplicator) ResourceName() string {
+func (r *secretReplicator) ResourceKind() string {
 	return kubernetes.KindSecret
 }
 

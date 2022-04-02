@@ -22,7 +22,7 @@ import (
 
 type ResourceReplicator interface {
 	ResourceApiVersion() string
-	ResourceName() string
+	ResourceKind() string
 
 	Informer() cache.SharedInformer
 	Clone(source metav1.Object) metav1.Object
