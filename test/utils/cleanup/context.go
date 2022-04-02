@@ -43,15 +43,20 @@ func AddTestObjectToContext(ctx context.Context, t *testing.T, object k8s.Object
 		objects = ctxValue.(*testObjects)
 	}
 
+	var objectType string
 	if namespace, ok := object.(*corev1.Namespace); ok {
 		objects.namespaces.Items = append(objects.namespaces.Items, *namespace)
+		objectType = "namespace"
 	} else if clusterrole, ok := object.(*rbacv1.ClusterRole); ok {
 		objects.clusterRoles.Items = append(objects.clusterRoles.Items, *clusterrole)
+		objectType = "cluster role"
 	} else if clusterrolebinding, ok := object.(*rbacv1.ClusterRoleBinding); ok {
 		objects.clusterRoleBindings.Items = append(objects.clusterRoleBindings.Items, *clusterrolebinding)
+		objectType = "cluster role binding"
 	} else {
 		t.Fatalf("cannot add unknown object type %s as test object", object.GetObjectKind().GroupVersionKind().String())
 	}
+	t.Logf("added test %s object %s to context", objectType, object.GetName())
 	return context.WithValue(ctx, testObjectsContextKey, objects)
 }
 
@@ -60,6 +65,7 @@ func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.O
 	var objects *testObjects
 	if ctxValue == nil {
 		objects = &testObjects{}
+		t.Log("initialized new test objects struct in context")
 	} else {
 		objects = ctxValue.(*testObjects)
 	}
@@ -80,6 +86,7 @@ func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.O
 		return testObjList
 	}
 
+	var objectType string
 	if namespace, ok := object.(*corev1.Namespace); ok {
 		objList, err := meta.ExtractList(&objects.namespaces)
 		if err != nil {
@@ -90,6 +97,7 @@ func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.O
 		if err != nil {
 			t.Fatalf("failed to set the new reduced list: %v", err)
 		}
+		objectType = "namespace"
 	} else if clusterrole, ok := object.(*rbacv1.ClusterRole); ok {
 		objList, err := meta.ExtractList(&objects.clusterRoles)
 		if err != nil {
@@ -100,6 +108,7 @@ func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.O
 		if err != nil {
 			t.Fatalf("failed to set the new reduced list: %v", err)
 		}
+		objectType = "cluster role"
 	} else if clusterrolebinding, ok := object.(*rbacv1.ClusterRoleBinding); ok {
 		objList, err := meta.ExtractList(&objects.clusterRoleBindings)
 		if err != nil {
@@ -110,8 +119,10 @@ func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.O
 		if err != nil {
 			t.Fatalf("failed to set the new reduced list: %v", err)
 		}
+		objectType = "cluster role binding"
 	} else {
-		t.Fatalf("cannot remove unknown object type %s as test object", object.GetObjectKind().GroupVersionKind().String())
+		t.Fatalf("cannot remove unknown object %s type %s as test object", objectType, object.GetName())
 	}
+	t.Logf("removed test %s object %s from context", objectType, object.GetName())
 	return context.WithValue(ctx, testObjectsContextKey, objects)
 }

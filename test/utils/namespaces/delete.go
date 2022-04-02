@@ -31,6 +31,7 @@ func Delete(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace *c
 	if err != nil {
 		t.Fatalf("failed to delete namespace: %v", err)
 	}
+	t.Logf("deleted namespace %s", clonedNamespace.GetName())
 	return cleanup.RemoveTestObjectFromContext(ctx, t, clonedNamespace)
 }
 
@@ -38,9 +39,11 @@ func DeleteWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config, name
 	clonedNamespace := namespace.DeepCopyObject().(k8s.Object)
 	ctx = Delete(ctx, t, cfg, namespace)
 
+	t.Logf("waiting for namespace %s to delete", clonedNamespace.GetName())
 	err := wait.For(conditions.New(cfg.Client().Resources()).ResourceDeleted(clonedNamespace))
 	if err != nil {
 		t.Fatalf("failed to wait for namespace to delete: %v", err)
 	}
+	t.Logf("waiting for namespace %s to delete complete", clonedNamespace.GetName())
 	return ctx
 }

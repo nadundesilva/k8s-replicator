@@ -27,4 +27,5 @@ func Update(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace *c
 	if err != nil {
 		t.Fatalf("failed to update namespace: %v", err)
 	}
+	t.Logf("updated namespace %s with labels %s", namespace.GetName(), namespace.GetLabels())
 }

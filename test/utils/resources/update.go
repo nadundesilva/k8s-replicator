@@ -28,4 +28,5 @@ func UpdateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namesp
 	if err != nil {
 		t.Fatalf("failed to update object: %v", err)
 	}
+	t.Logf("updated namespace %s/%s with labels %s", namespace, clonedObj.GetName(), clonedObj.GetLabels())
 }

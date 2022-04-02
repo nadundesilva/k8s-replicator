@@ -28,4 +28,5 @@ func CreateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namesp
 	if err != nil {
 		t.Fatalf("failed to create object: %v", err)
 	}
+	t.Logf("created new object %s/%s with labels %s", namespace, obj.GetName(), obj.GetLabels())
 }

@@ -46,6 +46,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		t.Fatalf("failed to list namespaces: %v", err)
 	}
 
+	waitedResources := []string{}
 	listItems := []runtime.Object{}
 	for _, ns := range nsList.Items {
 		var ignored bool
@@ -69,12 +70,14 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
 		clonedObj.SetNamespace(ns.GetName())
 		listItems = append(listItems, clonedObj)
+		waitedResources = append(waitedResources, fmt.Sprintf("%s/%s", clonedObj.GetNamespace(), clonedObj.GetName()))
 	}
 	err = meta.SetList(objectList, listItems)
 	if err != nil {
 		t.Fatalf("failed to create list of objects to wait for: %v", err)
 	}
 
+	t.Logf("waiting for replicas to be created: %s", waitedResources)
 	err = wait.For(conditions.New(cfg.Client().Resources()).ResourcesMatch(
 		objectList.DeepCopyObject().(k8s.ObjectList),
 		func(object k8s.Object) bool {
@@ -144,6 +147,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	if err != nil {
 		t.Fatalf("failed to wait for replicated objects: %v", err)
 	}
+	t.Log("waiting for replicas to be created complete")
 }
 
 func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object,
@@ -171,9 +175,12 @@ func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 
 		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
 		clonedObj.SetNamespace(namespace.GetName())
+
+		t.Logf("waiting for object %s/%s to be deleted", clonedObj.GetNamespace(), clonedObj.GetName())
 		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj))
 		if err != nil {
 			t.Fatalf("failed to wait for replicated objects: %v", err)
 		}
 	}
+	t.Log("waiting for objects to be deleted complete")
 }

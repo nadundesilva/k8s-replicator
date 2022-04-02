@@ -74,7 +74,7 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 	if err != nil {
 		t.Fatalf("failed to resolve kustomize dir %s: %v", kustomizeDirName, err)
 	}
-	t.Logf("creating controller from kustomize dir: %s", kustomizeDir)
+	t.Logf("creating controller artifacts from kustomize dir: %s", kustomizeDir)
 
 	fileSys := filesys.MakeFsOnDisk()
 	if !fileSys.Exists(kustomizeDir) {
@@ -138,16 +138,20 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 			}
 			clusterrolebinding.Subjects = newSubjs
 			ctx = cleanup.AddTestObjectToContext(ctx, t, clusterrolebinding)
+		} else {
+			t.Fatal("unknown resource type found in controller kustomization files")
 		}
 		err = cfg.Client().Resources().Create(ctx, obj.(k8s.Object))
 		if err != nil {
 			t.Fatalf("failed to create controller resource of kind %s: %v", kind, err)
 		}
 	}
+	t.Logf("created controller in namespace %s", namespace)
 	if controllerDeployment == nil {
-		t.Fatalf("controller deployment not found in controller kustomize files")
+		t.Fatal("controller deployment not found in controller kustomize files")
 	}
 
+	t.Log("waiting for controller to startup")
 	err = wait.For(conditions.New(cfg.Client().Resources()).ResourceMatch(controllerDeployment, func(object k8s.Object) bool {
 		d := object.(*appsv1.Deployment)
 		return d.Status.AvailableReplicas > 0 && d.Status.ReadyReplicas > 0
@@ -155,5 +159,6 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 	if err != nil {
 		t.Fatalf("failed to wait for controller deployment to be ready: %v", err)
 	}
+	t.Log("waiting for controller to startup complete")
 	return ctx
 }

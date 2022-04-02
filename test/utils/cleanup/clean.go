@@ -26,34 +26,37 @@ import (
 func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 	ctxValue := ctx.Value(testObjectsContextKey)
 	if ctxValue != nil {
-		deleteObjs := func(object k8s.Object) {
+		deleteObjs := func(object k8s.Object, objectType string) {
 			err := cfg.Client().Resources().Delete(ctx, object.DeepCopyObject().(k8s.Object),
 				resources.WithDeletePropagation("Background"))
 			if err != nil {
 				t.Errorf("failed to delete test object %s: %v", object.GetName(), err)
 			}
+			t.Logf("deleted test %s object %s", objectType, object.GetName())
 		}
-		waitForDeleteObjs := func(objList k8s.ObjectList) {
+		waitForDeleteObjs := func(objList k8s.ObjectList, objectType string) {
 			clonedObjList := objList.DeepCopyObject().(k8s.ObjectList)
+			t.Logf("waiting for test %s objects to delete", objectType)
 			err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesDeleted(clonedObjList))
 			if err != nil {
 				t.Fatalf("failed to wait for objects to delete: %v", err)
 			}
+			t.Logf("waiting for test %s objects to delete complete", objectType)
 		}
 
 		objects := ctxValue.(*testObjects)
 		for _, obj := range objects.namespaces.Items {
-			deleteObjs(&obj)
+			deleteObjs(&obj, "namespace")
 		}
 		for _, obj := range objects.clusterRoles.Items {
-			deleteObjs(&obj)
+			deleteObjs(&obj, "cluster role")
 		}
 		for _, obj := range objects.clusterRoleBindings.Items {
-			deleteObjs(&obj)
+			deleteObjs(&obj, "cluster role binding")
 		}
-		waitForDeleteObjs(&objects.namespaces)
-		waitForDeleteObjs(&objects.clusterRoles)
-		waitForDeleteObjs(&objects.clusterRoleBindings)
+		waitForDeleteObjs(&objects.namespaces, "namespace")
+		waitForDeleteObjs(&objects.clusterRoles, "cluster role")
+		waitForDeleteObjs(&objects.clusterRoleBindings, "cluster role binding")
 		ctx = context.WithValue(ctx, testObjectsContextKey, nil)
 	}
 	return ctx

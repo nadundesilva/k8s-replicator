@@ -30,6 +30,7 @@ func DeleteObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namesp
 	if err != nil {
 		t.Fatalf("failed to delete object: %v", err)
 	}
+	t.Logf("deleted object %s/%s", namespace, clonedObj.GetName())
 }
 
 func DeleteObjectWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
@@ -37,8 +38,10 @@ func DeleteObjectWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config
 	clonedObj.SetNamespace(namespace)
 	DeleteObject(ctx, t, cfg, namespace, clonedObj)
 
+	t.Logf("waiting for object %s/%s to delete", namespace, clonedObj.GetName())
 	err := wait.For(conditions.New(cfg.Client().Resources(namespace)).ResourceDeleted(clonedObj))
 	if err != nil {
 		t.Fatalf("failed to wait for object to delete: %v", err)
 	}
+	t.Logf("waiting for object %s/%s to delete complete", namespace, clonedObj.GetName())
 }

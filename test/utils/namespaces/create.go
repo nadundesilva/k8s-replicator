@@ -46,6 +46,7 @@ func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, option
 	if err != nil {
 		t.Fatalf("failed to create namespace %s: %v", namespace.GetName(), err)
 	}
+	t.Logf("created new namespace %s with labels %s", namespace.GetName(), namespace.GetLabels())
 	return namespace, cleanup.AddTestObjectToContext(ctx, t, namespace)
 }
 
