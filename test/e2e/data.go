@@ -40,7 +40,7 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 			objectList: &corev1.SecretList{},
 			sourceObject: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: envconf.RandomName("source-secret", 32),
+					Name: envconf.RandomName("test-secret", 32),
 					Labels: map[string]string{
 						"e2e-tests.replicator.io/test-label-key": "test-label-value",
 					},

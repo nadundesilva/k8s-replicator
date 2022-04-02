@@ -198,7 +198,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 		}
 	} else if isReplica(object) {
 		logger = h.logger.With("replicaNamespace", object.GetNamespace())
-		if sourceNamespaceName, ok := object.GetAnnotations()[SourceNamespaceLabelKey]; ok {
+		if sourceNamespaceName, ok := object.GetLabels()[SourceNamespaceLabelKey]; ok {
 			logger = h.logger.With("sourceNamespace", sourceNamespaceName)
 
 			deletionRequired := false
@@ -224,7 +224,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 				}
 			}
 		} else {
-			logger.Errorw("replica does not contain label %s", SourceNamespaceLabelKey)
+			logger.Errorw("replica does not contain label", "label", SourceNamespaceLabelKey)
 		}
 	} else {
 		logger.Errorw("ignored object's event received by replicator", "namespace", object.GetNamespace())

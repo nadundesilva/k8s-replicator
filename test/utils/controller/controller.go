@@ -13,6 +13,7 @@
 package controller
 
 import (
+	"bufio"
 	"context"
 	"os"
 	"path/filepath"
@@ -24,6 +25,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -160,5 +163,47 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 		t.Fatalf("failed to wait for controller deployment to be ready: %v", err)
 	}
 	t.Log("waiting for controller to startup complete")
+
+	startStreamingLogs(ctx, t, cfg, controllerDeployment)
 	return ctx
+}
+
+func startStreamingLogs(ctx context.Context, t *testing.T, cfg *envconf.Config, deployment *appsv1.Deployment) {
+	k8sClient, err := kubernetes.NewForConfig(cfg.Client().RESTConfig())
+	if err != nil {
+		t.Fatalf("failed to create a client-go k8s client using e2e-framework rest config: %v", err)
+	}
+
+	labelSelector := labels.FormatLabels(deployment.Spec.Selector.MatchLabels)
+	podList, err := k8sClient.CoreV1().Pods(deployment.GetNamespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: labelSelector,
+	})
+	for _, pod := range podList.Items {
+		podName := pod.GetName()
+		req := k8sClient.CoreV1().Pods(deployment.GetNamespace()).GetLogs(pod.GetName(), &corev1.PodLogOptions{
+			Follow: true,
+		})
+		logReader, err := req.Stream(ctx)
+		if err != nil {
+			t.Fatalf("failed to stream logs from replicator: %v", err)
+		}
+
+		logScanner := bufio.NewScanner(logReader)
+		go func() {
+			defer func() {
+				err = logReader.Close()
+				if err != nil {
+					t.Errorf("failed to close logs stream: %v", err)
+				}
+			}()
+
+			for logScanner.Scan() {
+				t.Logf("[%s] %s", podName, logScanner.Text())
+			}
+			err = logScanner.Err()
+			if err != nil {
+				t.Errorf("error occurred while reading logs: %v", err)
+			}
+		}()
+	}
 }
