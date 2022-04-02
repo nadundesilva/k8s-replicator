@@ -39,7 +39,7 @@ func main() {
 	stopCh := signals.SetupSignalHandler()
 	conf, err := config.NewFromFile(configFilePath)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to create configuration: %v", err)
 	}
 
 	zapConf := zap.NewProductionConfig()
@@ -52,7 +52,7 @@ func main() {
 
 	zapLogger, err := zapConf.Build()
 	if err != nil {
-		log.Printf("failed to build logger config: %v", err)
+		log.Fatalf("failed to build logger config: %v", err)
 	}
 	defer func() {
 		_ = zapLogger.Sync()
@@ -68,7 +68,7 @@ func main() {
 		},
 	)
 	if err != nil {
-		logger.Errorw("failed to initialize resources filter", "error", err)
+		logger.Fatalw("failed to initialize resources filter", "error", err)
 	}
 
 	namespaceSelectorReq, err := labels.NewRequirement(
@@ -79,14 +79,17 @@ func main() {
 		},
 	)
 	if err != nil {
-		logger.Errorw("failed to initialize namespace filter", "error", err)
+		logger.Fatalw("failed to initialize namespace filter", "error", err)
 	}
 
-	k8sClient := kubernetes.NewClient(
+	k8sClient, err := kubernetes.NewClient(
 		[]labels.Requirement{*resourceSelectorReq},
 		[]labels.Requirement{*namespaceSelectorReq},
 		logger,
 	)
+	if err != nil {
+		logger.Fatalw("failed to initialize kuberentes client", "error", err)
+	}
 
 	resourceReplicators := []resources.ResourceReplicator{}
 	if len(conf.Resources) == 0 {
@@ -115,11 +118,11 @@ func main() {
 
 	err = k8sClient.Start(stopCh)
 	if err != nil {
-		panic(err)
+		logger.Fatalw("failed to start k8s client", "error", err)
 	}
 	err = replicator.Start(stopCh)
 	if err != nil {
-		panic(err)
+		logger.Fatalw("failed to start the replicator", "error", err)
 	}
 }
 

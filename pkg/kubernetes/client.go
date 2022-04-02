@@ -33,15 +33,15 @@ type client struct {
 
 var _ ClientInterface = (*client)(nil)
 
-func NewClient(resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) *client {
+func NewClient(resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) (*client, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		return nil, fmt.Errorf("failed to detect in cluster configuration: %w", err)
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		return nil, fmt.Errorf("failed to initialize underlying kubernetes client: %w", err)
 	}
 
 	withNewRequirements := func(newReqs []labels.Requirement) informers.SharedInformerOption {
@@ -66,7 +66,7 @@ func NewClient(resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement,
 		clientset:                clientset,
 		namespaceInformerFactory: namespaceInformerFactory,
 		resourceInformerFactory:  resourceInformerFactory,
-	}
+	}, nil
 }
 
 func (c *client) Start(stopCh <-chan struct{}) error {
