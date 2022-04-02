@@ -15,6 +15,7 @@ package replicator
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
@@ -23,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 )
 
 const (
@@ -32,6 +34,33 @@ const (
 	ObjectTypeLabelValueSource  = "source"
 	ObjectTypeLabelValueReplica = "replica"
 )
+
+var (
+	sourceObjectsLabelSelector labels.Selector
+	replicasLabelSelector      labels.Selector
+)
+
+func init() {
+	sourceSelectorRequirement, err := labels.NewRequirement(
+		ObjectTypeLabelKey,
+		selection.Equals,
+		[]string{ObjectTypeLabelValueSource},
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize source objects selector: %v", err)
+	}
+	sourceObjectsLabelSelector = labels.NewSelector().Add(*sourceSelectorRequirement)
+
+	replicaSelectorRequirement, err := labels.NewRequirement(
+		ObjectTypeLabelKey,
+		selection.Equals,
+		[]string{ObjectTypeLabelValueReplica},
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize replicas selector: %v", err)
+	}
+	replicasLabelSelector = labels.NewSelector().Add(*replicaSelectorRequirement)
+}
 
 type ResourceEventHandler struct {
 	replicator resources.ResourceReplicator

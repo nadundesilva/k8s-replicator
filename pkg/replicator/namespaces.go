@@ -19,8 +19,6 @@ import (
 
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 )
 
 const (
@@ -39,18 +37,9 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 	namespace := obj.(*corev1.Namespace)
 	logger := r.logger.With("targetNamespace", namespace.GetName())
 
-	sourceSelectorRequirement, err := labels.NewRequirement(
-		ObjectTypeLabelKey,
-		selection.Equals,
-		[]string{ObjectTypeLabelValueSource},
-	)
-	if err != nil {
-		logger.Errorw("failed to initialize source objects filter", "error", err)
-	}
-
 	for _, replicator := range r.resourceReplicators {
 		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
-		objects, err := replicator.List("", labels.NewSelector().Add(*sourceSelectorRequirement))
+		objects, err := replicator.List("", sourceObjectsLabelSelector)
 		if err != nil {
 			logger.Errorw("failed to list the resources")
 		}
@@ -92,18 +81,9 @@ func (r *controller) handleDeleteNamespace(obj interface{}) {
 	}
 	// Namespaces which are removed only due to being marked as ignored needs to be cleaned up
 
-	replicaSelectorRequirement, err := labels.NewRequirement(
-		ObjectTypeLabelKey,
-		selection.Equals,
-		[]string{ObjectTypeLabelValueReplica},
-	)
-	if err != nil {
-		logger.Errorw("failed to initialize replicas filter", "error", err)
-	}
-
 	for _, replicator := range r.resourceReplicators {
 		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
-		objects, err := replicator.List(deletedNamespace.GetName(), labels.NewSelector().Add(*replicaSelectorRequirement))
+		objects, err := replicator.List(deletedNamespace.GetName(), replicasLabelSelector)
 		if err != nil {
 			logger.Errorw("failed to list the resources")
 		}
