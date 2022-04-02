@@ -24,7 +24,12 @@ import (
 )
 
 func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-	ctxValue := ctx.Value(testObjectsContextKey)
+	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey)
+	return cleanObjects(ctx, t, cfg, testObjectsContextKey)
+}
+
+func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey string) context.Context {
+	ctxValue := ctx.Value(contextKey)
 	if ctxValue != nil {
 		deleteObjs := func(object k8s.Object, objectType string) {
 			err := cfg.Client().Resources().Delete(ctx, object.DeepCopyObject().(k8s.Object),
@@ -57,7 +62,7 @@ func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) co
 		waitForDeleteObjs(&objects.namespaces, "namespace")
 		waitForDeleteObjs(&objects.clusterRoles, "cluster role")
 		waitForDeleteObjs(&objects.clusterRoleBindings, "cluster role binding")
-		ctx = context.WithValue(ctx, testObjectsContextKey, nil)
+		ctx = context.WithValue(ctx, contextKey, nil)
 	}
 	return ctx
 }

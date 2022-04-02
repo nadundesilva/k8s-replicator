@@ -128,9 +128,9 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 					ns.GetLabels()[k] = v
 				}
 			}
-			ctx = cleanup.AddTestObjectToContext(ctx, t, ns)
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, ns)
 		} else if clusterrole, ok := obj.(*rbacv1.ClusterRole); ok {
-			ctx = cleanup.AddTestObjectToContext(ctx, t, clusterrole)
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, clusterrole)
 		} else if clusterrolebinding, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
 			newSubjs := []rbacv1.Subject{}
 			for _, subject := range clusterrolebinding.Subjects {
@@ -140,7 +140,7 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 				newSubjs = append(newSubjs, subject)
 			}
 			clusterrolebinding.Subjects = newSubjs
-			ctx = cleanup.AddTestObjectToContext(ctx, t, clusterrolebinding)
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, clusterrolebinding)
 		} else {
 			t.Fatal("unknown resource type found in controller kustomization files")
 		}
@@ -178,6 +178,9 @@ func startStreamingLogs(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 	podList, err := k8sClient.CoreV1().Pods(deployment.GetNamespace()).List(ctx, metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
+	if err != nil {
+		t.Fatalf("failed to list pods for deployment %s/%s: %v", deployment.GetNamespace(), deployment.GetName(), err)
+	}
 	for _, pod := range podList.Items {
 		podName := pod.GetName()
 		req := k8sClient.CoreV1().Pods(deployment.GetNamespace()).GetLogs(pod.GetName(), &corev1.PodLogOptions{

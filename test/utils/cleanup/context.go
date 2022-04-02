@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	testObjectsContextKey = "__test_objects__"
+	testObjectsContextKey           = "__test_objects__"
+	testControllerObjectsContextKey = "__test_controller_objects__"
 )
 
 type testObjects struct {
@@ -35,7 +36,15 @@ type testObjects struct {
 }
 
 func AddTestObjectToContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
-	ctxValue := ctx.Value(testObjectsContextKey)
+	return addObjectToContext(ctx, t, object, testObjectsContextKey, "test")
+}
+
+func AddControllerObjectToContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
+	return addObjectToContext(ctx, t, object, testControllerObjectsContextKey, "controller")
+}
+
+func addObjectToContext(ctx context.Context, t *testing.T, object k8s.Object, contextKey, usage string) context.Context {
+	ctxValue := ctx.Value(contextKey)
 	var objects *testObjects
 	if ctxValue == nil {
 		objects = &testObjects{}
@@ -54,14 +63,22 @@ func AddTestObjectToContext(ctx context.Context, t *testing.T, object k8s.Object
 		objects.clusterRoleBindings.Items = append(objects.clusterRoleBindings.Items, *clusterrolebinding)
 		objectType = "cluster role binding"
 	} else {
-		t.Fatalf("cannot add unknown object type %s as test object", object.GetObjectKind().GroupVersionKind().String())
+		t.Fatalf("cannot add unknown object type %s as %s object", object.GetObjectKind().GroupVersionKind().String(), usage)
 	}
-	t.Logf("added test %s object %s to context", objectType, object.GetName())
-	return context.WithValue(ctx, testObjectsContextKey, objects)
+	t.Logf("added %s %s object %s to context", usage, objectType, object.GetName())
+	return context.WithValue(ctx, contextKey, objects)
 }
 
 func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
-	ctxValue := ctx.Value(testObjectsContextKey)
+	return removeObjectFromContext(ctx, t, object, testObjectsContextKey, "test")
+}
+
+func RemoveControllerObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
+	return removeObjectFromContext(ctx, t, object, testControllerObjectsContextKey, "controller")
+}
+
+func removeObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object, contextKey, usage string) context.Context {
+	ctxValue := ctx.Value(contextKey)
 	var objects *testObjects
 	if ctxValue == nil {
 		objects = &testObjects{}
@@ -121,8 +138,8 @@ func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.O
 		}
 		objectType = "cluster role binding"
 	} else {
-		t.Fatalf("cannot remove unknown object %s type %s as test object", objectType, object.GetName())
+		t.Fatalf("cannot remove unknown object type %s as %s object", object.GetObjectKind().GroupVersionKind().String(), usage)
 	}
-	t.Logf("removed test %s object %s from context", objectType, object.GetName())
-	return context.WithValue(ctx, testObjectsContextKey, objects)
+	t.Logf("removed %s %s object %s from context", usage, objectType, object.GetName())
+	return context.WithValue(ctx, contextKey, objects)
 }

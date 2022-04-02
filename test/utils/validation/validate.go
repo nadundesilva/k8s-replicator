@@ -142,7 +142,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 			}
 			return true
 		}),
-		wait.WithTimeout(time.Minute),
+		wait.WithTimeout(time.Minute*2),
 	)
 	if err != nil {
 		t.Fatalf("failed to wait for replicated objects: %v", err)
@@ -177,9 +177,10 @@ func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 		clonedObj.SetNamespace(namespace.GetName())
 
 		t.Logf("waiting for object %s/%s to be deleted", clonedObj.GetNamespace(), clonedObj.GetName())
-		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj))
+		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj),
+			wait.WithTimeout(time.Minute*2))
 		if err != nil {
-			t.Fatalf("failed to wait for replicated objects: %v", err)
+			t.Fatalf("failed to wait for replicated objects deletion: %v", err)
 		}
 	}
 	t.Log("waiting for objects to be deleted complete")
