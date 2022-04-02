@@ -74,6 +74,7 @@ jobs:
               run: make test.e2e
               env:
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  DISABLE_IMAGE_BUILD: true
             - name: Build & Push Docker Image
               uses: docker/build-push-action@v2
               with:
