@@ -1,9 +1,13 @@
 # Kubernetes Replicator
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Main Branch Build](https://github.com/nadundesilva/k8s-replicator/actions/workflows/build-branch.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/build-branch.yaml)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Replicator for Kubernetes resources across namespaces. This controller was written keeping extensibility in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
+[![Release](https://img.shields.io/github/release/nadundesilva/k8s-replicator.svg?style=flat-square)](https://github.com/nadundesilva/k8s-replicator/releases/latest)
+[![Docker Image](https://img.shields.io/docker/image-size/nadunrds/k8s-replicator/latest?style=flat-square)](https://hub.docker.com/r/nadunrds/k8s-replicator)
+[![Docker Pulls](https://img.shields.io/docker/pulls/nadunrds/k8s-replicator?style=flat-square)](https://hub.docker.com/r/nadunrds/k8s-replicator)
+
+Replicator supports copying kubernetes resources across namespaces. This controller was written keeping extensibility and performance in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
 
 * Secrets
 
