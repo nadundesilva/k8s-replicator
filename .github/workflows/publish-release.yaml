@@ -73,6 +73,7 @@ jobs:
             - name: Run E2E Tests
               run: make test.e2e
               env:
+                  TEST_FLAGS: "-args --labels \"resource=secret\""
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
                   DISABLE_IMAGE_BUILD: true
             - name: Build & Push Docker Image

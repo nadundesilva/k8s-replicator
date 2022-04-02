@@ -28,9 +28,13 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	fmt.Printf("Running E2E tests on controller image: %s\n", controller.GetImage())
+	fmt.Printf("running E2E tests on controller image: %s\n", controller.GetImage())
 
-	testenv = env.New()
+	cfg, err := envconf.NewFromFlags()
+	if err != nil {
+		fmt.Printf("failed to generate e2e test config from flags: %v", err)
+	}
+	testenv = env.NewWithConfig(cfg)
 	kindClusterName := envconf.RandomName("replicator-e2e-tests-cluster", 32)
 
 	testenv.Setup(
