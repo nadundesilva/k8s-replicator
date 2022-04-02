@@ -25,6 +25,14 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+const (
+	ObjectTypeLabelKey      = "replicator.nadundesilva.github.io/object-type"
+	SourceNamespaceLabelKey = "replicator.nadundesilva.github.io/source-namespace"
+
+	ObjectTypeLabelValueSource  = "source"
+	ObjectTypeLabelValueReplica = "replica"
+)
+
 type ResourceEventHandler struct {
 	replicator resources.ResourceReplicator
 	k8sClient  kubernetes.ClientInterface
@@ -79,28 +87,28 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 			}
 			logger.Infow("completed deleting object")
 		}
-	} else if isReplicationClone(deletedObj) {
-		if sourceNamespaceName, ok := deletedObj.GetLabels()[ReplicationSourceNamespaceLabelKey]; ok {
+	} else if isReplica(deletedObj) {
+		if sourceNamespaceName, ok := deletedObj.GetLabels()[SourceNamespaceLabelKey]; ok {
 			_, err := h.replicator.Get(sourceNamespaceName, deletedObj.GetName())
 			if err != nil {
 				if !errors.IsNotFound(err) {
 					h.logger.Errorw("failed to get source secret", "error", err, "sourceNamespace", sourceNamespaceName)
 				}
 			} else {
-				logger := h.logger.With("cloneNamespace", deletedObj.GetNamespace(), "name", deletedObj.GetName())
+				logger := h.logger.With("replicaNamespace", deletedObj.GetNamespace(), "name", deletedObj.GetName())
 				namespace, err := h.k8sClient.GetNamespace(deletedObj.GetNamespace())
 				if err != nil {
 					if !errors.IsNotFound(err) {
-						logger.Errorw("failed to recreate deleted clone: failed to check namespace state", "error", err)
+						logger.Errorw("failed to recreate deleted replica: failed to check namespace state", "error", err)
 					}
 				} else if namespace != nil && isReplicationTargetNamespace(logger, namespace) && namespace.GetDeletionTimestamp() == nil {
 					clonedObj := cloneObject(h.replicator, deletedObj)
-					clonedObj.GetLabels()[ReplicationSourceNamespaceLabelKey] = sourceNamespaceName
+					clonedObj.GetLabels()[SourceNamespaceLabelKey] = sourceNamespaceName
 					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
 					if err != nil {
-						logger.Errorw("failed to recreate deleted clone", "error", err)
+						logger.Errorw("failed to recreate deleted replica", "error", err)
 					} else {
-						logger.Infow("recreated deleted clone")
+						logger.Infow("recreated deleted replica")
 					}
 				}
 			}
@@ -132,9 +140,9 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 				}
 			}
 		}
-	} else if isReplicationClone(object) {
+	} else if isReplica(object) {
 		logger := h.logger.With("targetNamespace", object.GetNamespace(), "name", object.GetName())
-		if val, ok := object.GetAnnotations()[ReplicationSourceNamespaceLabelKey]; ok {
+		if val, ok := object.GetAnnotations()[SourceNamespaceLabelKey]; ok {
 			_, err := h.k8sClient.GetNamespace(val)
 			if err != nil {
 				if errors.IsNotFound(err) {
@@ -163,8 +171,8 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 	for k, v := range source.GetLabels() {
 		newLabels[k] = v
 	}
-	newLabels[ReplicationObjectTypeLabelKey] = ReplicationObjectTypeLabelValueClone
-	newLabels[ReplicationSourceNamespaceLabelKey] = source.GetNamespace()
+	newLabels[ObjectTypeLabelKey] = ObjectTypeLabelValueReplica
+	newLabels[SourceNamespaceLabelKey] = source.GetNamespace()
 	clonedObj.SetLabels(newLabels)
 
 	newAnnotations := map[string]string{}
@@ -198,11 +206,11 @@ func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, na
 }
 
 func isReplicationSource(obj metav1.Object) bool {
-	val, ok := obj.GetLabels()[ReplicationObjectTypeLabelKey]
-	return ok && val == ReplicationObjectTypeLabelValueSource
+	val, ok := obj.GetLabels()[ObjectTypeLabelKey]
+	return ok && val == ObjectTypeLabelValueSource
 }
 
-func isReplicationClone(obj metav1.Object) bool {
-	val, ok := obj.GetLabels()[ReplicationObjectTypeLabelKey]
-	return ok && val == ReplicationObjectTypeLabelValueClone
+func isReplica(obj metav1.Object) bool {
+	val, ok := obj.GetLabels()[ObjectTypeLabelKey]
+	return ok && val == ObjectTypeLabelValueReplica
 }

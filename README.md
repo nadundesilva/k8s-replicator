@@ -48,22 +48,22 @@ The following namespaces are ignored by default.
 * Namespaces with the name starting with `kube-` prefix
 * Namespaces with the label
   ```properties
-  replicator.nadundesilva.github.io/target-namespace=ignored
+  replicator.nadundesilva.github.io/namespace-type=ignored
   ```
 
 If you want to override this behavior and specifically replicate to a namespace, add the following label
 
 ```properties
-replicator.nadundesilva.github.io/target-namespace=replicated
+replicator.nadundesilva.github.io/namespace-type=replication-target
 ```
 
 ### Additional labels used by the controller
 
 The folloing labels are used by the controller to track the replication of resources.
 
-* The following label with the value `clone` is used to mark the replicated objects.
+* The following label with the value `replica` is used to mark the replicated objects.
   ```properties
-  replicator.nadundesilva.github.io/object-type=clone
+  replicator.nadundesilva.github.io/object-type=replica
   ```
 * The following label is used to mark a replicated resource's source namespace.
   ```properties

@@ -12,3 +12,7 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/v0.1.0#h
   - Updating resources
   - Removal of type label from resources
   - Namespace label changes
+- Update replicator labels
+  - Change label value `replicator.nadundesilva.github.io/object-type=clone` to `replicator.nadundesilva.github.io/object-type=replica`
+  - Change label key `replicator.nadundesilva.github.io/target-namespace` to `replicator.nadundesilva.github.io/namespace-type`
+  - Change label value `replicator.nadundesilva.github.io/target-namespace=replicated` to `replicator.nadundesilva.github.io/namespace-type=replication-target`

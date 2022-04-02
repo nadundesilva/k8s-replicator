@@ -60,11 +60,11 @@ func main() {
 	logger := zapLogger.Sugar()
 
 	resourceSelectorReq, err := labels.NewRequirement(
-		replicator.ReplicationObjectTypeLabelKey,
+		replicator.ObjectTypeLabelKey,
 		selection.In,
 		[]string{
-			replicator.ReplicationObjectTypeLabelValueSource,
-			replicator.ReplicationObjectTypeLabelValueClone,
+			replicator.ObjectTypeLabelValueSource,
+			replicator.ObjectTypeLabelValueReplica,
 		},
 	)
 	if err != nil {
@@ -72,10 +72,10 @@ func main() {
 	}
 
 	namespaceSelectorReq, err := labels.NewRequirement(
-		replicator.ReplicationTargetNamespaceTypeLabelKey,
+		replicator.NamespaceTypeLabelKey,
 		selection.NotEquals,
 		[]string{
-			replicator.ReplicationTargetNamespaceTypeLabelValueIgnored,
+			replicator.NamespaceTypeLabelValueIgnored,
 		},
 	)
 	if err != nil {

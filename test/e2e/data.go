@@ -82,7 +82,7 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 
 		updateSourceObjectLabels := func(sourceObject k8s.Object) {
 			labels := sourceObject.GetLabels()
-			labels[replicator.ReplicationObjectTypeLabelKey] = replicator.ReplicationObjectTypeLabelValueSource
+			labels[replicator.ObjectTypeLabelKey] = replicator.ObjectTypeLabelValueSource
 		}
 		updateSourceObjectLabels(resource.sourceObject)
 		updateSourceObjectLabels(resource.sourceObjectUpdate)

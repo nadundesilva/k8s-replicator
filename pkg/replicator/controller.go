@@ -22,14 +22,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const (
-	ReplicationObjectTypeLabelKey      = "replicator.nadundesilva.github.io/object-type"
-	ReplicationSourceNamespaceLabelKey = "replicator.nadundesilva.github.io/source-namespace"
-
-	ReplicationObjectTypeLabelValueSource = "source"
-	ReplicationObjectTypeLabelValueClone  = "clone"
-)
-
 type controller struct {
 	resourceReplicators []resources.ResourceReplicator
 	k8sClient           kubernetes.ClientInterface

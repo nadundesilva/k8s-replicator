@@ -24,10 +24,10 @@ import (
 )
 
 const (
-	ReplicationTargetNamespaceTypeLabelKey = "replicator.nadundesilva.github.io/target-namespace"
+	NamespaceTypeLabelKey = "replicator.nadundesilva.github.io/namespace-type"
 
-	ReplicationTargetNamespaceTypeLabelValueReplicated = "replicated"
-	ReplicationTargetNamespaceTypeLabelValueIgnored    = "ignored"
+	NamespaceTypeLabelValueReplicated = "replication-target"
+	NamespaceTypeLabelValueIgnored    = "ignored"
 )
 
 var (
@@ -40,9 +40,9 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 	logger := r.logger.With("targetNamespace", namespace.GetName())
 
 	sourceSelectorRequirement, err := labels.NewRequirement(
-		ReplicationObjectTypeLabelKey,
+		ObjectTypeLabelKey,
 		selection.Equals,
-		[]string{ReplicationObjectTypeLabelValueSource},
+		[]string{ObjectTypeLabelValueSource},
 	)
 	if err != nil {
 		logger.Errorw("failed to initialize source objects filter", "error", err)
@@ -78,7 +78,7 @@ func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
 	if !isReplicationTargetNamespace(logger, prevNamespace) && isReplicationTargetNamespace(logger, newNamespace) {
 		r.handleNewNamespace(newObj)
 	} else if isReplicationTargetNamespace(logger, prevNamespace) && !isReplicationTargetNamespace(logger, newNamespace) {
-		
+		r.handleDeleteNamespace(newObj)
 	}
 }
 
@@ -87,18 +87,18 @@ func (r *controller) handleDeleteNamespace(obj interface{}) {
 	deletedNamespace := obj.(*corev1.Namespace)
 	logger := r.logger.With("targetNamespace", deletedNamespace.GetName())
 
-	clonesSelectorRequirement, err := labels.NewRequirement(
-		ReplicationObjectTypeLabelKey,
+	replicaSelectorRequirement, err := labels.NewRequirement(
+		ObjectTypeLabelKey,
 		selection.Equals,
-		[]string{ReplicationObjectTypeLabelValueClone},
+		[]string{ObjectTypeLabelValueReplica},
 	)
 	if err != nil {
-		logger.Errorw("failed to initialize cloned objects filter", "error", err)
+		logger.Errorw("failed to initialize replicas filter", "error", err)
 	}
 
 	for _, replicator := range r.resourceReplicators {
 		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "resource", replicator.ResourceName())
-		objects, err := replicator.List(deletedNamespace.GetName(), labels.NewSelector().Add(*clonesSelectorRequirement))
+		objects, err := replicator.List(deletedNamespace.GetName(), labels.NewSelector().Add(*replicaSelectorRequirement))
 		if err != nil {
 			logger.Errorw("failed to list the resources")
 		}
@@ -116,13 +116,13 @@ func (r *controller) handleDeleteNamespace(obj interface{}) {
 }
 
 func isReplicationTargetNamespace(logger *zap.SugaredLogger, namespace *corev1.Namespace) bool {
-	val, ok := namespace.GetLabels()[ReplicationTargetNamespaceTypeLabelKey]
+	val, ok := namespace.GetLabels()[NamespaceTypeLabelKey]
 	if ok {
-		if val == ReplicationTargetNamespaceTypeLabelValueReplicated {
+		if val == NamespaceTypeLabelValueReplicated {
 			return true
 		} else {
 			logger.Warnw("ignored unrecorgnized label in target namespace",
-				"labelKey", ReplicationTargetNamespaceTypeLabelKey, "labelValue", val)
+				"labelKey", NamespaceTypeLabelKey, "labelValue", val)
 		}
 	}
 	return !strings.HasPrefix(namespace.GetName(), "kube-") && namespace.GetName() != controllerNamespace

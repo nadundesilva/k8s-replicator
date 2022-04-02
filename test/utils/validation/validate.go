@@ -80,16 +80,16 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		func(object k8s.Object) bool {
 			matchMap := func(sourceMap map[string]string, targetMap map[string]string) error {
 				for k, v := range sourceMap {
-					if k == replicator.ReplicationObjectTypeLabelKey {
+					if k == replicator.ObjectTypeLabelKey {
 						continue
 					}
 					if value, ok := targetMap[k]; ok {
 						if value != v {
-							return fmt.Errorf("source object %s/%s value %s for key %s does not exist in cloned object",
+							return fmt.Errorf("source object %s/%s value %s for key %s does not exist in replica",
 								namespaces.GetSource(ctx).GetName(), sourceObject.GetName(), v, k)
 						}
 					} else {
-						return fmt.Errorf("source object %s/%s key %s does not exist in cloned object",
+						return fmt.Errorf("source object %s/%s key %s does not exist in replica",
 							namespaces.GetSource(ctx).GetName(), sourceObject.GetName(), k)
 					}
 				}
@@ -104,34 +104,34 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 				t.Errorf("object %s/%s annotations are not matching %v", object.GetNamespace(), object.GetName(), err)
 			}
 
-			objType, objTypeOk := object.GetLabels()[replicator.ReplicationObjectTypeLabelKey]
+			objType, objTypeOk := object.GetLabels()[replicator.ObjectTypeLabelKey]
 			if !objTypeOk {
 				t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
-					replicator.ReplicationObjectTypeLabelKey)
+					replicator.ObjectTypeLabelKey)
 			}
 			if namespaces.GetSource(ctx).GetName() == object.GetNamespace() {
-				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueSource {
+				if objTypeOk && objType != replicator.ObjectTypeLabelValueSource {
 					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
-						object.GetNamespace(), object.GetName(), replicator.ReplicationObjectTypeLabelKey,
-						replicator.ReplicationObjectTypeLabelValueSource, objType)
+						object.GetNamespace(), object.GetName(), replicator.ObjectTypeLabelKey,
+						replicator.ObjectTypeLabelValueSource, objType)
 				}
 			} else {
-				if objTypeOk && objType != replicator.ReplicationObjectTypeLabelValueClone {
+				if objTypeOk && objType != replicator.ObjectTypeLabelValueReplica {
 					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
-						object.GetNamespace(), object.GetName(), replicator.ReplicationObjectTypeLabelKey,
-						replicator.ReplicationObjectTypeLabelValueClone, objType)
+						object.GetNamespace(), object.GetName(), replicator.ObjectTypeLabelKey,
+						replicator.ObjectTypeLabelValueReplica, objType)
 				}
 
-				sourceNs, sourceNsOk := object.GetLabels()[replicator.ReplicationSourceNamespaceLabelKey]
+				sourceNs, sourceNsOk := object.GetLabels()[replicator.SourceNamespaceLabelKey]
 				if sourceNsOk {
 					if sourceNs != namespaces.GetSource(ctx).GetName() {
 						t.Errorf("object %s/%s label %s does not contain the source namespace; want %s, got %s",
-							object.GetNamespace(), object.GetName(), replicator.ReplicationSourceNamespaceLabelKey,
+							object.GetNamespace(), object.GetName(), replicator.SourceNamespaceLabelKey,
 							namespaces.GetSource(ctx).GetName(), sourceNs)
 					}
 				} else {
 					t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
-						replicator.ReplicationSourceNamespaceLabelKey)
+						replicator.SourceNamespaceLabelKey)
 				}
 			}
 			if opts.objectMatcher != nil {

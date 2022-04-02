@@ -162,7 +162,7 @@ func TestResourcesUpdation(t *testing.T) {
 			return ctx
 		}
 
-		testFeatures = append(testFeatures, features.New("controller updates clones when source object is updated").
+		testFeatures = append(testFeatures, features.New("controller updates replicas when source object is updated").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -176,10 +176,10 @@ func TestResourcesUpdation(t *testing.T) {
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("updated clone objects", assessResourcesReplication).
+			Assess("updated replicas", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller removes clones when source object source type label is removed").
+		testFeatures = append(testFeatures, features.New("controller removes replicas when source object source type label is removed").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -192,19 +192,19 @@ func TestResourcesUpdation(t *testing.T) {
 
 				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
-				delete(sourceObjectLabels, replicator.ReplicationObjectTypeLabelKey)
+				delete(sourceObjectLabels, replicator.ObjectTypeLabelKey)
 				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), updatedObject)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			Assess("deleted replicas", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject,
 					validation.WithDeletionIgnoredNamespaces(namespaces.GetSource(ctx).GetName()))
 				return ctx
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller removes clones when source object type is set to different value").
+		testFeatures = append(testFeatures, features.New("controller removes replicas when source object type is set to different value").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -217,12 +217,12 @@ func TestResourcesUpdation(t *testing.T) {
 
 				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
-				sourceObjectLabels[replicator.ReplicationObjectTypeLabelKey] = "ignored"
+				sourceObjectLabels[replicator.ObjectTypeLabelKey] = "ignored"
 				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), updatedObject)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			Assess("deleted replicas", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject,
 					validation.WithDeletionIgnoredNamespaces(namespaces.GetSource(ctx).GetName()))
 				return ctx
@@ -245,7 +245,7 @@ func TestResourcesDeletion(t *testing.T) {
 			return ctx
 		}
 
-		testFeatures = append(testFeatures, features.New("controller deletes all clones when source object is deleted").
+		testFeatures = append(testFeatures, features.New("controller deletes all replicas when source object is deleted").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -259,13 +259,13 @@ func TestResourcesDeletion(t *testing.T) {
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			Assess("deleted replicas", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject)
 				return ctx
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller deletes all clones when namespace with source object is deleted").
+		testFeatures = append(testFeatures, features.New("controller deletes all replicas when namespace with source object is deleted").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -279,13 +279,13 @@ func TestResourcesDeletion(t *testing.T) {
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("deleted clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			Assess("deleted replicas", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateResourceDeletion(ctx, t, cfg, resource.sourceObject)
 				return ctx
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller recreated deleted clones").
+		testFeatures = append(testFeatures, features.New("controller recreated deleted replicas").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -300,14 +300,14 @@ func TestResourcesDeletion(t *testing.T) {
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("recreated clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			Assess("recreated replicas", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
 				return ctx
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller allows namespace with clone to be deleted").
+		testFeatures = append(testFeatures, features.New("controller allows namespace with replica to be deleted").
 			WithLabel("resource", resource.name).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
@@ -322,7 +322,7 @@ func TestResourcesDeletion(t *testing.T) {
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("remaining clones", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+			Assess("remaining replicas", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
 				return ctx
