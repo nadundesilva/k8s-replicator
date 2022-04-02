@@ -141,6 +141,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 				} else if isManagedNamespace(logger, namespace) {
 					clonedObj := cloneObject(h.replicator, deletedObj)
 					clonedObj.GetLabels()[SourceNamespaceLabelKey] = sourceNamespaceName
+
 					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
 					if err != nil {
 						logger.Errorw("failed to recreate deleted replica", "error", err)
@@ -150,7 +151,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 				}
 			}
 		} else {
-			logger.Errorw("deleted replica does not contain label %s", SourceNamespaceLabelKey)
+			logger.Errorw("deleted replica does not contain source namespace label", "label", SourceNamespaceLabelKey)
 		}
 	} else {
 		logger.Errorw("ignored object's event received by replicator")
@@ -178,8 +179,9 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 				return fmt.Errorf("failed to list namespaces: %w", err)
 			} else {
 				clonedObj := cloneObject(h.replicator, object)
+
 				for _, namespace := range namespaces {
-					logger := logger.With("targetNamespace", namespace.GetName())
+					logger := logger.With("replicaNamespace", namespace.GetName())
 					replicationAttempted, err := createReplica(ctx, logger, object.GetNamespace(), namespace, clonedObj,
 						h.replicator)
 					if replicationAttempted {
@@ -195,7 +197,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 			logger.Warnw("object marked as a replication source in an ignored namespace")
 		}
 	} else if isReplica(object) {
-		logger = h.logger.With("targetNamespace", object.GetNamespace())
+		logger = h.logger.With("replicaNamespace", object.GetNamespace())
 		if sourceNamespaceName, ok := object.GetAnnotations()[SourceNamespaceLabelKey]; ok {
 			logger = h.logger.With("sourceNamespace", sourceNamespaceName)
 
@@ -252,11 +254,11 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 }
 
 func createReplica(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
-	targetNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
-	if sourceNamespace == targetNamespace.GetName() || !isManagedNamespace(logger, targetNamespace) {
+	replicaNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
+	if sourceNamespace == replicaNamespace.GetName() || !isManagedNamespace(logger, replicaNamespace) {
 		return false, nil
 	}
-	return true, replicator.Apply(ctx, targetNamespace.GetName(), obj)
+	return true, replicator.Apply(ctx, replicaNamespace.GetName(), obj)
 }
 
 func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, name string,

@@ -35,10 +35,15 @@ var (
 func (r *controller) handleNewNamespace(obj interface{}) {
 	ctx := context.Background()
 	namespace := obj.(*corev1.Namespace)
-	logger := r.logger.With("targetNamespace", namespace.GetName())
+	logger := r.logger.With("replicaNamespace", namespace.GetName())
+
+	if !isManagedNamespace(logger, namespace) {
+		return
+	}
 
 	for _, replicator := range r.resourceReplicators {
 		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
+
 		objects, err := replicator.List("", sourceObjectsLabelSelector)
 		if err != nil {
 			logger.Errorw("failed to list the resources")
@@ -62,8 +67,8 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
 	prevNamespace := prevObj.(*corev1.Namespace)
 	newNamespace := newObj.(*corev1.Namespace)
-	logger := r.logger.With("targetNamespace", newNamespace.GetName())
 
+	logger := r.logger.With("namespace", newNamespace.GetName())
 	if !isManagedNamespace(logger, prevNamespace) && isManagedNamespace(logger, newNamespace) {
 		r.handleNewNamespace(newObj)
 	} else if isManagedNamespace(logger, prevNamespace) && !isManagedNamespace(logger, newNamespace) {
@@ -74,15 +79,16 @@ func (r *controller) handleUpdateNamespace(prevObj, newObj interface{}) {
 func (r *controller) handleDeleteNamespace(obj interface{}) {
 	ctx := context.Background()
 	deletedNamespace := obj.(*corev1.Namespace)
-	logger := r.logger.With("targetNamespace", deletedNamespace.GetName())
 
 	if deletedNamespace.GetDeletionTimestamp() != nil {
 		return
 	}
 	// Namespaces which are removed only due to being marked as ignored needs to be cleaned up
 
+	logger := r.logger.With("replicaNamespace", deletedNamespace.GetName())
 	for _, replicator := range r.resourceReplicators {
 		logger := logger.With("apiVersion", replicator.ResourceApiVersion(), "kind", replicator.ResourceKind())
+
 		objects, err := replicator.List(deletedNamespace.GetName(), replicasLabelSelector)
 		if err != nil {
 			logger.Errorw("failed to list the resources")
@@ -108,8 +114,10 @@ func isManagedNamespace(logger *zap.SugaredLogger, namespace *corev1.Namespace) 
 	if ok {
 		if val == NamespaceTypeLabelValueManaged {
 			return true
+		} else if val == NamespaceTypeLabelValueIgnored {
+			return false
 		} else {
-			logger.Warnw("ignored unrecorgnized label in target namespace",
+			logger.Warnw("ignored unrecorgnized label in replica's namespace",
 				"labelKey", NamespaceTypeLabelKey, "labelValue", val)
 		}
 	}

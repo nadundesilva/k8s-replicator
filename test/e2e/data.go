@@ -65,12 +65,12 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 					"data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-two-value"))),
 				},
 			},
-			matcher: func(sourceObject k8s.Object, targetObject k8s.Object) bool {
+			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
 				sourceSecret := sourceObject.(*corev1.Secret)
-				targetSecret := targetObject.(*corev1.Secret)
-				if !reflect.DeepEqual(sourceSecret.Data, targetSecret.Data) {
+				replicaSecret := replicaObject.(*corev1.Secret)
+				if !reflect.DeepEqual(sourceSecret.Data, replicaSecret.Data) {
 					t.Errorf("secret data not equal; want %s, got %s",
-						sourceSecret.Data, targetSecret.Data)
+						sourceSecret.Data, replicaSecret.Data)
 				}
 				return true
 			},

@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type ObjectMatcher func(sourceObject k8s.Object, targetObject k8s.Object) bool
+type ObjectMatcher func(sourceObject k8s.Object, replicaObject k8s.Object) bool
 
 func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	sourceObject k8s.Object, objectList k8s.ObjectList, options ...ReplicationOption) {
@@ -78,12 +78,12 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	err = wait.For(conditions.New(cfg.Client().Resources()).ResourcesMatch(
 		objectList.DeepCopyObject().(k8s.ObjectList),
 		func(object k8s.Object) bool {
-			matchMap := func(sourceMap map[string]string, targetMap map[string]string) error {
+			matchMap := func(sourceMap map[string]string, replicaMap map[string]string) error {
 				for k, v := range sourceMap {
 					if k == replicator.ObjectTypeLabelKey {
 						continue
 					}
-					if value, ok := targetMap[k]; ok {
+					if value, ok := replicaMap[k]; ok {
 						if value != v {
 							return fmt.Errorf("source object %s/%s value %s for key %s does not exist in replica",
 								namespaces.GetSource(ctx).GetName(), sourceObject.GetName(), v, k)
