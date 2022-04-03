@@ -1,9 +1,16 @@
-name: Build Branch
+name: Build
 
 on:
-    push:
-        branches:
-            - main
+    workflow_call:
+        inputs:
+            publish-snapshots:
+                description: Whether the snapshots should be published (true/false)
+                required: true
+                type: string
+        secrets:
+            docker_hub_token:
+                description: Docker Hub token
+                required: true
 
 jobs:
     run-super-linter:
@@ -114,11 +121,6 @@ jobs:
                   install: true
             - name: Available platforms
               run: echo ${{ steps.buildx.outputs.platforms }}
-            - name: Login to the Container registry
-              uses: docker/login-action@v1
-              with:
-                  username: nadunrds
-                  password: ${{ secrets.DOCKER_HUB_TOKEN }}
             - name: Build Docker Image for scanning
               uses: docker/build-push-action@v2
               with:
@@ -132,7 +134,14 @@ jobs:
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
+            - name: Login to the Container registry
+              if: ${{ inputs.publish-snapshots != '' }}
+              uses: docker/login-action@v1
+              with:
+                  username: nadunrds
+                  password: ${{ secrets.docker_hub_token }}
             - name: Build & Push Docker Image
+              if: ${{ inputs.publish-snapshots != '' }}
               uses: docker/build-push-action@v2
               with:
                   context: .

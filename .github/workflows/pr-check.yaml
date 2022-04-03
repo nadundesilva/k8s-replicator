@@ -1,0 +1,13 @@
+name: Pull Request Check
+
+on:
+    pull_request:
+        branches:
+            - main
+
+jobs:
+    build:
+        name: Check Pull Request
+        uses: ./.github/workflows/build.yaml
+        with:
+            publish-snapshots: "false"
