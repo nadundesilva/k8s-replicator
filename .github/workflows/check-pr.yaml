@@ -1,7 +1,7 @@
-name: Build Branch
+name: Check PR
 
 on:
-    push:
+    pull_request:
         branches:
             - main
 
@@ -86,14 +86,9 @@ jobs:
                   TEST_FLAGS: "-args --labels \"resource=${{ matrix.resource }}\""
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
 
-    build:
-        name: Build
+    run-trivy-scan:
+        name: Run Trivy Scan
         runs-on: ubuntu-latest
-        needs:
-            - run-super-linter
-            - run-golangci-lint
-            - run-codeql-analysis
-            - run-e2e-tests
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -114,11 +109,6 @@ jobs:
                   install: true
             - name: Available platforms
               run: echo ${{ steps.buildx.outputs.platforms }}
-            - name: Login to the Container registry
-              uses: docker/login-action@v1
-              with:
-                  username: nadunrds
-                  password: ${{ secrets.DOCKER_HUB_TOKEN }}
             - name: Build Docker Image for scanning
               uses: docker/build-push-action@v2
               with:
@@ -132,11 +122,3 @@ jobs:
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
-            - name: Build & Push Docker Image
-              uses: docker/build-push-action@v2
-              with:
-                  context: .
-                  platforms: linux/amd64,linux/arm64,linux/arm/v7
-                  push: ${{ github.event_name == 'push' && github.repository_owner == 'nadundesilva' }}
-                  tags: |
-                    nadunrds/k8s-replicator:${{ github.ref_name }}
