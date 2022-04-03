@@ -50,7 +50,7 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 		})
 
 		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
-		err := cfg.Client().Resources(namespace.GetName()).Get(ctx, namespace.GetName(), clonedObj.GetName(), clonedObj)
+		err := cfg.Client().Resources(namespace.GetName()).Get(ctx, clonedObj.GetName(), namespace.GetName(), clonedObj)
 		if err != nil {
 			return fmt.Errorf("failed to get source object %s in namespace %s: %w", clonedObj.GetName(), namespace.GetName(), err)
 		} else {
