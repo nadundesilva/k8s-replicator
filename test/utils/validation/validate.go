@@ -145,7 +145,12 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		wait.WithTimeout(time.Minute*2),
 	)
 	if err != nil {
-		t.Fatalf("failed to wait for replicated objects: %v", err)
+		t.Errorf("failed to wait for replicated objects: %v", err)
+		err = printState(ctx, t, cfg, sourceObject)
+		if err != nil {
+			t.Fatalf("failed to print the cluster state after replication validation failure: %v", err)
+		}
+		t.FailNow()
 	}
 	t.Log("waiting for replicas to be created complete")
 }
@@ -180,7 +185,12 @@ func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj),
 			wait.WithTimeout(time.Minute*2))
 		if err != nil {
-			t.Fatalf("failed to wait for replicated objects deletion: %v", err)
+			t.Errorf("failed to wait for replicated objects deletion: %v", err)
+			err = printState(ctx, t, cfg, sourceObject)
+			if err != nil {
+				t.Fatalf("failed to print the cluster state after deletion validation failure: %v", err)
+			}
+			t.FailNow()
 		}
 	}
 	t.Log("waiting for objects to be deleted complete")
