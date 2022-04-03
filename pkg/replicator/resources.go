@@ -28,8 +28,10 @@ import (
 )
 
 const (
-	ObjectTypeLabelKey      = "replicator.nadundesilva.github.io/object-type"
-	SourceNamespaceLabelKey = "replicator.nadundesilva.github.io/source-namespace"
+	ObjectTypeLabelKey = "replicator.nadundesilva.github.io/object-type"
+
+	SourceNamespaceAnnotationKey       = "replicator.nadundesilva.github.io/source-namespace"
+	SourceResourceVersionAnnotationKey = "replicator.nadundesilva.github.io/source-resource-version"
 
 	ObjectTypeLabelValueSource  = "source"
 	ObjectTypeLabelValueReplica = "replica"
@@ -122,7 +124,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 			logger.Infow("completed deleting source object replicas")
 		}
 	} else if isReplica(deletedObj) {
-		if sourceNamespaceName, ok := deletedObj.GetLabels()[SourceNamespaceLabelKey]; ok {
+		if sourceNamespaceName, ok := deletedObj.GetAnnotations()[SourceNamespaceAnnotationKey]; ok {
 			logger := logger.With("sourceNamespace", sourceNamespaceName)
 
 			_, err := h.replicator.Get(sourceNamespaceName, deletedObj.GetName())
@@ -140,7 +142,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 					}
 				} else if isManagedNamespace(logger, namespace) {
 					clonedObj := cloneObject(h.replicator, deletedObj)
-					clonedObj.GetLabels()[SourceNamespaceLabelKey] = sourceNamespaceName
+					clonedObj.GetAnnotations()[SourceNamespaceAnnotationKey] = sourceNamespaceName
 
 					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
 					if err != nil {
@@ -151,7 +153,8 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 				}
 			}
 		} else {
-			logger.Errorw("deleted replica does not contain source namespace label", "label", SourceNamespaceLabelKey)
+			logger.Errorw("deleted replica does not contain source namespace annotation", "annotation",
+				SourceNamespaceAnnotationKey)
 		}
 	} else {
 		logger.Errorw("ignored object's event received by replicator")
@@ -182,7 +185,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 
 				for _, namespace := range namespaces {
 					logger := logger.With("replicaNamespace", namespace.GetName())
-					replicationAttempted, err := createReplica(ctx, logger, object.GetNamespace(), namespace, clonedObj,
+					replicationAttempted, err := applyReplica(ctx, logger, object, namespace, clonedObj,
 						h.replicator)
 					if replicationAttempted {
 						if err != nil {
@@ -198,7 +201,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 		}
 	} else if isReplica(object) {
 		logger = h.logger.With("replicaNamespace", object.GetNamespace())
-		if sourceNamespaceName, ok := object.GetLabels()[SourceNamespaceLabelKey]; ok {
+		if sourceNamespaceName, ok := object.GetAnnotations()[SourceNamespaceAnnotationKey]; ok {
 			logger = h.logger.With("sourceNamespace", sourceNamespaceName)
 
 			deletionRequired := false
@@ -224,7 +227,8 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 				}
 			}
 		} else {
-			logger.Errorw("replica does not contain label", "label", SourceNamespaceLabelKey)
+			logger.Errorw("replica does not contain source namespace annotation", "annotation",
+				SourceNamespaceAnnotationKey)
 		}
 	} else {
 		logger.Errorw("ignored object's event received by replicator", "namespace", object.GetNamespace())
@@ -241,23 +245,40 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 		newLabels[k] = v
 	}
 	newLabels[ObjectTypeLabelKey] = ObjectTypeLabelValueReplica
-	newLabels[SourceNamespaceLabelKey] = source.GetNamespace()
 	clonedObj.SetLabels(newLabels)
 
 	newAnnotations := map[string]string{}
 	for k, v := range source.GetAnnotations() {
 		newAnnotations[k] = v
 	}
+	newAnnotations[SourceNamespaceAnnotationKey] = source.GetNamespace()
+	newAnnotations[SourceResourceVersionAnnotationKey] = source.GetResourceVersion()
 	clonedObj.SetAnnotations(newAnnotations)
 
 	return clonedObj
 }
 
-func createReplica(ctx context.Context, logger *zap.SugaredLogger, sourceNamespace string,
+func applyReplica(ctx context.Context, logger *zap.SugaredLogger, sourceObj metav1.Object,
 	replicaNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
-	if sourceNamespace == replicaNamespace.GetName() || !isManagedNamespace(logger, replicaNamespace) {
+	existingReplica, err := replicator.Get(replicaNamespace.GetName(), obj.GetName())
+	if err != nil && !errors.IsNotFound(err) {
+		logger.Warnw("failed to check if object replica already exists", "error", err)
+	}
+
+	if existingReplica != nil {
+		if val, ok := existingReplica.GetAnnotations()[SourceResourceVersionAnnotationKey]; ok {
+			if val == sourceObj.GetResourceVersion() {
+				return false, nil
+			}
+		} else {
+			logger.Errorw("replica does not contain source resource version annotation", "annotation",
+				SourceResourceVersionAnnotationKey)
+		}
+	}
+	if sourceObj.GetNamespace() == replicaNamespace.GetName() || !isManagedNamespace(logger, replicaNamespace) {
 		return false, nil
 	}
+
 	return true, replicator.Apply(ctx, replicaNamespace.GetName(), obj)
 }
 
@@ -271,9 +292,12 @@ func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, na
 			logger.Warnw("failed to check if object replica exists", "error", err)
 		}
 	}
-	if !isReplica(replica) {
+
+	if replica != nil && (replica.GetDeletionTimestamp() != nil || !isReplica(replica)) {
 		return false, nil
+
 	}
+
 	return true, replicator.Delete(ctx, namespace, name)
 }
 

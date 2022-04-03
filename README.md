@@ -62,7 +62,7 @@ If you want to override this behavior and specifically replicate to a namespace,
 replicator.nadundesilva.github.io/namespace-type=managed
 ```
 
-### Additional labels used by the controller
+### Additional labels/annotations used by the controller
 
 The folloing labels are used by the controller to track the replication of resources.
 
@@ -70,9 +70,13 @@ The folloing labels are used by the controller to track the replication of resou
   ```properties
   replicator.nadundesilva.github.io/object-type=replica
   ```
-* The following label is used to mark a replicated resource's source namespace.
+* The following annotation is used to store a replicated resource's source namespace.
   ```properties
   replicator.nadundesilva.github.io/source-namespace=<namespace>
+  ```
+* The following annotation is used to store a replicated resource's source resource version.
+  ```properties
+  replicator.nadundesilva.github.io/source-resource-version=<resource-version>
   ```
 
 ### How to Cleanup Controller

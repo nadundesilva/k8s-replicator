@@ -125,16 +125,16 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 						replicator.ObjectTypeLabelValueReplica, objType)
 				}
 
-				sourceNs, sourceNsOk := object.GetLabels()[replicator.SourceNamespaceLabelKey]
+				sourceNs, sourceNsOk := object.GetAnnotations()[replicator.SourceNamespaceAnnotationKey]
 				if sourceNsOk {
 					if sourceNs != namespaces.GetSource(ctx).GetName() {
-						t.Errorf("object %s/%s label %s does not contain the source namespace; want %s, got %s",
-							object.GetNamespace(), object.GetName(), replicator.SourceNamespaceLabelKey,
+						t.Errorf("object %s/%s annotation %s does not contain the source namespace; want %s, got %s",
+							object.GetNamespace(), object.GetName(), replicator.SourceNamespaceAnnotationKey,
 							namespaces.GetSource(ctx).GetName(), sourceNs)
 					}
 				} else {
-					t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
-						replicator.SourceNamespaceLabelKey)
+					t.Errorf("object %s/%s does not contain annotation key %s", object.GetNamespace(), object.GetName(),
+						replicator.SourceNamespaceAnnotationKey)
 				}
 			}
 			if opts.objectMatcher != nil {

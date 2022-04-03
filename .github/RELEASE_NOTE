@@ -4,4 +4,6 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
 
 #### Changelog:
 
-- 
+- Change `replicator.nadundesilva.github.io/source-namespace` label to an annotation.
+- Add `replicator.nadundesilva.github.io/source-resource-version` annotation to track a replica's source object's resource version to check whether an update event needs to be propagated to a replica.
+- Improvements to reduce unwanted apply and delete calls to the K8s API Server.
