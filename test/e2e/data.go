@@ -36,7 +36,7 @@ type resourcesCreationTestData struct {
 func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData {
 	resources := []resourcesCreationTestData{
 		{
-			name:       "secret",
+			name:       "Secret",
 			objectList: &corev1.SecretList{},
 			sourceObject: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -49,7 +49,7 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 					},
 				},
 				Data: map[string][]byte{
-					"data-item-one-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-one-value"))),
+					"secret-data-item-one-key": []byte(base64.StdEncoding.EncodeToString([]byte("secret-data-item-one-value"))),
 				},
 			},
 			sourceObjectUpdate: &corev1.Secret{
@@ -62,7 +62,7 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 					},
 				},
 				Data: map[string][]byte{
-					"data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("data-item-two-value"))),
+					"secret-data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("secret-data-item-two-value"))),
 				},
 			},
 			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
@@ -71,6 +71,46 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 				if !reflect.DeepEqual(sourceSecret.Data, replicaSecret.Data) {
 					t.Errorf("secret data not equal; want %s, got %s",
 						sourceSecret.Data, replicaSecret.Data)
+				}
+				return true
+			},
+		},
+		{
+			name:       "ConfigMap",
+			objectList: &corev1.ConfigMapList{},
+			sourceObject: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: envconf.RandomName("test-config-map", 32),
+					Labels: map[string]string{
+						"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					},
+					Annotations: map[string]string{
+						"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					},
+				},
+				BinaryData: map[string][]byte{
+					"config-map-data-item-one-key": []byte(base64.StdEncoding.EncodeToString([]byte("config-map-data-item-one-value"))),
+				},
+			},
+			sourceObjectUpdate: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					},
+					Annotations: map[string]string{
+						"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					},
+				},
+				BinaryData: map[string][]byte{
+					"config-map-data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("config-map-data-item-two-value"))),
+				},
+			},
+			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
+				sourceConfigMap := sourceObject.(*corev1.ConfigMap)
+				replicaConfigMap := replicaObject.(*corev1.ConfigMap)
+				if !reflect.DeepEqual(sourceConfigMap.Data, replicaConfigMap.Data) {
+					t.Errorf("config map data not equal; want %s, got %s",
+						sourceConfigMap.Data, replicaConfigMap.Data)
 				}
 				return true
 			},

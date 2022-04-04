@@ -11,3 +11,5 @@ logging:
 resources:
 - apiVersion: v1
   kind: Secret
+- apiVersion: v1
+  kind: ConfigMap

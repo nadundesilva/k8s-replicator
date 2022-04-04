@@ -77,7 +77,8 @@ jobs:
         strategy:
             matrix:
                 resource:
-                    - secret
+                    - Secret
+                    - ConfigMap
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3

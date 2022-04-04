@@ -9,3 +9,4 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
 - Improvements to reduce unwanted apply and delete calls to the K8s API Server.
 - Bug fixes
   - Fix minor bug in applying and deleting resources
+- Add support for replicating Config Maps

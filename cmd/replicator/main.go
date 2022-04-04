@@ -97,6 +97,7 @@ func main() {
 	} else {
 		availableResourceReplicators := []resources.ResourceReplicator{
 			resources.NewSecretReplicator(k8sClient, logger),
+			resources.NewConfigMapReplicator(k8sClient, logger),
 		}
 		for _, resource := range conf.Resources {
 			found := false

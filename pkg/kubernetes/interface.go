@@ -29,16 +29,21 @@ var defaultDeleteOptions = metav1.DeleteOptions{
 }
 
 type ClientInterface interface {
-	SecretInformer() cache.SharedIndexInformer
 	NamespaceInformer() cache.SharedIndexInformer
+	ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error)
 	GetNamespace(name string) (*corev1.Namespace, error)
 
-	ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error)
-
+	SecretInformer() cache.SharedIndexInformer
 	ApplySecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
 	ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error)
 	GetSecret(namespace, name string) (*corev1.Secret, error)
 	DeleteSecret(ctx context.Context, namespace, name string) error
+
+	ConfigMapInformer() cache.SharedIndexInformer
+	ApplyConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error)
+	ListConfigMaps(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error)
+	GetConfigMap(namespace, name string) (*corev1.ConfigMap, error)
+	DeleteConfigMap(ctx context.Context, namespace, name string) error
 }
 
 func toPointer[T interface{}](val T) *T {
