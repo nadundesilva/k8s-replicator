@@ -260,12 +260,15 @@ func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) 
 
 func applyReplica(ctx context.Context, logger *zap.SugaredLogger, sourceObj metav1.Object,
 	replicaNamespace *corev1.Namespace, obj metav1.Object, replicator resources.ResourceReplicator) (bool, error) {
-	existingReplica, err := replicator.Get(replicaNamespace.GetName(), obj.GetName())
-	if err != nil && !errors.IsNotFound(err) {
-		logger.Warnw("failed to check if object replica already exists", "error", err)
+	if sourceObj.GetNamespace() == replicaNamespace.GetName() || !isManagedNamespace(logger, replicaNamespace) {
+		return false, nil
 	}
-
-	if existingReplica != nil {
+	existingReplica, err := replicator.Get(replicaNamespace.GetName(), obj.GetName())
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			logger.Warnw("failed to check if object replica already exists", "error", err)
+		}
+	} else {
 		if val, ok := existingReplica.GetAnnotations()[SourceResourceVersionAnnotationKey]; ok {
 			if val == sourceObj.GetResourceVersion() {
 				return false, nil
@@ -275,10 +278,6 @@ func applyReplica(ctx context.Context, logger *zap.SugaredLogger, sourceObj meta
 				SourceResourceVersionAnnotationKey)
 		}
 	}
-	if sourceObj.GetNamespace() == replicaNamespace.GetName() || !isManagedNamespace(logger, replicaNamespace) {
-		return false, nil
-	}
-
 	return true, replicator.Apply(ctx, replicaNamespace.GetName(), obj)
 }
 
@@ -291,13 +290,9 @@ func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, na
 		} else {
 			logger.Warnw("failed to check if object replica exists", "error", err)
 		}
-	}
-
-	if replica != nil && (replica.GetDeletionTimestamp() != nil || !isReplica(replica)) {
+	} else if replica.GetDeletionTimestamp() != nil || !isReplica(replica) {
 		return false, nil
-
 	}
-
 	return true, replicator.Delete(ctx, namespace, name)
 }
 
