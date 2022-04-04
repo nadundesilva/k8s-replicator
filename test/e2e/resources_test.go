@@ -14,7 +14,6 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
@@ -45,8 +44,7 @@ func TestResourcesCreation(t *testing.T) {
 			return ctx
 		}
 
-		testFeatures = append(testFeatures, features.New("controller starts before initial namespaces creation").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller starts before initial namespaces creation", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -61,8 +59,7 @@ func TestResourcesCreation(t *testing.T) {
 			Assess("replicated objects", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New(fmt.Sprintf("controller starts netween initial namespaces creation and source namespace %s creation", resource.name)).
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller starts between initial namespaces creation and source namespace creation", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -77,8 +74,7 @@ func TestResourcesCreation(t *testing.T) {
 			Assess("replicated objects", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New(fmt.Sprintf("controller starts between source namespace creation and source object %s creation", resource.name)).
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller starts between source namespace creation and source object creation", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -93,8 +89,7 @@ func TestResourcesCreation(t *testing.T) {
 			Assess("replicated objects", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New(fmt.Sprintf("controller starts between source object %s creation and first new namespace creation", resource.name)).
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller starts between source object creation and first new namespace creation", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -109,8 +104,7 @@ func TestResourcesCreation(t *testing.T) {
 			Assess("replicated objects", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller starts between first new namespace creation and second new namespace creation").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller starts between first new namespace creation and second new namespace creation", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -125,8 +119,7 @@ func TestResourcesCreation(t *testing.T) {
 			Assess("replicated objects", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller starts after second new namespace creation").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller starts after second new namespace creation", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -162,8 +155,7 @@ func TestResourcesUpdation(t *testing.T) {
 			return ctx
 		}
 
-		testFeatures = append(testFeatures, features.New("controller updates replicas when source object is updated").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller updates replicas when source object is updated", resource).
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -179,8 +171,7 @@ func TestResourcesUpdation(t *testing.T) {
 			Assess("updated replicas", assessResourcesReplication).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller removes replicas when source object source type label is removed").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller removes replicas when source object source type label is removed", resource).
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -204,8 +195,7 @@ func TestResourcesUpdation(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller removes replicas when source object type is set to different value").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller removes replicas when source object type is set to different value", resource).
 			WithLabel("operation", "update").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -245,8 +235,7 @@ func TestResourcesDeletion(t *testing.T) {
 			return ctx
 		}
 
-		testFeatures = append(testFeatures, features.New("controller deletes all replicas when source object is deleted").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller deletes all replicas when source object is deleted", resource).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -265,8 +254,7 @@ func TestResourcesDeletion(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller deletes all replicas when namespace with source object is deleted").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller deletes all replicas when namespace with source object is deleted", resource).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -285,8 +273,7 @@ func TestResourcesDeletion(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller recreated deleted replicas").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller recreated deleted replicas", resource).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -307,8 +294,7 @@ func TestResourcesDeletion(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller allows namespace with replica to be deleted").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller allows namespace with replica to be deleted", resource).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)

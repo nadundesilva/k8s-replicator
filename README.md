@@ -95,7 +95,7 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 #### Manual Removal
 
 * Clone this repository.
-* Remove the controller into your cluster by running the following command.
+* Remove the controller from your cluster by running the following command.
 
   ```bash
   kubectl delete -k kustomize

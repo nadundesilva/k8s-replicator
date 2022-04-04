@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type resourcesCreationTestData struct {
+type resourceTestDatum struct {
 	name               string
 	objectList         k8s.ObjectList
 	sourceObject       k8s.Object
@@ -33,8 +33,8 @@ type resourcesCreationTestData struct {
 	matcher            validation.ObjectMatcher
 }
 
-func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData {
-	resources := []resourcesCreationTestData{
+func generateResourcesCreationTestData(t *testing.T) []resourceTestDatum {
+	resources := []resourceTestDatum{
 		{
 			name:       "Secret",
 			objectList: &corev1.SecretList{},
@@ -108,9 +108,9 @@ func generateResourcesCreationTestData(t *testing.T) []resourcesCreationTestData
 			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
 				sourceConfigMap := sourceObject.(*corev1.ConfigMap)
 				replicaConfigMap := replicaObject.(*corev1.ConfigMap)
-				if !reflect.DeepEqual(sourceConfigMap.Data, replicaConfigMap.Data) {
+				if !reflect.DeepEqual(sourceConfigMap.BinaryData, replicaConfigMap.BinaryData) {
 					t.Errorf("config map data not equal; want %s, got %s",
-						sourceConfigMap.Data, replicaConfigMap.Data)
+						sourceConfigMap.BinaryData, replicaConfigMap.BinaryData)
 				}
 				return true
 			},

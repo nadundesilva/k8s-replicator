@@ -34,8 +34,7 @@ func TestNamespaceLabels(t *testing.T) {
 	for _, resource := range testResources {
 		var testedNs *corev1.Namespace
 
-		testFeatures = append(testFeatures, features.New("controller ignores namespaces with skip label").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller ignores namespaces with skip label", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
@@ -56,8 +55,7 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller ignores namespaces with kube prefix").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller ignores namespaces with kube prefix", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
@@ -76,8 +74,7 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller replicates namespaces with kube prefix with replicate label").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller replicates namespaces with kube prefix with replicate label", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
@@ -98,8 +95,7 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller ignores controller namespace").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller ignores controller namespace", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
@@ -118,8 +114,7 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller creates replica in controller namespace with replicate label").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller creates replica in controller namespace with replicate label", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg, controller.WithNamespaceLabels(map[string]string{
@@ -140,8 +135,7 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller deletes replica when ignore label is added to namespace").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller deletes replica when ignore label is added to namespace", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
@@ -164,8 +158,7 @@ func TestNamespaceLabels(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, features.New("controller creates replica when replicate label is added to ignored namespace").
-			WithLabel("resource", resource.name).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller creates replica when replicate label is added to ignored namespace", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
