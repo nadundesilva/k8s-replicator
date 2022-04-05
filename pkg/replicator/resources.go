@@ -167,7 +167,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 	logger := h.logger.With("name", object.GetName())
 
 	if isReplicationSource(object) {
-		logger := h.logger.With("sourceNamespace", object.GetNamespace())
+		logger := logger.With("sourceNamespace", object.GetNamespace())
 
 		sourceNamespace, err := h.k8sClient.GetNamespace(object.GetNamespace())
 		if err != nil {
@@ -200,9 +200,9 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 			logger.Warnw("object marked as a replication source in an ignored namespace")
 		}
 	} else if isReplica(object) {
-		logger = h.logger.With("replicaNamespace", object.GetNamespace())
+		logger = logger.With("replicaNamespace", object.GetNamespace())
 		if sourceNamespaceName, ok := object.GetAnnotations()[SourceNamespaceAnnotationKey]; ok {
-			logger = h.logger.With("sourceNamespace", sourceNamespaceName)
+			logger = logger.With("sourceNamespace", sourceNamespaceName)
 
 			deletionRequired := false
 			sourceNamespace, err := h.k8sClient.GetNamespace(sourceNamespaceName)
