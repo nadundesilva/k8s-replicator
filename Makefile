@@ -45,4 +45,4 @@ test.e2e:
 else
 test.e2e: docker
 endif
-	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/... $(TEST_FLAGS)
+	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...

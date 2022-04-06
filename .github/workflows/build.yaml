@@ -91,7 +91,7 @@ jobs:
             - name: Run E2E Tests
               run: make test.e2e
               env:
-                  TEST_FLAGS: "-args --labels \"resource=${{ matrix.resource }}\""
+                  TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
 
     build:

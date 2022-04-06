@@ -14,7 +14,11 @@ package e2e
 
 import (
 	"encoding/base64"
+	"fmt"
+	"log"
+	"os"
 	"reflect"
+	"regexp"
 	"testing"
 
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
@@ -24,6 +28,25 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
+
+var (
+	testResourcesFilterRegexString string
+	testResourcesFilterRegex       *regexp.Regexp
+)
+
+func init() {
+	testResourcesFilterRegexString = os.Getenv("TEST_RESOURCES_FILTER_REGEX")
+	if testResourcesFilterRegexString == "" {
+		testResourcesFilterRegexString = ".*"
+	}
+	testResourcesFilterRegexString = fmt.Sprintf("^%s$", testResourcesFilterRegexString)
+
+	var err error
+	testResourcesFilterRegex, err = regexp.Compile(testResourcesFilterRegexString)
+	if err != nil {
+		log.Fatalf("failed to initialize test resources filter: %v", err)
+	}
+}
 
 type resourceTestDatum struct {
 	name               string
@@ -117,7 +140,11 @@ func generateResourcesCreationTestData(t *testing.T) []resourceTestDatum {
 		},
 	}
 
+	filteredResources := []resourceTestDatum{}
 	for _, resource := range resources {
+		if !testResourcesFilterRegex.MatchString(resource.name) {
+			continue
+		}
 		resource.sourceObjectUpdate.SetName(resource.sourceObject.GetName())
 
 		updateSourceObjectLabels := func(sourceObject k8s.Object) {
@@ -126,6 +153,8 @@ func generateResourcesCreationTestData(t *testing.T) []resourceTestDatum {
 		}
 		updateSourceObjectLabels(resource.sourceObject)
 		updateSourceObjectLabels(resource.sourceObjectUpdate)
+
+		filteredResources = append(filteredResources, resource)
 	}
-	return resources
+	return filteredResources
 }

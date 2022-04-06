@@ -28,7 +28,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	fmt.Printf("running E2E tests on controller image: %s\n", controller.GetImage())
+	fmt.Printf("running E2E tests with resources filter: \"%s\" using controller image: \"%s\"\n", testResourcesFilterRegexString,
+		controller.GetImage())
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
