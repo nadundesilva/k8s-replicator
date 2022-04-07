@@ -82,14 +82,14 @@ func NewResourcesEventHandler(replicator resources.ResourceReplicator, k8sClient
 }
 
 func (h *ResourceEventHandler) OnAdd(newObj interface{}) {
-	err := h.handleUpdate(newObj)
+	err := h.handleUpdate(newObj, "Resource Add")
 	if err != nil {
 		h.logger.Errorw("failed to handle added object", "error", err)
 	}
 }
 
 func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
-	err := h.handleUpdate(newObj)
+	err := h.handleUpdate(newObj, "Resource Update")
 	if err != nil {
 		h.logger.Errorw("failed to handle updated object", "error", err)
 	}
@@ -98,14 +98,14 @@ func (h *ResourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
 func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	ctx := context.Background()
 	deletedObj := obj.(metav1.Object)
-	logger := h.logger.With("name", deletedObj.GetName())
+	logger := h.logger.With("name", deletedObj.GetName(), "eventType", "Resource Delete")
 
 	if isReplicationSource(deletedObj) {
 		logger := logger.With("sourceNamespace", deletedObj.GetNamespace())
 
 		namespaces, err := h.k8sClient.ListNamespaces(labels.Everything())
 		if err != nil {
-			logger.Errorw("failed to handle deleting object: failed to list namespaces", "error", err)
+			logger.Errorw("failed to handle deleting source object: failed to list namespaces", "error", err)
 		} else {
 			for _, namespace := range namespaces {
 				if namespace.GetName() != deletedObj.GetNamespace() {
@@ -113,10 +113,14 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 
 					deletionAttempted, err := deleteReplica(ctx, logger, namespace.GetName(), deletedObj.GetName(), h.replicator)
 					if deletionAttempted {
-						if err != nil && !errors.IsNotFound(err) {
-							logger.Errorw("failed to delete object", "error", err)
+						if err != nil {
+							if errors.IsNotFound(err) {
+								logger.Debugw("replica which was attempted to delete was not found")
+							} else {
+								logger.Errorw("failed to handle deleting source object: failed to delete replica", "error", err)
+							}
 						} else {
-							logger.Debugw("deleted object from namespace")
+							logger.Debugw("deleted replica from namespace due to source object deletion")
 						}
 					}
 				}
@@ -129,7 +133,9 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 
 			_, err := h.replicator.Get(sourceNamespaceName, deletedObj.GetName())
 			if err != nil {
-				if !errors.IsNotFound(err) {
+				if errors.IsNotFound(err) {
+					logger.Debugw("ignored replica deletion as source namespace does not exist")
+				} else {
 					logger.Errorw("failed to get source object of replica", "error", err)
 				}
 			} else {
@@ -137,7 +143,9 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 
 				namespace, err := h.k8sClient.GetNamespace(deletedObj.GetNamespace())
 				if err != nil {
-					if !errors.IsNotFound(err) {
+					if errors.IsNotFound(err) {
+						logger.Debugw("ignored replica deletion as replica namespace does not exist")
+					} else {
 						logger.Errorw("failed to check if source namespace of replica exists", "error", err)
 					}
 				} else if isManagedNamespace(logger, namespace) {
@@ -150,6 +158,8 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 					} else {
 						logger.Infow("recreated deleted replica")
 					}
+				} else {
+					logger.Debugw("ignored replica as namespace is in an ignored namespace")
 				}
 			}
 		} else {
@@ -161,10 +171,10 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 	}
 }
 
-func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
+func (h *ResourceEventHandler) handleUpdate(newObj interface{}, eventType string) error {
 	ctx := context.Background()
 	object := newObj.(metav1.Object)
-	logger := h.logger.With("name", object.GetName())
+	logger := h.logger.With("name", object.GetName(), "eventType", eventType)
 
 	if isReplicationSource(object) {
 		logger := logger.With("sourceNamespace", object.GetNamespace())
@@ -189,7 +199,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}) error {
 						h.replicator)
 					if replicationAttempted {
 						if err != nil {
-							return fmt.Errorf("failed to create replica in namespace: %w", err)
+							logger.Errorw("failed to create replica in namespace", "error", err)
 						} else {
 							logger.Debugw("created replica in namespace")
 						}
@@ -286,11 +296,16 @@ func deleteReplica(ctx context.Context, logger *zap.SugaredLogger, namespace, na
 	replica, err := replicator.Get(namespace, name)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			logger.Debugw("deleting replica ignored as it does not exist")
 			return false, nil
 		} else {
 			logger.Warnw("failed to check if object replica exists", "error", err)
 		}
-	} else if replica.GetDeletionTimestamp() != nil || !isReplica(replica) {
+	} else if replica.GetDeletionTimestamp() != nil {
+		logger.Debugw("deleting replica ignored as delete timestamp had been already set")
+		return false, nil
+	} else if !isReplica(replica) {
+		logger.Debugw("deleting replica ignored as it is not a replica")
 		return false, nil
 	}
 	return true, replicator.Delete(ctx, namespace, name)
