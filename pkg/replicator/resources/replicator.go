@@ -29,6 +29,6 @@ type ResourceReplicator interface {
 
 	Apply(ctx context.Context, namespace string, object metav1.Object) error
 	List(namespace string, selector labels.Selector) ([]metav1.Object, error)
-	Get(namespace, name string) (metav1.Object, error)
+	Get(ctx context.Context, namespace, name string) (metav1.Object, error)
 	Delete(ctx context.Context, namespace, name string) error
 }

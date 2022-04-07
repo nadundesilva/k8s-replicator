@@ -83,8 +83,8 @@ func (r *configMapReplicator) List(namespace string, selector labels.Selector) (
 	return listObjects, nil
 }
 
-func (r *configMapReplicator) Get(namespace, name string) (metav1.Object, error) {
-	return r.k8sClient.GetConfigMap(namespace, name)
+func (r *configMapReplicator) Get(ctx context.Context, namespace, name string) (metav1.Object, error) {
+	return r.k8sClient.GetConfigMap(ctx, namespace, name)
 }
 
 func (r *configMapReplicator) Delete(ctx context.Context, namespace, name string) error {

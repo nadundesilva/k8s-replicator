@@ -13,7 +13,10 @@
 package kubernetes
 
 import (
+	"context"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 )
@@ -26,6 +29,10 @@ func (c *client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, 
 	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().List(selector)
 }
 
-func (c *client) GetNamespace(name string) (*corev1.Namespace, error) {
-	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().Get(name)
+func (c *client) GetNamespace(ctx context.Context, name string) (*corev1.Namespace, error) {
+	namespace, err := c.namespaceInformerFactory.Core().V1().Namespaces().Lister().Get(name)
+	if errors.IsNotFound(err) {
+		return c.clientset.CoreV1().Namespaces().Get(ctx, name, defaultGetOptions)
+	}
+	return namespace, err
 }

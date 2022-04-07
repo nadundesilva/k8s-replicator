@@ -73,7 +73,7 @@ func (r *secretReplicator) Apply(ctx context.Context, namespace string, object m
 }
 
 func (r *secretReplicator) List(namespace string, selector labels.Selector) ([]metav1.Object, error) {
-	secrets, err := r.k8sClient.ListSecrets(namespace,selector)
+	secrets, err := r.k8sClient.ListSecrets(namespace, selector)
 	if err != nil {
 		return []metav1.Object{}, err
 	}
@@ -84,8 +84,8 @@ func (r *secretReplicator) List(namespace string, selector labels.Selector) ([]m
 	return listObjects, nil
 }
 
-func (r *secretReplicator) Get(namespace, name string) (metav1.Object, error) {
-	return r.k8sClient.GetSecret(namespace, name)
+func (r *secretReplicator) Get(ctx context.Context, namespace, name string) (metav1.Object, error) {
+	return r.k8sClient.GetSecret(ctx, namespace, name)
 }
 
 func (r *secretReplicator) Delete(ctx context.Context, namespace, name string) error {
