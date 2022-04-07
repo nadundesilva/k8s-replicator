@@ -43,6 +43,19 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 		"buildGitRevision", version.GetBuildGitRevision(), "buildTime", version.GetBuildTime(),
 		"buildGoLangVersion", version.GetGoLangVersion())
 
+	namespaceInformer := r.k8sClient.NamespaceInformer()
+	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc:    r.handleNewNamespace,
+		UpdateFunc: r.handleUpdateNamespace,
+		DeleteFunc: r.handleDeleteNamespace,
+	})
+
+	if cache.WaitForCacheSync(stopCh, namespaceInformer.HasSynced) {
+		r.logger.Infow("namespace informer cache sync complete")
+	} else {
+		return fmt.Errorf("timeout waiting for namespace informer cache sync")
+	}
+
 	informerSyncs := []cache.InformerSynced{}
 	for _, resourceReplicator := range r.resourceReplicators {
 		informer := resourceReplicator.Informer()
@@ -50,18 +63,10 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 		informerSyncs = append(informerSyncs, informer.HasSynced)
 	}
 
-	namespaceInformer := r.k8sClient.NamespaceInformer()
-	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc:    r.handleNewNamespace,
-		UpdateFunc: r.handleUpdateNamespace,
-		DeleteFunc: r.handleDeleteNamespace,
-	})
-	informerSyncs = append(informerSyncs, namespaceInformer.HasSynced)
-
 	if cache.WaitForCacheSync(stopCh, informerSyncs...) {
-		r.logger.Infow("cache sync complete", "informersCount", len(informerSyncs))
+		r.logger.Infow("resource informers cache sync complete", "informersCount", len(informerSyncs))
 	} else {
-		return fmt.Errorf("timeout waiting for informer cache sync")
+		return fmt.Errorf("timeout waiting for resource informers cache sync")
 	}
 
 	r.logger.Info("started replicator")
