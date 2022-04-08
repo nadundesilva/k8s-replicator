@@ -53,13 +53,14 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 		for _, obj := range objects.namespaces.Items {
 			deleteObjs(&obj, "namespace")
 		}
+		waitForDeleteObjs(&objects.namespaces, "namespace")
+
 		for _, obj := range objects.clusterRoles.Items {
 			deleteObjs(&obj, "cluster role")
 		}
 		for _, obj := range objects.clusterRoleBindings.Items {
 			deleteObjs(&obj, "cluster role binding")
 		}
-		waitForDeleteObjs(&objects.namespaces, "namespace")
 		waitForDeleteObjs(&objects.clusterRoles, "cluster role")
 		waitForDeleteObjs(&objects.clusterRoleBindings, "cluster role binding")
 		ctx = context.WithValue(ctx, contextKey, nil)
