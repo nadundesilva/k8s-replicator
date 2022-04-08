@@ -18,7 +18,8 @@ ifeq ("$(CONTROLLER_IMAGE)", "")
 	CONTROLLER_IMAGE=nadunrds/k8s-replicator:$(VERSION)
 endif
 
-GO_LDFLAGS := -X $(PROJECT_PKG)/pkg/version.buildVersion=$(VERSION)
+GO_LDFLAGS := -w -s
+GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildVersion=$(VERSION)
 GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildGitRevision=$(GIT_REVISION)
 GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildTime=$(shell date +%Y-%m-%dT%H:%M:%S%z)
 
@@ -30,7 +31,7 @@ clean:
 
 .PHONY: build
 build: clean
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./out/replicator ./cmd/replicator
+	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "$(GO_LDFLAGS)" -o ./out/replicator ./cmd/replicator
 
 .PHONY: docker
 docker: build

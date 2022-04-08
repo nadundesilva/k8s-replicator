@@ -35,8 +35,16 @@ spec:
         volumeMounts:
         - name: conf-vol
           mountPath: /etc/replicator
+        securityContext:
+          runAsUser: 10500
+          runAsGroup: 10500
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - all
+      serviceAccountName: replicator
       volumes:
       - name: conf-vol
         configMap:
           name: replicator
-      serviceAccount: replicator

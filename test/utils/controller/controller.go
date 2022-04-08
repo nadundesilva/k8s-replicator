@@ -114,24 +114,30 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 
 		kind := groupVersionKind.String()
 		if deployment, ok := obj.(*appsv1.Deployment); ok {
+			t.Logf("creating controller deployment %s/%s", deployment.GetNamespace(), deployment.GetName())
 			setNamespace(deployment, namespace)
 			deployment.Spec.Template.Spec.Containers[0].Image = image
 			controllerDeployment = deployment
 		} else if cm, ok := obj.(*corev1.ConfigMap); ok {
+			t.Logf("creating controller config map %s/%s", cm.GetNamespace(), cm.GetName())
 			setNamespace(cm, namespace)
 		} else if sa, ok := obj.(*corev1.ServiceAccount); ok {
+			t.Logf("creating controller service account %s", sa.GetName())
 			setNamespace(sa, namespace)
 		} else if ns, ok := obj.(*corev1.Namespace); ok {
+			t.Logf("creating controller namespace %s", ns.GetName())
 			if ns.GetName() == defaulControllerNamespace {
 				ns.SetName(namespace)
 				for k, v := range opts.labels {
 					ns.GetLabels()[k] = v
 				}
 			}
-			ctx = cleanup.AddControllerObjectToContext(ctx, t, ns)
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, obj.(k8s.Object))
 		} else if clusterrole, ok := obj.(*rbacv1.ClusterRole); ok {
-			ctx = cleanup.AddControllerObjectToContext(ctx, t, clusterrole)
+			t.Logf("creating controller cluster role %s", clusterrole.GetName())
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, obj.(k8s.Object))
 		} else if clusterrolebinding, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
+			t.Logf("creating controller cluster role binding %s", clusterrolebinding.GetName())
 			newSubjs := []rbacv1.Subject{}
 			for _, subject := range clusterrolebinding.Subjects {
 				if subject.Namespace == defaulControllerNamespace {
@@ -140,7 +146,7 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 				newSubjs = append(newSubjs, subject)
 			}
 			clusterrolebinding.Subjects = newSubjs
-			ctx = cleanup.AddControllerObjectToContext(ctx, t, clusterrolebinding)
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, obj.(k8s.Object))
 		} else {
 			t.Fatal("unknown resource type found in controller kustomization files")
 		}
