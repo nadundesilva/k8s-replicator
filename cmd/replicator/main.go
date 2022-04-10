@@ -16,6 +16,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"path/filepath"
 
 	"github.com/nadundesilva/k8s-replicator/pkg/config"
@@ -121,6 +122,17 @@ func main() {
 	if err != nil {
 		logger.Fatalw("failed to start k8s client", "error", err)
 	}
+
+	go func() {
+		http.HandleFunc("/health", func(w http.ResponseWriter, req *http.Request) {
+			fmt.Fprintf(w, "{\"status\":\"OK\"}")
+		})
+		err := http.ListenAndServe(":8080", nil)
+		if err != nil {
+			logger.Fatalw("failed to start health endpoint")
+		}
+	}()
+
 	err = replicator.Start(stopCh)
 	if err != nil {
 		logger.Fatalw("failed to start the replicator", "error", err)

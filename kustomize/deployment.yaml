@@ -47,6 +47,10 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
         securityContext:
           runAsUser: 10500
           runAsGroup: 10500
