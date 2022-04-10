@@ -14,6 +14,11 @@ metadata:
   name: replicator
   labels:
     controller: replicator
+  annotations:
+    checkov.io/skip1: CKV_K8S_9=The readiness probe not required since controller does not accept requests
+    checkov.io/skip2: CKV_K8S_14=The image will be set by the pipeline in the release
+    checkov.io/skip3: CKV_K8S_38=The service account required for authentication requests for copying resources
+    checkov.io/skip4: CKV_K8S_43=The image will be set by the pipeline in the release
 spec:
   replicas: 1
   selector:
@@ -35,6 +40,13 @@ spec:
         volumeMounts:
         - name: conf-vol
           mountPath: /etc/replicator
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
         securityContext:
           runAsUser: 10500
           runAsGroup: 10500
@@ -43,8 +55,11 @@ spec:
           capabilities:
             drop:
             - all
-      serviceAccountName: replicator
       volumes:
       - name: conf-vol
         configMap:
           name: replicator
+      serviceAccountName: replicator
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

@@ -28,7 +28,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
                   VALIDATE_GO: "false"
-                  KUBERNETES_KUBEVAL_OPTIONS: "--ignore-missing-schemas"
+                  KUBERNETES_KUBEVAL_OPTIONS: "--ignore-missing-schemas --kubernetes-version=v1.23.3"
 
     run-golangci-lint:
         name: Run GoLangCI Lint
@@ -71,6 +71,23 @@ jobs:
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v1
 
+    run-checkov-scan:
+        name: Run Checkov Scan
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repo
+              uses: actions/checkout@master
+            - name: Build Kubernetes Artifacts
+              run: |
+                  mkdir -p out
+                  docker run -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
+                      build /artifacts > out/kustomize-all.yaml
+            - name: Run Checkov Scan
+              uses: bridgecrewio/checkov-action@master
+              with:
+                  directory: out
+                  download_external_modules: true
+
     run-e2e-tests:
         name: Run E2E Tests
         runs-on: ubuntu-latest
@@ -101,6 +118,7 @@ jobs:
             - run-super-linter
             - run-golangci-lint
             - run-codeql-analysis
+            - run-checkov-scan
             - run-e2e-tests
         steps:
             - name: Checkout repository
