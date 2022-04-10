@@ -8,12 +8,6 @@ on:
             - completed
     schedule:
         - cron: '0 0 * * *'
-    workflow_call:
-        inputs:
-            image-tag:
-                description: Docker Image tag
-                required: true
-                type: string
     workflow_dispatch:
         inputs:
             image-tag:
@@ -30,7 +24,7 @@ jobs:
             - name: Run Trivy vulnerability scanner
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ inputs.image-tag || 'latest' }}
+                  image-ref: nadunrds/k8s-replicator:${{ github.event.inputs.image-tag || 'latest' }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true

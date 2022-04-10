@@ -28,7 +28,7 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 
 #### Manual Applying
 
-* Clone this repository.
+* Clone this repository and checkout the required version of K8s Replicator.
 * Update the configuration (`<REPOSITORY_ROOT>/kustomize/config.yaml`) to match your needs.
 * Apply the controller into your cluster by running the following command.
 
@@ -94,7 +94,7 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 
 #### Manual Removal
 
-* Clone this repository.
+* Clone this repository and checkout the installed version of K8s Replicator.
 * Remove the controller from your cluster by running the following command.
 
   ```bash

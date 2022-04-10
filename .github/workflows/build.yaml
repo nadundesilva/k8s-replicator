@@ -28,7 +28,7 @@ jobs:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
                   VALIDATE_GO: "false"
-                  KUBERNETES_KUBEVAL_OPTIONS: "--ignore-missing-schemas --kubernetes-version=v1.23.3"
+                  VALIDATE_KUBERNETES_KUBEVAL: "false"
 
     run-golangci-lint:
         name: Run GoLangCI Lint

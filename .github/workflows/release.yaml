@@ -1,9 +1,12 @@
 name: Release
 
 on:
-    push:
-        tags:
-            - v*
+    workflow_dispatch:
+        inputs:
+            release-version:
+                description: Release Version
+                required: true
+                type: string
 
 jobs:
     publish-release:
@@ -12,12 +15,16 @@ jobs:
         steps:
             - name: Generate Version
               run: |
-                echo "GitHub Tag: ${{ github.ref_name }}"
+                echo "Release Version: ${{ github.event.inputs.release-version }}"
 
-                TAG_VERSION="$(echo -n "${{ github.ref_name }}" | cut -c2-)"
-                MAJOR="$(echo -n "${TAG_VERSION}" | cut -d "." -f1)"
-                MINOR="$(echo -n "${TAG_VERSION}" | cut -d "." -f2)"
-                PATCH="$(echo -n "${TAG_VERSION}" | cut -d "." -f3)"
+                if [[ "${{ github.event.inputs.release-version }}" =~ ^\d+\.\d+\.\d+$ ]]; then
+                  echo "Unexpected format in release version version"
+                  exit 1
+                fi
+
+                MAJOR="$(echo -n "${{ github.event.inputs.release-version }}" | cut -d "." -f1)"
+                MINOR="$(echo -n "${{ github.event.inputs.release-version }}" | cut -d "." -f2)"
+                PATCH="$(echo -n "${{ github.event.inputs.release-version }}" | cut -d "." -f3)"
 
                 RELEASE_MAJOR_VERSION="${MAJOR}"
                 RELEASE_MINOR_VERSION="${MAJOR}.${MINOR}"
@@ -33,10 +40,27 @@ jobs:
                 echo "Release Major Version: ${RELEASE_MAJOR_VERSION}"
                 echo "Release Minor Version: ${RELEASE_MINOR_VERSION}"
                 echo "Release Patch Version: ${RELEASE_PATCH_VERSION}"
+            - name: Preparing Git CLI
+              run: |
+                git config --global user.name "${{ github.actor }}"
+                git config --global user.email nadunrds@gmail.com
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
                   fetch-depth: 0
+            - name: Update deployment artifacts
+              run: |
+                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
+                  -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
+                  edit set image nadunrds/k8s-replicator=nadunrds/k8s-replicator:${{ env.RELEASE_PATCH_VERSION }}
+
+                git add kustomize
+                git commit -m "[Automated] Preparing for Release v${{ github.event.inputs.release-version }}"
+            - name: Create Release Tag
+              run: |
+                GITHUB_TAG="v${{ github.event.inputs.release-version }}"
+                git tag "${GITHUB_TAG}"
+                git push origin "${GITHUB_TAG}"
             - name: Setup GoLang
               uses: actions/setup-go@v2
               with:
@@ -89,7 +113,7 @@ jobs:
                     nadunrds/k8s-replicator:latest
             - name: Prepare Release Note
               run: |
-                sed -i 's/{{VERSION_TAG}}/${{ github.ref_name }}/g' .github/RELEASE_NOTE
+                sed -i 's/{{VERSION_TAG}}/v${{ github.event.inputs.release-version }}/g' .github/RELEASE_NOTE
             - name: Create Release
               id: create-release
               uses: actions/create-release@v1
@@ -97,7 +121,7 @@ jobs:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                 tag_name: ${{ github.ref }}
-                release_name: Kubernetes Replicator ${{ github.ref_name }}
+                release_name: Kubernetes Replicator v${{ github.event.inputs.release-version }}
                 body_path: .github/RELEASE_NOTE
                 draft: false
                 prerelease: false
@@ -128,9 +152,12 @@ jobs:
                 addToReleaseNote ""
                 addToReleaseNote "- "
 
-                git config --global user.name "${{ github.actor }}"
-                git config --global user.email nadunrds@gmail.com
+                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
+                  -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
+                  edit set image nadunrds/k8s-replicator=nadunrds/k8s-replicator:latest
+
                 git add .github/RELEASE_NOTE
+                git add kustomize
                 git commit -m "[Automated] Preparing for next development iteration"
 
                 git checkout -b "release-${RELEASE_PATCH_VERSION}"

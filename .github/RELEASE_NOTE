@@ -12,3 +12,5 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
   - Add additional step of verification when object is not in informer as there can be cache issues.
 - Add support for replicating Config Maps
 - Remove all unwanted packages from docker image
+- Add Checkov scan to pipelines and fix issues
+- Add a simple liveness probe to validate responsiveness
