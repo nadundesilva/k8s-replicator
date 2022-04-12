@@ -25,4 +25,4 @@ configMapGenerator:
 images:
 - name: nadunrds/k8s-replicator
   newName: nadunrds/k8s-replicator
-  newTag: latest
+  newTag: 0.3.0
