@@ -16,6 +16,7 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
@@ -47,6 +48,12 @@ type ClientInterface interface {
 	ListConfigMaps(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error)
 	GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error)
 	DeleteConfigMap(ctx context.Context, namespace, name string) error
+
+	NetworkPolicyInformer() cache.SharedIndexInformer
+	ApplyNetworkPolicy(ctx context.Context, namespace string, netpol *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error)
+	ListNetworkPolicies(namespace string, selector labels.Selector) ([]*networkingv1.NetworkPolicy, error)
+	GetNetworkPolicy(ctx context.Context, namespace, name string) (*networkingv1.NetworkPolicy, error)
+	DeleteNetworkPolicy(ctx context.Context, namespace, name string) error
 }
 
 func toPointer[T interface{}](val T) *T {

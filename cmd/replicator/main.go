@@ -99,6 +99,7 @@ func main() {
 		availableResourceReplicators := []resources.ResourceReplicator{
 			resources.NewSecretReplicator(k8sClient, logger),
 			resources.NewConfigMapReplicator(k8sClient, logger),
+			resources.NewNetworkPolicyReplicator(k8sClient, logger),
 		}
 		for _, resource := range conf.Resources {
 			found := false

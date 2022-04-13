@@ -31,13 +31,18 @@ rules:
   resources:
   - secrets
   - configmaps
-  verbs:
+  verbs: &resourceVerbs
   - watch
   - list
   - get
   - create
   - patch
   - delete
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  verbs: *resourceVerbs
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

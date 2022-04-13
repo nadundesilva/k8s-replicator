@@ -13,3 +13,5 @@ resources:
   kind: Secret
 - apiVersion: v1
   kind: ConfigMap
+- apiVersion: networking.k8s.io/v1
+  kind: NetworkPolicy

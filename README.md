@@ -12,6 +12,7 @@ Replicator supports copying kubernetes resources across namespaces. This control
 
 * Secrets
 * Config Maps
+* Network Policies
 
 ## How to Use
 
@@ -26,7 +27,7 @@ to be used (eg:- `0.3.0`) and kubectl CLI should be configured pointing to the c
 curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/install.sh | bash -s <VERSION>
 ```
 
-#### Manual Applying
+#### Manual Installation
 
 * Clone this repository and checkout the required version of K8s Replicator.
 * Update the configuration (`<REPOSITORY_ROOT>/kustomize/config.yaml`) to match your needs.
