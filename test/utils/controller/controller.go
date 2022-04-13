@@ -166,7 +166,9 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 		return d.Status.AvailableReplicas > 0 && d.Status.ReadyReplicas > 0
 	}), wait.WithTimeout(time.Minute))
 	if err != nil {
-		t.Fatalf("failed to wait for controller deployment to be ready: %v", err)
+		t.Errorf("failed to wait for controller deployment to be ready: %v", err)
+		startStreamingLogs(ctx, t, cfg, controllerDeployment)
+		t.FailNow()
 	}
 	t.Log("waiting for controller to startup complete")
 
@@ -189,20 +191,24 @@ func startStreamingLogs(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 	}
 	for _, pod := range podList.Items {
 		podName := pod.GetName()
-		req := k8sClient.CoreV1().Pods(deployment.GetNamespace()).GetLogs(pod.GetName(), &corev1.PodLogOptions{
-			Follow: true,
-		})
-		logReader, err := req.Stream(ctx)
-		if err != nil {
-			t.Fatalf("failed to stream logs from replicator: %v", err)
-		}
 
-		logScanner := bufio.NewScanner(logReader)
-		go func() {
+		readLogs := func(previous bool) {
+			req := k8sClient.CoreV1().Pods(deployment.GetNamespace()).GetLogs(pod.GetName(), &corev1.PodLogOptions{
+				Follow:   true,
+				Previous: previous,
+			})
+			logReader, err := req.Stream(ctx)
+			if err != nil {
+				t.Logf("failed to stream logs from replicator: %v", err)
+				return
+			}
+
+			logScanner := bufio.NewScanner(logReader)
 			defer func() {
 				err = logReader.Close()
 				if err != nil {
-					t.Errorf("failed to close logs stream: %v", err)
+					t.Logf("failed to close logs stream: %v", err)
+					return
 				}
 			}()
 
@@ -211,8 +217,11 @@ func startStreamingLogs(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 			}
 			err = logScanner.Err()
 			if err != nil {
-				t.Errorf("error occurred while reading logs: %v", err)
+				t.Logf("error occurred while reading logs: %v", err)
+				return
 			}
-		}()
+		}
+		readLogs(true)
+		go readLogs(false)
 	}
 }
