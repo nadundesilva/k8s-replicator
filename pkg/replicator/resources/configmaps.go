@@ -53,17 +53,7 @@ func (r *configMapReplicator) Informer() cache.SharedInformer {
 
 func (r *configMapReplicator) Clone(source metav1.Object) metav1.Object {
 	sourceConfigMap := source.(*corev1.ConfigMap)
-	clonedConfigMap := &corev1.ConfigMap{
-		BinaryData: map[string][]byte{},
-		Data:       map[string]string{},
-	}
-	for k, v := range sourceConfigMap.BinaryData {
-		clonedConfigMap.BinaryData[k] = v
-	}
-	for k, v := range sourceConfigMap.Data {
-		clonedConfigMap.Data[k] = v
-	}
-	return clonedConfigMap
+	return sourceConfigMap.DeepCopy()
 }
 
 func (r *configMapReplicator) Apply(ctx context.Context, namespace string, object metav1.Object) error {

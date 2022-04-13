@@ -53,18 +53,7 @@ func (r *secretReplicator) Informer() cache.SharedInformer {
 
 func (r *secretReplicator) Clone(source metav1.Object) metav1.Object {
 	sourceSecret := source.(*corev1.Secret)
-	clonedSecret := &corev1.Secret{
-		Type:       sourceSecret.Type,
-		Data:       map[string][]byte{},
-		StringData: map[string]string{},
-	}
-	for k, v := range sourceSecret.Data {
-		clonedSecret.Data[k] = v
-	}
-	for k, v := range sourceSecret.StringData {
-		clonedSecret.StringData[k] = v
-	}
-	return clonedSecret
+	return sourceSecret.DeepCopy()
 }
 
 func (r *secretReplicator) Apply(ctx context.Context, namespace string, object metav1.Object) error {
