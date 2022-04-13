@@ -21,8 +21,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+const FieldManager = "replicator.nadundesilva.github.io/apply"
+
 var defaultApplyOptions = metav1.ApplyOptions{
-	FieldManager: "replicator.nadundesilva.github.io/apply",
+	FieldManager: FieldManager,
 }
 var defaultGetOptions = metav1.GetOptions{}
 var defaultDeleteOptions = metav1.DeleteOptions{

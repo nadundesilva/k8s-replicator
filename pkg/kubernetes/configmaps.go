@@ -19,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigcorev1 "k8s.io/client-go/applyconfigurations/core/v1"
-	applyconfigmetav1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	"k8s.io/client-go/tools/cache"
 )
 
@@ -30,19 +29,13 @@ func (c *client) ConfigMapInformer() cache.SharedIndexInformer {
 }
 
 func (c *client) ApplyConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-	applyConfig := &applyconfigcorev1.ConfigMapApplyConfiguration{
-		TypeMetaApplyConfiguration: applyconfigmetav1.TypeMetaApplyConfiguration{
-			Kind:       toPointer(KindConfigMap),
-			APIVersion: toPointer(corev1.SchemeGroupVersion.String()),
-		},
-		ObjectMetaApplyConfiguration: &applyconfigmetav1.ObjectMetaApplyConfiguration{
-			Name:        &configMap.Name,
-			Labels:      configMap.Labels,
-			Annotations: configMap.Annotations,
-		},
-		Data:       configMap.Data,
-		BinaryData: configMap.BinaryData,
-		Immutable:  configMap.Immutable,
+	applyConfig := applyconfigcorev1.ConfigMap(configMap.GetName(), namespace).
+		WithLabels(configMap.GetLabels()).
+		WithAnnotations(configMap.GetAnnotations()).
+		WithData(configMap.Data).
+		WithBinaryData(configMap.BinaryData)
+	if configMap.Immutable != nil {
+		applyConfig = applyConfig.WithImmutable(*configMap.Immutable)
 	}
 	return c.clientset.CoreV1().ConfigMaps(namespace).Apply(ctx, applyConfig, defaultApplyOptions)
 }
