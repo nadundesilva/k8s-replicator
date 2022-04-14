@@ -199,7 +199,7 @@ func startStreamingLogs(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 			})
 			logReader, err := req.Stream(ctx)
 			if err != nil {
-				t.Logf("failed to stream logs from replicator: %v", err)
+				t.Logf("failed to stream logs from replicator (previous: %t): %v", previous, err)
 				return
 			}
 

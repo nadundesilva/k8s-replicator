@@ -29,8 +29,8 @@ type namespaceDatum struct {
 }
 
 type objectDatum struct {
-	Namespace string            `json:"name"`
-	Name      string            `json:"namespace"`
+	Namespace string            `json:"namespace"`
+	Name      string            `json:"name"`
 	Labels    map[string]string `json:"labels"`
 }
 
