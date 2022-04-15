@@ -143,7 +143,8 @@ func TestNamespaceLabels(t *testing.T) {
 				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList)
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
+					validation.WithObjectMatcher(resource.matcher))
 
 				testedNs.GetLabels()[replicator.NamespaceTypeLabelKey] = replicator.NamespaceTypeLabelValueIgnored
 				namespaces.Update(ctx, t, cfg, testedNs)

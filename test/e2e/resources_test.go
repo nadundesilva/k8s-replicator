@@ -180,6 +180,8 @@ func TestResourcesUpdation(t *testing.T) {
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
+					validation.WithObjectMatcher(resource.matcher))
 
 				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
@@ -204,6 +206,8 @@ func TestResourcesUpdation(t *testing.T) {
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
+					validation.WithObjectMatcher(resource.matcher))
 
 				updatedObject := resource.sourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
@@ -244,6 +248,7 @@ func TestResourcesDeletion(t *testing.T) {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
+
 				resources.DeleteObjectWithWait(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.sourceObject)
 				return ctx
 			}).
@@ -263,6 +268,7 @@ func TestResourcesDeletion(t *testing.T) {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
+
 				ctx = namespaces.DeleteWithWait(ctx, t, cfg, namespaces.GetSource(ctx))
 				return ctx
 			}).
@@ -273,7 +279,7 @@ func TestResourcesDeletion(t *testing.T) {
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, newFeatureBuilder("controller recreated deleted replicas", resource).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller recreates deleted replicas", resource).
 			WithLabel("operation", "delete").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = setupInitialNamspaces(ctx, t, cfg)
@@ -283,6 +289,7 @@ func TestResourcesDeletion(t *testing.T) {
 				cloneNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
+
 				resources.DeleteObject(ctx, t, cfg, cloneNamespace.GetName(), resource.sourceObject)
 				return ctx
 			}).
@@ -304,6 +311,7 @@ func TestResourcesDeletion(t *testing.T) {
 				cloneNamespace, ctx := namespaces.CreateRandom(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.sourceObject, resource.objectList,
 					validation.WithObjectMatcher(resource.matcher))
+
 				ctx = namespaces.DeleteWithWait(ctx, t, cfg, cloneNamespace)
 				return ctx
 			}).
