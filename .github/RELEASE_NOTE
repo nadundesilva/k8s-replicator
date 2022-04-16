@@ -5,3 +5,4 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
 #### Changelog:
 
 - Add support for Network Policy replication
+- Simply resource replicator by moving resource cloning into controller

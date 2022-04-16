@@ -51,11 +51,6 @@ func (r *secretReplicator) Informer() cache.SharedInformer {
 	return r.k8sClient.SecretInformer()
 }
 
-func (r *secretReplicator) Clone(source metav1.Object) metav1.Object {
-	sourceSecret := source.(*corev1.Secret)
-	return sourceSecret.DeepCopy()
-}
-
 func (r *secretReplicator) Apply(ctx context.Context, namespace string, object metav1.Object) error {
 	_, err := r.k8sClient.ApplySecret(ctx, namespace, object.(*corev1.Secret))
 	return err

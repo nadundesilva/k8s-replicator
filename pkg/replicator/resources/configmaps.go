@@ -51,11 +51,6 @@ func (r *configMapReplicator) Informer() cache.SharedInformer {
 	return r.k8sClient.ConfigMapInformer()
 }
 
-func (r *configMapReplicator) Clone(source metav1.Object) metav1.Object {
-	sourceConfigMap := source.(*corev1.ConfigMap)
-	return sourceConfigMap.DeepCopy()
-}
-
 func (r *configMapReplicator) Apply(ctx context.Context, namespace string, object metav1.Object) error {
 	_, err := r.k8sClient.ApplyConfigMap(ctx, namespace, object.(*corev1.ConfigMap))
 	return err

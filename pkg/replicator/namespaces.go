@@ -49,7 +49,7 @@ func (r *controller) handleNewNamespace(obj interface{}) {
 			logger.Errorw("failed to list the resources")
 		}
 		for _, object := range objects {
-			clonedObj := cloneObject(replicator, object)
+			clonedObj := cloneObject(object)
 
 			replicationAttempted, err := applyReplica(ctx, logger, object, namespace, clonedObj, replicator)
 			if replicationAttempted {

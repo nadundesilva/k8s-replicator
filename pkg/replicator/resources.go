@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 )
 
@@ -151,7 +152,7 @@ func (h *ResourceEventHandler) OnDelete(obj interface{}) {
 						logger.Errorw("failed to check if source namespace of replica exists", "error", err)
 					}
 				} else if isManagedNamespace(logger, namespace) {
-					clonedObj := cloneObject(h.replicator, deletedObj)
+					clonedObj := cloneObject(deletedObj)
 					clonedObj.GetAnnotations()[SourceNamespaceAnnotationKey] = sourceNamespaceName
 
 					err = h.replicator.Apply(ctx, namespace.GetName(), clonedObj)
@@ -193,7 +194,7 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}, eventType string
 			if err != nil {
 				return fmt.Errorf("failed to list namespaces: %w", err)
 			} else {
-				clonedObj := cloneObject(h.replicator, object)
+				clonedObj := cloneObject(object)
 
 				for _, namespace := range namespaces {
 					logger := logger.With("replicaNamespace", namespace.GetName())
@@ -248,8 +249,9 @@ func (h *ResourceEventHandler) handleUpdate(newObj interface{}, eventType string
 	return nil
 }
 
-func cloneObject(replicator resources.ResourceReplicator, source metav1.Object) metav1.Object {
-	clonedObj := replicator.Clone(source)
+func cloneObject(source metav1.Object) metav1.Object {
+	runtimeObj := source.(runtime.Object)
+	clonedObj := runtimeObj.DeepCopyObject().(metav1.Object)
 	clonedObj.SetName(source.GetName())
 
 	newLabels := map[string]string{}

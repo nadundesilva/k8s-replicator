@@ -51,11 +51,6 @@ func (r *networkPolicyReplicator) Informer() cache.SharedInformer {
 	return r.k8sClient.NetworkPolicyInformer()
 }
 
-func (r *networkPolicyReplicator) Clone(source metav1.Object) metav1.Object {
-	sourceNetworkPolicy := source.(*networkingv1.NetworkPolicy)
-	return sourceNetworkPolicy.DeepCopy()
-}
-
 func (r *networkPolicyReplicator) Apply(ctx context.Context, namespace string, object metav1.Object) error {
 	_, err := r.k8sClient.ApplyNetworkPolicy(ctx, namespace, object.(*networkingv1.NetworkPolicy))
 	return err
