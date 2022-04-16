@@ -16,7 +16,6 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigcorev1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -45,11 +44,7 @@ func (c *client) ListConfigMaps(namespace string, selector labels.Selector) ([]*
 }
 
 func (c *client) GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error) {
-	configMap, err := c.resourceInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(namespace).Get(name)
-	if errors.IsNotFound(err) {
-		return c.clientset.CoreV1().ConfigMaps(namespace).Get(ctx, name, defaultGetOptions)
-	}
-	return configMap, err
+	return c.clientset.CoreV1().ConfigMaps(namespace).Get(ctx, name, defaultGetOptions)
 }
 
 func (c *client) DeleteConfigMap(ctx context.Context, namespace, name string) error {

@@ -16,7 +16,6 @@ import (
 	"context"
 
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfignetworkingv1 "k8s.io/client-go/applyconfigurations/networking/v1"
 	"k8s.io/client-go/tools/cache"
@@ -106,11 +105,7 @@ func (c *client) ListNetworkPolicies(namespace string, selector labels.Selector)
 }
 
 func (c *client) GetNetworkPolicy(ctx context.Context, namespace, name string) (*networkingv1.NetworkPolicy, error) {
-	netpol, err := c.resourceInformerFactory.Networking().V1().NetworkPolicies().Lister().NetworkPolicies(namespace).Get(name)
-	if errors.IsNotFound(err) {
-		return c.clientset.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, defaultGetOptions)
-	}
-	return netpol, err
+	return c.clientset.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, defaultGetOptions)
 }
 
 func (c *client) DeleteNetworkPolicy(ctx context.Context, namespace, name string) error {
