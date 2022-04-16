@@ -29,9 +29,9 @@ ensure_dependencies() {
         fi
     done
     set -e
-    echo
 
     if [ "${#missingRequirements[@]}" != "0" ]; then
+        echo
         echo -n "🤔 Missing dependencies found. Would you like to install them automatically ? (Y/n): "
         read -r shouldInstallRequirements
         shouldInstallRequirements=${shouldInstallRequirements:-"y"}
@@ -53,7 +53,6 @@ ensure_dependencies() {
     else
         echo "✅ All dependencies are already available"
     fi
-    echo
 }
 
 setup_cert_manager() {
@@ -71,7 +70,19 @@ setup_cert_manager() {
 }
 
 ensure_dependencies
+
+echo
 setup_cert_manager
 
-kubectl create ns kr-cert-issuer
-kubectl apply -n kr-cert-issuer -k cert-issuer
+echo
+echo "🌟 Installing Kubernetes Replicator"
+kubectl apply -k ../../kustomize
+echo "✅ Installing Kubernetes Replicator Complete"
+
+echo
+echo "🌟 Installing Cert Issuer"
+kubectl apply -k ./cert-issuer
+echo "✅ Installing Cert Issuer Complete"
+
+echo
+echo "🏄 Completed! Cert Manager Example is ready in the cluster"

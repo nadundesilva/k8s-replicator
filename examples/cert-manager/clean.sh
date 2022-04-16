@@ -11,8 +11,18 @@
 # limitations under the License.
 set -e
 
-kubectl delete -n kr-cert-issuer -k cert-issuer
-kubectl delete ns kr-cert-issuer
+echo
+echo "🧹 Removing Cert Issuer"
+kubectl delete -k ./cert-issuer
 
+echo
+echo "🧹 Removing Kubernetes Replicator"
+kubectl delete -k ../../kustomize
+
+echo
+echo "🧹 Removing Cert Manager"
 helm delete kr-cert-manager -n kr-cert-manager
 kubectl delete ns kr-cert-manager
+
+echo
+echo "✋ Completed! Cert Manager example is removed from the cluster"
