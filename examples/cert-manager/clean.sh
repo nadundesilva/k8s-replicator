@@ -11,6 +11,11 @@
 # limitations under the License.
 set -e
 
+echo "🧹 Removing Editors"
+kubectl delete -k ./editors/editor-03
+kubectl delete -k ./editors/editor-02
+kubectl delete -k ./editors/editor-01
+
 echo
 echo "🧹 Removing Cert Issuer"
 kubectl delete -k ./cert-issuer

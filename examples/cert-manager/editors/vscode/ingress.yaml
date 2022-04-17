@@ -8,14 +8,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-namespace: kr-cert-issuer
-
-resources:
-- namespace.yaml
-- selfsigned-issuer.yaml
-- selfsigned-ca-cert.yaml
-- ca-issuer.yaml
-- vscode-cert.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vscode
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - editor.vscode.local
+    secretName: vscode-wildcard-tls
+  rules:
+  - host: editor.vscode.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vscode
+            port:
+              number: 80

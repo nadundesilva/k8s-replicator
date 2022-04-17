@@ -8,31 +8,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: sample-app-wildcard
-spec:
-  isCA: false
-  commonName: '*.sample-app.local'
-  dnsNames:
-  - sample-app.local
-  - '*.sample-app.local'
-  subject:
-    organizations:
-      - replicator.nadundesilva.github.io
-  usages:
-  - server auth
-  duration: 720h
-  renewBefore: 360h
-  secretName: sample-app-wildcard-tls
-  secretTemplate:
-    labels:
-      replicator.nadundesilva.github.io/object-type: source
-  privateKey:
-    algorithm: ECDSA
-    size: 256
-  issuerRef:
-    name: ca
-    kind: Issuer
-    group: cert-manager.io
+- op: replace
+  path: /spec/tls/0/hosts/0
+  value: editor-02.vscode.local
+- op: replace
+  path: /spec/rules/0/host
+  value: editor-02.vscode.local

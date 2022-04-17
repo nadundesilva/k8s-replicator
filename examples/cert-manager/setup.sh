@@ -85,4 +85,11 @@ kubectl apply -k ./cert-issuer
 echo "✅ Installing Cert Issuer Complete"
 
 echo
+echo "🌟 Installing Editors"
+kubectl apply -k ./editors/editor-01
+kubectl apply -k ./editors/editor-02
+kubectl apply -k ./editors/editor-03
+echo "✅ Installing Editors Complete"
+
+echo
 echo "🏄 Completed! Cert Manager Example is ready in the cluster"
