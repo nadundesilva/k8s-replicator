@@ -47,7 +47,7 @@ replicator.nadundesilva.github.io/object-type=source
 
 All objects with the above label will replicated into all namespaces.
 
-### Ignored namespaces
+#### Ignored namespaces
 
 The following namespaces are ignored by default.
 
@@ -63,6 +63,10 @@ If you want to override this behavior and specifically replicate to a namespace,
 ```properties
 replicator.nadundesilva.github.io/namespace-type=managed
 ```
+
+### Examples
+
+Examples based on the K8s Replicator can be found [here](./examples/).
 
 ### Additional labels/annotations used by the controller
 

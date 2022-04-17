@@ -2,7 +2,7 @@
 
 The following list of examples illustrates practical usages of the K8s Replicator.
 
-- [WIP] [Cert Manager](./cert-manager)
+- [Cert Manager](./cert-manager)
 
 ## How to Tryout
 
