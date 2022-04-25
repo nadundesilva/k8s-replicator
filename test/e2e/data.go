@@ -90,14 +90,14 @@ func generateResourcesCreationTestData(t *testing.T) []resourceTestDatum {
 					"secret-data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("secret-data-item-two-value"))),
 				},
 			},
-			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
+			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) error {
 				sourceSecret := sourceObject.(*corev1.Secret)
 				replicaSecret := replicaObject.(*corev1.Secret)
 				if !reflect.DeepEqual(sourceSecret.Data, replicaSecret.Data) {
-					t.Errorf("secret data not equal; want %s, got %s",
+					return fmt.Errorf("secret data not equal; want %s, got %s",
 						sourceSecret.Data, replicaSecret.Data)
 				}
-				return true
+				return nil
 			},
 		},
 		{
@@ -130,14 +130,14 @@ func generateResourcesCreationTestData(t *testing.T) []resourceTestDatum {
 					"config-map-data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("config-map-data-item-two-value"))),
 				},
 			},
-			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
+			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) error {
 				sourceConfigMap := sourceObject.(*corev1.ConfigMap)
 				replicaConfigMap := replicaObject.(*corev1.ConfigMap)
 				if !reflect.DeepEqual(sourceConfigMap.BinaryData, replicaConfigMap.BinaryData) {
-					t.Errorf("config map data not equal; want %s, got %s",
+					return fmt.Errorf("config map data not equal; want %s, got %s",
 						sourceConfigMap.BinaryData, replicaConfigMap.BinaryData)
 				}
-				return true
+				return nil
 			},
 		},
 		{
@@ -296,14 +296,14 @@ func generateResourcesCreationTestData(t *testing.T) []resourceTestDatum {
 					},
 				},
 			},
-			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) bool {
+			matcher: func(sourceObject k8s.Object, replicaObject k8s.Object) error {
 				sourceNetworkPolicy := sourceObject.(*networkingv1.NetworkPolicy)
 				replicaNetworkPolicy := replicaObject.(*networkingv1.NetworkPolicy)
 				if !reflect.DeepEqual(sourceNetworkPolicy.Spec, replicaNetworkPolicy.Spec) {
-					t.Errorf("network policy spec not equal; want %+v, got %+v",
+					return fmt.Errorf("network policy spec not equal; want %+v, got %+v",
 						sourceNetworkPolicy.Spec, replicaNetworkPolicy.Spec)
 				}
-				return true
+				return nil
 			},
 		},
 	}

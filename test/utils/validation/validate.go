@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type ObjectMatcher func(sourceObject k8s.Object, replicaObject k8s.Object) bool
+type ObjectMatcher func(sourceObject k8s.Object, replicaObject k8s.Object) error
 
 func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	sourceObject k8s.Object, objectList k8s.ObjectList, options ...ReplicationOption) {
@@ -100,49 +100,60 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 			}
 			err := matchMap(sourceObject.GetLabels(), object.GetLabels())
 			if err != nil {
-				t.Errorf("object %s/%s labels are not matching %v", object.GetNamespace(), object.GetName(), err)
+				t.Logf("object %s/%s labels are not matching: %v", object.GetNamespace(), object.GetName(), err)
+				return false
 			}
 			err = matchMap(sourceObject.GetAnnotations(), object.GetAnnotations())
 			if err != nil {
-				t.Errorf("object %s/%s annotations are not matching %v", object.GetNamespace(), object.GetName(), err)
+				t.Logf("object %s/%s annotations are not matching: %v", object.GetNamespace(), object.GetName(), err)
+				return false
 			}
 
 			objType, objTypeOk := object.GetLabels()[replicator.ObjectTypeLabelKey]
 			if !objTypeOk {
-				t.Errorf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
+				t.Logf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
 					replicator.ObjectTypeLabelKey)
+				return false
 			}
 			if namespaces.GetSource(ctx).GetName() == object.GetNamespace() {
 				if objTypeOk && objType != replicator.ObjectTypeLabelValueSource {
-					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
+					t.Logf("object %s/%s label %s does not contain the expected value; want %s, got %s",
 						object.GetNamespace(), object.GetName(), replicator.ObjectTypeLabelKey,
 						replicator.ObjectTypeLabelValueSource, objType)
+					return false
 				}
 			} else {
 				if objTypeOk && objType != replicator.ObjectTypeLabelValueReplica {
-					t.Errorf("object %s/%s label %s does not contain the expected value; want %s, got %s",
+					t.Logf("object %s/%s label %s does not contain the expected value; want %s, got %s",
 						object.GetNamespace(), object.GetName(), replicator.ObjectTypeLabelKey,
 						replicator.ObjectTypeLabelValueReplica, objType)
+					return false
 				}
 
 				sourceNs, sourceNsOk := object.GetAnnotations()[replicator.SourceNamespaceAnnotationKey]
 				if sourceNsOk {
 					if sourceNs != namespaces.GetSource(ctx).GetName() {
-						t.Errorf("object %s/%s annotation %s does not contain the source namespace; want %s, got %s",
+						t.Logf("object %s/%s annotation %s does not contain the source namespace; want %s, got %s",
 							object.GetNamespace(), object.GetName(), replicator.SourceNamespaceAnnotationKey,
 							namespaces.GetSource(ctx).GetName(), sourceNs)
+						return false
 					}
 				} else {
-					t.Errorf("object %s/%s does not contain annotation key %s", object.GetNamespace(), object.GetName(),
+					t.Logf("object %s/%s does not contain annotation key %s", object.GetNamespace(), object.GetName(),
 						replicator.SourceNamespaceAnnotationKey)
+					return false
 				}
 			}
 			if opts.objectMatcher != nil {
-				opts.objectMatcher(sourceObject, object)
+				err := opts.objectMatcher(sourceObject, object)
+				if err != nil {
+					t.Logf("failed matching objects: %v", err)
+					return false
+				}
 			}
 			return true
 		}),
-		wait.WithTimeout(time.Minute*3),
+		wait.WithTimeout(time.Minute),
 	)
 	if err != nil {
 		t.Errorf("failed to wait for replicated objects: %v", err)
@@ -183,7 +194,7 @@ func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 
 		t.Logf("waiting for object %s/%s to be deleted", clonedObj.GetNamespace(), clonedObj.GetName())
 		err := wait.For(conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj),
-			wait.WithTimeout(time.Minute*3))
+			wait.WithTimeout(time.Minute))
 		if err != nil {
 			t.Errorf("failed to wait for replicated objects deletion: %v", err)
 			err = printState(ctx, t, cfg, sourceObject)
