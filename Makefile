@@ -37,13 +37,17 @@ build: clean
 docker: build
 	docker build -t $(CONTROLLER_IMAGE) .
 
+.PHONY: pre-integration-test
+ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
+pre-integration-test:
+	@echo "Using already existing docker image: $(CONTROLLER_IMAGE)"
+else
+pre-integration-test: docker
+endif
+
 .PHONY: test
 test: test.e2e
 
 .PHONY: test.e2e
-ifeq ("$(DISABLE_IMAGE_BUILD)", "true")
-test.e2e:
-else
-test.e2e: docker
-endif
+test.e2e: pre-integration-test
 	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
