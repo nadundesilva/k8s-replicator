@@ -4,9 +4,4 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
 
 #### Changelog:
 
-- Add support for Network Policy replication
-- Simplify and improve resource replicator
-  - Move resource cloning into controller (removed `Clone(source metav1.Object) source metav1.Object` function)
-  - Update `Get(ctx context.Context, namespace, name string) (metav1.Object, error)` to always return object from API Server to avoid invalid cache related issues
-- Add Cert Manager Example
-- Fix intermittent issues in E2E tests
+- 
