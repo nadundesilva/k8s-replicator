@@ -13,6 +13,9 @@ kind: Kustomization
 
 namespace: kr-cert-issuer
 
+commonLabels:
+  example: cert-manager
+
 resources:
 - namespace.yaml
 - selfsigned-issuer.yaml

@@ -13,6 +13,9 @@ kind: Kustomization
 
 namespace: kr-vscode
 
+commonLabels:
+  example: cert-manager
+
 resources:
 - namespace.yaml
 - deployment.yaml
