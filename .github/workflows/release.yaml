@@ -50,9 +50,8 @@ jobs:
                   fetch-depth: 0
             - name: Update deployment artifacts
               run: |
-                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
-                  -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                  edit set image nadunrds/k8s-replicator=nadunrds/k8s-replicator:${{ env.RELEASE_PATCH_VERSION }}
+                source .github/scripts/utils.sh
+                update_controller_image ${{ github.workspace }}/kustomize ${{ env.RELEASE_PATCH_VERSION }}
 
                 git add kustomize
                 git commit -m "[Automated] Preparing for Release v${{ github.event.inputs.release-version }}"
@@ -152,9 +151,8 @@ jobs:
                 addToReleaseNote ""
                 addToReleaseNote "- "
 
-                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
-                  -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                  edit set image nadunrds/k8s-replicator=nadunrds/k8s-replicator:latest
+                source .github/scripts/utils.sh
+                update_controller_image ${{ github.workspace }}/kustomize latest
 
                 git add .github/RELEASE_NOTE
                 git add kustomize

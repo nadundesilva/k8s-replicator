@@ -128,7 +128,7 @@ jobs:
               uses: actions/setup-go@v2
               with:
                   go-version: "^1.18"
-            - name: Install Kind
+            - name: Setup Kind
               run: |
                 go get sigs.k8s.io/kind
                 echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
@@ -152,10 +152,8 @@ jobs:
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Validate Example
               run: |
-                echo "🚜 Updating controller image to ${CONTROLLER_IMAGE}"
-                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
-                  -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                  edit set image nadunrds/k8s-replicator=nadunrds/k8s-replicator:${{ github.sha }}
+                source .github/scripts/utils.sh
+                update_controller_image ${{ github.workspace }}/kustomize ${{ github.sha }}
 
                 pushd examples/${{ matrix.example }}
                 ./validate.sh
