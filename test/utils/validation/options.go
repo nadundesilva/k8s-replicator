@@ -12,10 +12,13 @@
  */
 package validation
 
+import "time"
+
 type ReplicationOptions struct {
 	objectMatcher        ObjectMatcher
 	ignoreedNamespaces   []string
 	replicatedNamespaces []string
+	timeout              time.Duration
 }
 
 type ReplicationOption func(*ReplicationOptions)
@@ -35,6 +38,12 @@ func WithReplicationIgnoredNamespaces(namespaces ...string) ReplicationOption {
 func WithReplicatedNamespaces(namespaces ...string) ReplicationOption {
 	return func(options *ReplicationOptions) {
 		options.replicatedNamespaces = append(options.replicatedNamespaces, namespaces...)
+	}
+}
+
+func WithReplicationTimeout(timeout time.Duration) ReplicationOption {
+	return func(options *ReplicationOptions) {
+		options.timeout = timeout
 	}
 }
 

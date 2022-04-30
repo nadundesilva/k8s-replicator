@@ -35,7 +35,9 @@ type ObjectMatcher func(sourceObject k8s.Object, replicaObject k8s.Object) error
 
 func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	sourceObject k8s.Object, objectList k8s.ObjectList, options ...ReplicationOption) {
-	opts := &ReplicationOptions{}
+	opts := &ReplicationOptions{
+		timeout: time.Minute,
+	}
 	for _, option := range options {
 		option(opts)
 	}
@@ -153,7 +155,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 			}
 			return true
 		}),
-		wait.WithTimeout(time.Minute),
+		wait.WithTimeout(opts.timeout),
 	)
 	if err != nil {
 		t.Errorf("failed to wait for replicated objects: %v", err)

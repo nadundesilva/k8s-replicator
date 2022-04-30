@@ -51,3 +51,7 @@ test: test.e2e
 .PHONY: test.e2e
 test.e2e: pre-integration-test
 	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
+
+.PHONY: test.benchmark
+test.benchmark: pre-integration-test
+	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/benchmark/...

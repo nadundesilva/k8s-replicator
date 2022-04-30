@@ -88,6 +88,23 @@ jobs:
                   directory: out
                   download_external_modules: true
 
+    run-benchmark-tests:
+        name: Run Benchmark Tests
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Setup GoLang
+              uses: actions/setup-go@v2
+              with:
+                  go-version: "^1.18"
+            - name: Run Benchmark Tests
+              run: make test.benchmark
+              env:
+                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+
     run-e2e-tests:
         name: Run E2E Tests
         runs-on: ubuntu-latest
@@ -168,6 +185,7 @@ jobs:
             - run-codeql-analysis
             - run-checkov-scan
             - run-e2e-tests
+            - run-benchmark-tests
             - validate-examples
         steps:
             - name: Checkout repository
