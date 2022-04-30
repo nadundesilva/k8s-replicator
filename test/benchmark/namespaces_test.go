@@ -35,6 +35,17 @@ func TestNamespaceCreation(t *testing.T) {
 	initialNamespaceCounts := []int{1, 10, 100, 1000}
 	testNamespaceCount := 100
 
+	measureReplication := func(ctx context.Context, t *testing.T, cfg *envconf.Config, count int) (context.Context, time.Duration) {
+		startTime := time.Now()
+		for i := 0; i < count; i++ {
+			_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+		}
+		validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
+			validation.WithReplicationTimeout(time.Minute*10))
+		duration := time.Since(startTime)
+		return ctx, duration
+	}
+
 	for _, initialNamespaceCount := range initialNamespaceCounts {
 		startingNamespaceCount := initialNamespaceCount
 		finalNamespaceCount := initialNamespaceCount + testNamespaceCount
@@ -44,25 +55,19 @@ func TestNamespaceCreation(t *testing.T) {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
 				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
-
-				for i := 0; i < initialNamespaceCount; i++ {
-					_, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				}
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithReplicationTimeout(time.Minute*10))
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
-			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				startTime := time.Now()
+			Assess("replication time", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+				ctx, duration := measureReplication(ctx, t, cfg, initialNamespaceCount)
+				report = append(report, reportItem{
+					Target:       Namespace,
+					InitialCount: 0,
+					FinalCount:   startingNamespaceCount,
+					Duration:     fmt.Sprint(duration),
+				})
 
-				for i := 0; i < testNamespaceCount; i++ {
-					_, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				}
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithReplicationTimeout(time.Minute*10))
-
-				duration := time.Since(startTime)
+				ctx, duration = measureReplication(ctx, t, cfg, testNamespaceCount)
 				report = append(report, reportItem{
 					Target:       Namespace,
 					InitialCount: startingNamespaceCount,
