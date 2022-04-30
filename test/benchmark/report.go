@@ -14,32 +14,25 @@ package benchmark
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"time"
+	"os"
 )
 
-type Target int64
+type Target string
 
 const (
-	Namespace Target = iota
-	Resource
+	Namespace Target = "Namespace"
+	Resource  Target = "Resource"
+
+	reportPath = "report.json"
 )
 
-func (t Target) String() string {
-	switch t {
-	case Namespace:
-		return "Namespace"
-	case Resource:
-		return "Resource"
-	}
-	return "Unknown"
-}
-
 type reportItem struct {
-	Target       Target        `json:"target"`
-	InitialCount int           `json:"initialCount"`
-	TestCount    int           `json:"testCount"`
-	Duration     time.Duration `json:"duration"`
+	Target       Target `json:"target"`
+	InitialCount int    `json:"initialCount"`
+	FinalCount   int    `json:"finalCount"`
+	Duration     string `json:"duration"`
 }
 
 type Report []reportItem
@@ -47,8 +40,20 @@ type Report []reportItem
 func (r Report) export() error {
 	formattedJson, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
-		return fmt.Errorf("failed to format object data into json: %w", err)
+		return fmt.Errorf("failed to format test report into json: %w", err)
 	}
 	fmt.Printf("Benchmark Results: %s", formattedJson)
+
+	if _, err := os.Stat(reportPath); !errors.Is(err, os.ErrNotExist) {
+		err = os.Remove(reportPath)
+		if err != nil {
+			return fmt.Errorf("failed to remove previous report: %s", reportPath)
+		}
+	}
+
+	err = os.WriteFile(reportPath, formattedJson, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write test report into file: %w", err)
+	}
 	return nil
 }
