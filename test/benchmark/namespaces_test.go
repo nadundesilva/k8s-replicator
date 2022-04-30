@@ -60,18 +60,18 @@ func TestNamespaceCreation(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replication time", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				// Testing creating initial namespaces set
+				time.Sleep(time.Second * 30)
 				ctx, duration := measureReplication(ctx, t, cfg, initialNamespaceCount)
-				report = append(report, reportItem{
-					Target:       Namespace,
+				report.namespace = append(report.namespace, ReportItem{
 					InitialCount: 0,
 					FinalCount:   startingNamespaceCount,
 					Duration:     fmt.Sprint(duration),
 				})
 
-				// Testing creating namespaces with an initial set of namespaces already in cluster 
+				// Testing creating namespaces with an initial set of namespaces already in cluster
+				time.Sleep(time.Second * 30)
 				ctx, duration = measureReplication(ctx, t, cfg, testNamespaceCount)
-				report = append(report, reportItem{
-					Target:       Namespace,
+				report.namespace = append(report.namespace, ReportItem{
 					InitialCount: startingNamespaceCount,
 					FinalCount:   finalNamespaceCount,
 					Duration:     fmt.Sprint(duration),

@@ -16,4 +16,4 @@ out/
 coverage.txt
 
 # Benchmark Report
-test/benchmark/report.json
+test/benchmark/report.md

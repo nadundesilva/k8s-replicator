@@ -91,6 +91,8 @@ jobs:
     run-benchmark-tests:
         name: Run Benchmark Tests
         runs-on: ubuntu-latest
+        permissions:
+          checks: write
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -105,11 +107,11 @@ jobs:
               env:
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Upload Benchmark Report
-              uses: actions/upload-artifact@v3
-              with:
-                  name: benchmark-report
-                  path: test/benchmark/report.json
-                  if-no-files-found: error
+              run: |
+                curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
+                  -H "Accept: application/vnd.github.antiope-preview+json" \
+                  -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
 
     run-e2e-tests:
         name: Run E2E Tests

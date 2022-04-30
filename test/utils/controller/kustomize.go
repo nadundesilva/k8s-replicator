@@ -49,11 +49,11 @@ func buildKustomizeResources(t *testing.T, kustomizeDir string) ([]kustomizeBuil
 	for _, resource := range m.Resources() {
 		yaml, err := resource.AsYAML()
 		if err != nil {
-			return nil, fmt.Errorf("failed get kustomization output yaml: %v", err)
+			return nil, fmt.Errorf("failed get kustomization output yaml: %+w", err)
 		}
 		obj, groupVersionKind, err := scheme.Codecs.UniversalDeserializer().Decode(yaml, nil, nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed parse kustomization output yaml: %v", err)
+			return nil, fmt.Errorf("failed parse kustomization output yaml: %+w", err)
 		}
 
 		resources = append(resources, kustomizeBuildObject{

@@ -17,43 +17,83 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 )
-
-type Target string
 
 const (
-	Namespace Target = "Namespace"
-	Resource  Target = "Resource"
-
-	reportPath = "report.json"
+	markdownReportPath = "report.md"
 )
 
-type reportItem struct {
-	Target       Target `json:"target"`
+type ReportItem struct {
 	InitialCount int    `json:"initialCount"`
 	FinalCount   int    `json:"finalCount"`
 	Duration     string `json:"duration"`
 }
 
-type Report []reportItem
+type ReportItems []ReportItem
+
+func (r ReportItems) Len() int {
+	return len(r)
+}
+
+func (r ReportItems) Less(i, j int) bool {
+	if r[i].InitialCount == r[j].InitialCount {
+		return r[i].FinalCount < r[j].FinalCount
+	} else {
+		return r[i].InitialCount < r[j].InitialCount
+	}
+}
+
+func (r ReportItems) Swap(i, j int) {
+	temp := r[i]
+	r[i] = r[j]
+	r[j] = temp
+}
+
+type Report struct {
+	namespace ReportItems
+}
 
 func (r Report) export() error {
+	sort.Sort(r.namespace)
+
 	formattedJson, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to format test report into json: %w", err)
 	}
 	fmt.Printf("Benchmark Results: %s", formattedJson)
 
-	if _, err := os.Stat(reportPath); !errors.Is(err, os.ErrNotExist) {
-		err = os.Remove(reportPath)
+	return r.generateMarkdownReport()
+}
+
+func (r Report) generateMarkdownReport() error {
+	content := "## K8s Replicator - Benchmark Results\n\n" +
+		"### Namespace Creation\n\n" +
+		"| Initial Namespace Count | Final Namespace Count | Duration |\n" +
+		"| -- | -- | -- |\n"
+	for _, reportItem := range r.namespace {
+		content += fmt.Sprintf("| %d | %d | %s |\n", reportItem.InitialCount, reportItem.FinalCount, reportItem.Duration)
+	}
+	content += "\n"
+
+	err := r.writeToFile(markdownReportPath, []byte(content))
+	if err != nil {
+		return fmt.Errorf("failed to generate markdown report: %+w", err)
+	}
+	return nil
+}
+
+func (r Report) writeToFile(path string, content []byte) error {
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		err = os.Remove(path)
 		if err != nil {
-			return fmt.Errorf("failed to remove previous report: %s", reportPath)
+			return fmt.Errorf("failed to remove previous report: %s", path)
 		}
 	}
 
-	err = os.WriteFile(reportPath, formattedJson, 0644)
+	err := os.WriteFile(path, content, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to write test report into file: %w", err)
+		return fmt.Errorf("failed to write test report %s into file: %+w", path, err)
 	}
 	return nil
 }

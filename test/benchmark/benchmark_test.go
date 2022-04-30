@@ -30,6 +30,7 @@ var (
 
 func TestMain(m *testing.M) {
 	fmt.Printf("running benchmark tests using controller image: \"%s\"\n", controller.GetImage())
+	report = Report{}
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
