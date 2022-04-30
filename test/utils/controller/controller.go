@@ -27,14 +27,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
-	"sigs.k8s.io/kustomize/api/filesys"
-	"sigs.k8s.io/kustomize/api/krusty"
-	"sigs.k8s.io/kustomize/api/types"
 )
 
 const (
@@ -79,52 +75,31 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 	}
 	t.Logf("creating controller artifacts from kustomize dir: %s", kustomizeDir)
 
-	fileSys := filesys.MakeFsOnDisk()
-	if !fileSys.Exists(kustomizeDir) {
-		t.Fatalf("kustomization dir %s does not exist on file system", kustomizeDir)
-	}
-
-	k := krusty.MakeKustomizer(&krusty.Options{
-		AddManagedbyLabel: true,
-		PluginConfig: &types.PluginConfig{
-			FnpLoadingOptions: types.FnPluginLoadingOptions{},
-		},
-	})
-	m, err := k.Run(fileSys, kustomizeDir)
+	resources, err := buildKustomizeResources(t, kustomizeDir)
 	if err != nil {
 		t.Fatalf("failed build kustomization: %v", err)
 	}
 
 	var controllerDeployment *appsv1.Deployment
-	for _, resource := range m.Resources() {
-		yaml, err := resource.AsYAML()
-		if err != nil {
-			t.Fatalf("failed get kustomization output yaml: %v", err)
-		}
-		obj, groupVersionKind, err := scheme.Codecs.UniversalDeserializer().Decode(yaml, nil, nil)
-		if err != nil {
-			t.Fatalf("failed parse kustomization output yaml: %v", err)
-		}
-
+	for _, resource := range resources {
 		setNamespace := func(object metav1.Object, namespace string) {
 			if object.GetNamespace() == defaulControllerNamespace {
 				object.SetNamespace(namespace)
 			}
 		}
 
-		kind := groupVersionKind.String()
-		if deployment, ok := obj.(*appsv1.Deployment); ok {
+		if deployment, ok := resource.obj.(*appsv1.Deployment); ok {
 			t.Logf("creating controller deployment %s/%s", deployment.GetNamespace(), deployment.GetName())
 			setNamespace(deployment, namespace)
 			deployment.Spec.Template.Spec.Containers[0].Image = image
 			controllerDeployment = deployment
-		} else if cm, ok := obj.(*corev1.ConfigMap); ok {
+		} else if cm, ok := resource.obj.(*corev1.ConfigMap); ok {
 			t.Logf("creating controller config map %s/%s", cm.GetNamespace(), cm.GetName())
 			setNamespace(cm, namespace)
-		} else if sa, ok := obj.(*corev1.ServiceAccount); ok {
+		} else if sa, ok := resource.obj.(*corev1.ServiceAccount); ok {
 			t.Logf("creating controller service account %s", sa.GetName())
 			setNamespace(sa, namespace)
-		} else if ns, ok := obj.(*corev1.Namespace); ok {
+		} else if ns, ok := resource.obj.(*corev1.Namespace); ok {
 			t.Logf("creating controller namespace %s", ns.GetName())
 			if ns.GetName() == defaulControllerNamespace {
 				ns.SetName(namespace)
@@ -132,11 +107,11 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 					ns.GetLabels()[k] = v
 				}
 			}
-			ctx = cleanup.AddControllerObjectToContext(ctx, t, obj.(k8s.Object))
-		} else if clusterrole, ok := obj.(*rbacv1.ClusterRole); ok {
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, resource.obj.(k8s.Object))
+		} else if clusterrole, ok := resource.obj.(*rbacv1.ClusterRole); ok {
 			t.Logf("creating controller cluster role %s", clusterrole.GetName())
-			ctx = cleanup.AddControllerObjectToContext(ctx, t, obj.(k8s.Object))
-		} else if clusterrolebinding, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, resource.obj.(k8s.Object))
+		} else if clusterrolebinding, ok := resource.obj.(*rbacv1.ClusterRoleBinding); ok {
 			t.Logf("creating controller cluster role binding %s", clusterrolebinding.GetName())
 			newSubjs := []rbacv1.Subject{}
 			for _, subject := range clusterrolebinding.Subjects {
@@ -146,13 +121,14 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 				newSubjs = append(newSubjs, subject)
 			}
 			clusterrolebinding.Subjects = newSubjs
-			ctx = cleanup.AddControllerObjectToContext(ctx, t, obj.(k8s.Object))
+			ctx = cleanup.AddControllerObjectToContext(ctx, t, resource.obj.(k8s.Object))
 		} else {
 			t.Fatal("unknown resource type found in controller kustomization files")
 		}
-		err = cfg.Client().Resources().Create(ctx, obj.(k8s.Object))
+
+		err = cfg.Client().Resources().Create(ctx, resource.obj.(k8s.Object))
 		if err != nil {
-			t.Fatalf("failed to create controller resource of kind %s: %v", kind, err)
+			t.Fatalf("failed to create controller resource of kind %s: %v", resource.kind, err)
 		}
 	}
 	t.Logf("created controller in namespace %s", namespace)
