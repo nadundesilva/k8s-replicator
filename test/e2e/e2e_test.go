@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
@@ -28,7 +29,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	fmt.Printf("running E2E tests with resources filter: \"%s\" using controller image: \"%s\"\n", testResourcesFilterRegexString,
+	fmt.Printf("running E2E tests with resources filter: \"%s\" using controller image: \"%s\"\n", testdata.GetFilterRegex(),
 		controller.GetImage())
 
 	cfg, err := envconf.NewFromFlags()

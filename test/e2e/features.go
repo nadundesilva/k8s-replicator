@@ -15,10 +15,11 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func newFeatureBuilder(name string, datum resourceTestDatum) *features.FeatureBuilder {
-	return features.New(fmt.Sprintf("%s: %s", datum.name, name)).
-		WithLabel("resource", datum.name)
+func newFeatureBuilder(name string, datum testdata.Resource) *features.FeatureBuilder {
+	return features.New(fmt.Sprintf("%s: %s", datum.Name, name)).
+		WithLabel("resource", datum.Name)
 }
