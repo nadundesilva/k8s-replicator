@@ -52,14 +52,7 @@ jobs:
               run: |
                 source .github/scripts/utils.sh
                 update_controller_image ${{ github.workspace }}/kustomize ${{ env.RELEASE_PATCH_VERSION }}
-
                 git add kustomize
-                git commit -m "[Automated] Preparing for Release v${{ github.event.inputs.release-version }}"
-            - name: Create Release Tag
-              run: |
-                GITHUB_TAG="v${{ github.event.inputs.release-version }}"
-                git tag "${GITHUB_TAG}"
-                git push origin "${GITHUB_TAG}"
             - name: Setup GoLang
               uses: actions/setup-go@v2
               with:
@@ -99,6 +92,23 @@ jobs:
                   TEST_RESOURCES_FILTER_REGEX: Secret
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
                   DISABLE_IMAGE_BUILD: true
+            - name: Run Benchmark Tests
+              run: make test.benchmark
+              env:
+                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  DISABLE_IMAGE_BUILD: true
+            - name: Commit Release Files
+              run: |
+                rm -f BENCHMARK.md
+                cp test/benchmark/report.md BENCHMARK.md
+                git add BENCHMARK.md
+
+                git commit -m "[Automated] Preparing for Release v${{ github.event.inputs.release-version }}"
+            - name: Create Release Tag
+              run: |
+                GITHUB_TAG="v${{ github.event.inputs.release-version }}"
+                git tag "${GITHUB_TAG}"
+                git push origin "${GITHUB_TAG}"
             - name: Build & Push Docker Image
               uses: docker/build-push-action@v2
               with:
