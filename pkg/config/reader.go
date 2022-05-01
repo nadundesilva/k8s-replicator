@@ -59,13 +59,13 @@ func New(reader io.Reader, configType string) (*Conf, error) {
 		return nil, err
 	}
 
-	providedConfKind := viperConf.GetString("kind")
-	if providedConfKind != configFileKind {
-		return nil, fmt.Errorf("invalid config file kind %s, expected %s", providedConfKind, configFileKind)
-	}
 	providedApiVersion := viperConf.GetString("apiVersion")
 	if providedApiVersion != configFileApiVersionV1 {
 		return nil, fmt.Errorf("invalid config file api version %s, expected %s", providedApiVersion, configFileApiVersionV1)
+	}
+	providedConfKind := viperConf.GetString("kind")
+	if providedConfKind != configFileKind {
+		return nil, fmt.Errorf("invalid config file kind %s, expected %s", providedConfKind, configFileKind)
 	}
 
 	conf := &Conf{}
@@ -93,7 +93,7 @@ func replaceEnv(reader io.Reader) (io.Reader, error) {
 		return v
 	})
 	if len(missingEnvs) > 0 {
-		return nil, fmt.Errorf("missing env(s): %s", strings.Join(missingEnvs, ","))
+		return nil, fmt.Errorf("missing env(s): %s", strings.Join(missingEnvs, ", "))
 	}
 
 	return bytes.NewBuffer([]byte(replacedConf)), nil

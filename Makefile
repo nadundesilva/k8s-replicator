@@ -46,7 +46,11 @@ pre-integration-test: docker
 endif
 
 .PHONY: test
-test: test.e2e test.benchmark
+test: test.unit test.e2e test.benchmark
+
+.PHONY: test.unit
+test.unit:
+	go test -v -ldflags "$(GO_LDFLAGS)" -race -timeout 15m -cover -coverprofile=coverage.out ./pkg/...
 
 .PHONY: test.e2e
 test.e2e: pre-integration-test
