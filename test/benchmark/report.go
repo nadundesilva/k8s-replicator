@@ -25,9 +25,9 @@ const (
 )
 
 type ReportItem struct {
-	InitialCount int    `json:"initialCount"`
-	FinalCount   int    `json:"finalCount"`
-	Duration     string `json:"duration"`
+	InitialNamespaceCount int    `json:"initialNamespaceCount"`
+	NewNamespaceCount     int    `json:"newNamespaceCount"`
+	Duration              string `json:"duration"`
 }
 
 type ReportItems []ReportItem
@@ -37,10 +37,10 @@ func (r ReportItems) Len() int {
 }
 
 func (r ReportItems) Less(i, j int) bool {
-	if r[i].InitialCount == r[j].InitialCount {
-		return r[i].FinalCount < r[j].FinalCount
+	if r[i].InitialNamespaceCount == r[j].InitialNamespaceCount {
+		return r[i].NewNamespaceCount < r[j].NewNamespaceCount
 	} else {
-		return r[i].InitialCount < r[j].InitialCount
+		return r[i].InitialNamespaceCount < r[j].InitialNamespaceCount
 	}
 }
 
@@ -52,10 +52,12 @@ func (r ReportItems) Swap(i, j int) {
 
 type Report struct {
 	namespace ReportItems
+	resource  ReportItems
 }
 
 func (r Report) export() error {
 	sort.Sort(r.namespace)
+	sort.Sort(r.resource)
 
 	formattedJson, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
@@ -69,12 +71,23 @@ func (r Report) export() error {
 func (r Report) generateMarkdownReport() error {
 	content := "## K8s Replicator - Benchmark Results\n\n" +
 		"### Namespace Creation\n\n" +
-		"| Initial Namespace Count | Final Namespace Count | Duration |\n" +
+		"This is a benchmark on the duration taken to replicate resources to a set of new namespaces with varying initial and new " +
+		"namespaces counts. The initial namespaces are created beforehand and only the time taken to create the new namespaces " +
+		"and replicate to them are measured for the benchmark.\n\n" +
+		"| Initial Namespace Count | New Namespace Count | Duration |\n" +
 		"| -- | -- | -- |\n"
 	for _, reportItem := range r.namespace {
-		content += fmt.Sprintf("| %d | %d | %s |\n", reportItem.InitialCount, reportItem.FinalCount, reportItem.Duration)
+		content += fmt.Sprintf("| %d | %d | %s |\n", reportItem.InitialNamespaceCount, reportItem.NewNamespaceCount, reportItem.Duration)
 	}
-	content += "\n"
+	content += "\n" +
+		"### Resource Creation\n\n" +
+		"This is a benchmark on replicating a new resource to namespaces with varying namespaces counts. The namespaces are " +
+		"created beforehand and only the time to replicate to the new namespaces are measured.\n\n" +
+		"| Namespace Count | Duration |\n" +
+		"| -- | -- |\n"
+	for _, reportItem := range r.resource {
+		content += fmt.Sprintf("| %d | %s |\n", reportItem.InitialNamespaceCount, reportItem.Duration)
+	}
 
 	err := r.writeToFile(markdownReportPath, []byte(content))
 	if err != nil {

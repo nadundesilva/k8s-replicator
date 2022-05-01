@@ -46,7 +46,7 @@ pre-integration-test: docker
 endif
 
 .PHONY: test
-test: test.e2e
+test: test.e2e test.benchmark
 
 .PHONY: test.e2e
 test.e2e: pre-integration-test
