@@ -23,11 +23,11 @@ import (
 
 const KindConfigMap = "ConfigMap"
 
-func (c *client) ConfigMapInformer() cache.SharedIndexInformer {
+func (c *Client) ConfigMapInformer() cache.SharedIndexInformer {
 	return c.resourceInformerFactory.Core().V1().ConfigMaps().Informer()
 }
 
-func (c *client) ApplyConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+func (c *Client) ApplyConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 	applyConfig := applyconfigcorev1.ConfigMap(configMap.GetName(), namespace).
 		WithLabels(configMap.GetLabels()).
 		WithAnnotations(configMap.GetAnnotations()).
@@ -39,14 +39,14 @@ func (c *client) ApplyConfigMap(ctx context.Context, namespace string, configMap
 	return c.clientset.CoreV1().ConfigMaps(namespace).Apply(ctx, applyConfig, defaultApplyOptions)
 }
 
-func (c *client) ListConfigMaps(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error) {
+func (c *Client) ListConfigMaps(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error) {
 	return c.resourceInformerFactory.Core().V1().ConfigMaps().Lister().ConfigMaps(namespace).List(selector)
 }
 
-func (c *client) GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error) {
+func (c *Client) GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error) {
 	return c.clientset.CoreV1().ConfigMaps(namespace).Get(ctx, name, defaultGetOptions)
 }
 
-func (c *client) DeleteConfigMap(ctx context.Context, namespace, name string) error {
+func (c *Client) DeleteConfigMap(ctx context.Context, namespace, name string) error {
 	return c.clientset.CoreV1().ConfigMaps(namespace).Delete(ctx, name, defaultDeleteOptions)
 }

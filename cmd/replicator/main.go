@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 
 	"github.com/nadundesilva/k8s-replicator/pkg/config"
-	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
+	k8s "github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	"github.com/nadundesilva/k8s-replicator/pkg/signals"
@@ -28,6 +28,8 @@ import (
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 )
 
@@ -43,15 +45,7 @@ func main() {
 		log.Fatalf("failed to create configuration: %v", err)
 	}
 
-	zapConf := zap.NewProductionConfig()
-	logLevel, err := zapcore.ParseLevel(conf.Logging.Level)
-	if err != nil {
-		log.Printf("defaulting to info log level as parsing log level %s failed: %v", conf.Logging.Level, err)
-		logLevel = zapcore.InfoLevel
-	}
-	zapConf.Level = zap.NewAtomicLevelAt(logLevel)
-
-	zapLogger, err := zapConf.Build()
+	zapLogger, err := initLogger(&conf.Logging)
 	if err != nil {
 		log.Fatalf("failed to build logger config: %v", err)
 	}
@@ -60,6 +54,40 @@ func main() {
 	}()
 	logger := zapLogger.Sugar()
 
+	k8sClient, err := initK8sClient(logger)
+	if err != nil {
+		logger.Fatalw("failed to initialize kuberentes client", "error", err)
+	}
+
+	resourceReplicators := createResourceReplicators(k8sClient, conf, logger)
+	replicator := replicator.NewController(resourceReplicators, k8sClient, logger)
+
+	err = k8sClient.Start(stopCh)
+	if err != nil {
+		logger.Fatalw("failed to start k8s client", "error", err)
+	}
+
+	go startHealthEndpoint(logger)
+
+	err = replicator.Start(stopCh)
+	if err != nil {
+		logger.Fatalw("failed to start the replicator", "error", err)
+	}
+}
+
+func initLogger(conf *config.LoggingConf) (*zap.Logger, error) {
+	zapConf := zap.NewProductionConfig()
+	logLevel, err := zapcore.ParseLevel(conf.Level)
+	if err != nil {
+		log.Printf("defaulting to info log level as parsing log level %s failed: %v", conf.Level, err)
+		logLevel = zapcore.InfoLevel
+	}
+	zapConf.Level = zap.NewAtomicLevelAt(logLevel)
+
+	return zapConf.Build()
+}
+
+func initK8sClient(logger *zap.SugaredLogger) (*k8s.Client, error) {
 	resourceSelectorReq, err := labels.NewRequirement(
 		replicator.ObjectTypeLabelKey,
 		selection.In,
@@ -83,15 +111,25 @@ func main() {
 		logger.Fatalw("failed to initialize namespace filter", "error", err)
 	}
 
-	k8sClient, err := kubernetes.NewClient(
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to detect in cluster configuration: %w", err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize underlying kubernetes client: %w", err)
+	}
+
+	return k8s.NewClient(
+		clientset,
 		[]labels.Requirement{*resourceSelectorReq},
 		[]labels.Requirement{*namespaceSelectorReq},
 		logger,
 	)
-	if err != nil {
-		logger.Fatalw("failed to initialize kuberentes client", "error", err)
-	}
+}
 
+func createResourceReplicators(k8sClient *k8s.Client, conf *config.Conf, logger *zap.SugaredLogger) []resources.ResourceReplicator {
 	resourceReplicators := []resources.ResourceReplicator{}
 	if len(conf.Resources) == 0 {
 		logger.Fatalw("no resources specified in configuration to replicate")
@@ -117,26 +155,16 @@ func main() {
 			}
 		}
 	}
-	replicator := replicator.NewController(resourceReplicators, k8sClient, logger)
+	return resourceReplicators
+}
 
-	err = k8sClient.Start(stopCh)
+func startHealthEndpoint(logger *zap.SugaredLogger) {
+	http.HandleFunc("/health", func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprintf(w, "{\"status\":\"OK\"}")
+	})
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		logger.Fatalw("failed to start k8s client", "error", err)
-	}
-
-	go func() {
-		http.HandleFunc("/health", func(w http.ResponseWriter, req *http.Request) {
-			fmt.Fprintf(w, "{\"status\":\"OK\"}")
-		})
-		err := http.ListenAndServe(":8080", nil)
-		if err != nil {
-			logger.Fatalw("failed to start health endpoint")
-		}
-	}()
-
-	err = replicator.Start(stopCh)
-	if err != nil {
-		logger.Fatalw("failed to start the replicator", "error", err)
+		logger.Fatalw("failed to start health endpoint")
 	}
 }
 

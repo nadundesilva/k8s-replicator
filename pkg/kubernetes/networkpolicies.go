@@ -23,11 +23,11 @@ import (
 
 const KindNetworkPolicy = "NetworkPolicy"
 
-func (c *client) NetworkPolicyInformer() cache.SharedIndexInformer {
+func (c *Client) NetworkPolicyInformer() cache.SharedIndexInformer {
 	return c.resourceInformerFactory.Networking().V1().NetworkPolicies().Informer()
 }
 
-func (c *client) ApplyNetworkPolicy(ctx context.Context, namespace string, netpol *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+func (c *Client) ApplyNetworkPolicy(ctx context.Context, namespace string, netpol *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 	specApplyConfig := applyconfignetworkingv1.NetworkPolicySpec().
 		WithPolicyTypes(netpol.Spec.PolicyTypes...).
 		WithPodSelector(extractLabelSelectApplyConfig(&netpol.Spec.PodSelector))
@@ -100,14 +100,14 @@ func (c *client) ApplyNetworkPolicy(ctx context.Context, namespace string, netpo
 	return c.clientset.NetworkingV1().NetworkPolicies(namespace).Apply(ctx, applyConfig, defaultApplyOptions)
 }
 
-func (c *client) ListNetworkPolicies(namespace string, selector labels.Selector) ([]*networkingv1.NetworkPolicy, error) {
+func (c *Client) ListNetworkPolicies(namespace string, selector labels.Selector) ([]*networkingv1.NetworkPolicy, error) {
 	return c.resourceInformerFactory.Networking().V1().NetworkPolicies().Lister().NetworkPolicies(namespace).List(selector)
 }
 
-func (c *client) GetNetworkPolicy(ctx context.Context, namespace, name string) (*networkingv1.NetworkPolicy, error) {
+func (c *Client) GetNetworkPolicy(ctx context.Context, namespace, name string) (*networkingv1.NetworkPolicy, error) {
 	return c.clientset.NetworkingV1().NetworkPolicies(namespace).Get(ctx, name, defaultGetOptions)
 }
 
-func (c *client) DeleteNetworkPolicy(ctx context.Context, namespace, name string) error {
+func (c *Client) DeleteNetworkPolicy(ctx context.Context, namespace, name string) error {
 	return c.clientset.NetworkingV1().NetworkPolicies(namespace).Delete(ctx, name, defaultDeleteOptions)
 }

@@ -23,11 +23,11 @@ import (
 
 const KindSecret = "Secret"
 
-func (c *client) SecretInformer() cache.SharedIndexInformer {
+func (c *Client) SecretInformer() cache.SharedIndexInformer {
 	return c.resourceInformerFactory.Core().V1().Secrets().Informer()
 }
 
-func (c *client) ApplySecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
+func (c *Client) ApplySecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
 	applyConfig := applyconfigcorev1.Secret(secret.GetName(), namespace).
 		WithLabels(secret.GetLabels()).
 		WithAnnotations(secret.GetAnnotations()).
@@ -40,14 +40,14 @@ func (c *client) ApplySecret(ctx context.Context, namespace string, secret *core
 	return c.clientset.CoreV1().Secrets(namespace).Apply(ctx, applyConfig, defaultApplyOptions)
 }
 
-func (c *client) ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error) {
+func (c *Client) ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error) {
 	return c.resourceInformerFactory.Core().V1().Secrets().Lister().Secrets(namespace).List(selector)
 }
 
-func (c *client) GetSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
+func (c *Client) GetSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error) {
 	return c.clientset.CoreV1().Secrets(namespace).Get(ctx, name, defaultGetOptions)
 }
 
-func (c *client) DeleteSecret(ctx context.Context, namespace, name string) error {
+func (c *Client) DeleteSecret(ctx context.Context, namespace, name string) error {
 	return c.clientset.CoreV1().Secrets(namespace).Delete(ctx, name, defaultDeleteOptions)
 }

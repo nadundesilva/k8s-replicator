@@ -20,14 +20,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-func (c *client) NamespaceInformer() cache.SharedIndexInformer {
+func (c *Client) NamespaceInformer() cache.SharedIndexInformer {
 	return c.namespaceInformerFactory.Core().V1().Namespaces().Informer()
 }
 
-func (c *client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error) {
+func (c *Client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error) {
 	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().List(selector)
 }
 
-func (c *client) GetNamespace(ctx context.Context, name string) (*corev1.Namespace, error) {
+func (c *Client) GetNamespace(ctx context.Context, name string) (*corev1.Namespace, error) {
 	return c.clientset.CoreV1().Namespaces().Get(ctx, name, defaultGetOptions)
 }
