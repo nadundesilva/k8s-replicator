@@ -17,4 +17,5 @@ INTERFACE="${2}"
 if [ ! -d "fake" ]; then
   mkdir fake
 fi
+
 moq -fmt goimports -out "fake/${FILE_NAME}.go" -pkg fake . "${INTERFACE}"

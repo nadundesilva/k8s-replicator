@@ -14,7 +14,7 @@ on:
 
 jobs:
     check-code-gen:
-        name: Check code generation
+        name: Check Code Generation
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository

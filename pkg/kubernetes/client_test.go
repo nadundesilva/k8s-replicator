@@ -488,6 +488,12 @@ func TestClientResourceOperations(t *testing.T) {
 				}
 			}
 
+			// Validating informer list calls
+			if len(clientset.Actions()) != 2 {
+				t.Errorf("unexpected number of client set actions called for informer sync: want %d; got %d",
+					2, len(clientset.Actions()))
+			}
+
 			firstObject := testDatum.initialObjects[0]
 			firstObjectNamespace := firstObject.(metav1.Object).GetNamespace()
 			firstObjectName := firstObject.(metav1.Object).GetName()
@@ -495,6 +501,7 @@ func TestClientResourceOperations(t *testing.T) {
 
 			// Validate applying patch and the informer notifying of new object
 			if testDatum.apply != nil {
+				clientset.ClearActions()
 				kind, applyObject, err := testDatum.apply(ctx, k8sClient, firstObjectNamespace, fmt.Sprintf("%s-new", firstObjectName))
 				if err != nil {
 					t.Errorf("applying resource failed with error: %v", err)
@@ -511,9 +518,24 @@ func TestClientResourceOperations(t *testing.T) {
 					t.Errorf("informer did not get the expected event of type %s and kind %s", Add, kind)
 				}
 				expectedObjectsCount++
+
+				// Validate applying patch action
+				if len(clientset.Actions()) != 1 {
+					t.Errorf("unexpected number of client set actions called for apply: want %d; got %d", 1, len(clientset.Actions()))
+				} else {
+					action := clientset.Actions()[0]
+					if action.GetVerb() != "patch" {
+						t.Errorf("unexpected verb used in the client set action for apply: want %s; got %s", "patch", action.GetVerb())
+					}
+					if action.GetResource().Resource != testDatum.resource {
+						t.Errorf("unexpected resource used in the client set action for apply: want %s; got %s",
+							testDatum.resource, action.GetResource().Resource)
+					}
+				}
 			}
 
 			// Validate listing the objects
+			clientset.ClearActions()
 			objects, err := testDatum.list(k8sClient, firstObjectNamespace)
 			if err != nil {
 				t.Errorf("listing resource failed with error: %v", err)
@@ -523,7 +545,13 @@ func TestClientResourceOperations(t *testing.T) {
 					expectedObjectsCount, len(objects))
 			}
 
+			// Validate listing action (using informer lister)
+			if len(clientset.Actions()) != 0 {
+				t.Errorf("unexpected number of client set actions called for list: want %d; got %d", 0, len(clientset.Actions()))
+			}
+
 			// Validate getting an object
+			clientset.ClearActions()
 			object, err := testDatum.get(ctx, k8sClient, firstObjectNamespace, firstObjectName)
 			if err != nil {
 				t.Errorf("getting resource failed with error: %v", err)
@@ -533,8 +561,23 @@ func TestClientResourceOperations(t *testing.T) {
 					firstObject, object)
 			}
 
+			// Validate getting action
+			if len(clientset.Actions()) != 1 {
+				t.Errorf("unexpected number of client set actions called for get: want %d; got %d", 1, len(clientset.Actions()))
+			} else {
+				action := clientset.Actions()[0]
+				if action.GetVerb() != "get" {
+					t.Errorf("unexpected verb used in the client set action for get: want %s; got %s", "get", action.GetVerb())
+				}
+				if action.GetResource().Resource != testDatum.resource {
+					t.Errorf("unexpected resource used in the client set action for get: want %s; got %s",
+						testDatum.resource, action.GetResource().Resource)
+				}
+			}
+
 			// Validate deleting an object and the informer notifying the deletion
 			if testDatum.delete != nil {
+				clientset.ClearActions()
 				err = testDatum.delete(ctx, k8sClient, firstObjectNamespace, firstObjectName)
 				if err != nil {
 					t.Errorf("getting resource failed with error: %v", err)
@@ -549,6 +592,20 @@ func TestClientResourceOperations(t *testing.T) {
 					}
 				case <-time.After(wait.ForeverTestTimeout):
 					t.Errorf("informer did not get the expected event of type %s", Delete)
+				}
+
+				// Validate deleting action
+				if len(clientset.Actions()) != 1 {
+					t.Errorf("unexpected number of client set actions called for delete: want %d; got %d", 1, len(clientset.Actions()))
+				} else {
+					action := clientset.Actions()[0]
+					if action.GetVerb() != "delete" {
+						t.Errorf("unexpected verb used in the client set action for delete: want %s; got %s", "delete", action.GetVerb())
+					}
+					if action.GetResource().Resource != testDatum.resource {
+						t.Errorf("unexpected resource used in the client set action for delete: want %s; got %s",
+							testDatum.resource, action.GetResource().Resource)
+					}
 				}
 			}
 
