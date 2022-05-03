@@ -1,6 +1,7 @@
 # Kubernetes Replicator
 
 [![Main Branch Build](https://github.com/nadundesilva/k8s-replicator/actions/workflows/branch-build.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/branch-build.yaml)
+[![codecov](https://codecov.io/gh/nadundesilva/k8s-replicator/branch/main/graph/badge.svg?token=P05ZSUPDT3)](https://codecov.io/gh/nadundesilva/k8s-replicator)
 [![Vulnerabilities Scan](https://github.com/nadundesilva/k8s-replicator/actions/workflows/vulnerabilities-scan.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/vulnerabilities-scan.yaml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 

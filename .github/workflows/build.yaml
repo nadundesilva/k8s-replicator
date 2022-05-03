@@ -101,7 +101,13 @@ jobs:
               with:
                   go-version: "^1.18"
             - name: Run Unit Tests
-              run: make test.unit
+              run: |
+                make test.unit
+                echo "TEST_TYPE=unit" >> "${GITHUB_ENV}"
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v3
+              with:
+                env_vars: TEST_TYPE
 
     run-benchmark-tests:
         name: Run Benchmark Tests

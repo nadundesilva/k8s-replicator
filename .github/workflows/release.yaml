@@ -87,7 +87,14 @@ jobs:
                   exit-code: '1'
                   ignore-unfixed: true
             - name: Run Unit Tests
-              run: make test.unit
+              run: |
+                rm -f coverage.out
+                make test.unit
+                echo "TEST_TYPE=unit" >> "${GITHUB_ENV}"
+            - name: Upload unit tests code coverage to Codecov
+              uses: codecov/codecov-action@v3
+              with:
+                env_vars: TEST_TYPE
             - name: Run E2E Tests
               run: make test.e2e
               env:
