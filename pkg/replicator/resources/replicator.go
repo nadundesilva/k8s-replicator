@@ -12,6 +12,8 @@
  */
 package resources
 
+//go:generate ${PROJECT_ROOT}/gen-fake.sh replicator ResourceReplicator
+
 import (
 	"context"
 
