@@ -12,6 +12,8 @@
  */
 package kubernetes
 
+//go:generate ${PROJECT_ROOT}/gen-fake.sh interface ClientInterface
+
 import (
 	"context"
 

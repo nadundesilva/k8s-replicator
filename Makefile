@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+PROJECT_ROOT := $(realpath $(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 PROJECT_PKG := github.com/nadundesilva/k8s-replicator
 GIT_REVISION := $(shell git rev-parse --verify HEAD)
 
@@ -24,6 +25,11 @@ GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildGitRevision=$(GIT_REVISION)
 GO_LDFLAGS += -X $(PROJECT_PKG)/pkg/version.buildTime=$(shell date +%Y-%m-%dT%H:%M:%S%z)
 
 all: build
+
+.PHONY: gen
+gen:
+	go install github.com/matryer/moq@latest
+	PROJECT_ROOT=$(PROJECT_ROOT) go generate ./...
 
 .PHONY: clean
 clean:
