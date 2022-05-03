@@ -25,14 +25,14 @@ import (
 )
 
 type Client struct {
-	clientset                *kubernetes.Clientset
+	clientset                kubernetes.Interface
 	namespaceInformerFactory informers.SharedInformerFactory
 	resourceInformerFactory  informers.SharedInformerFactory
 }
 
 var _ ClientInterface = (*Client)(nil)
 
-func NewClient(clientset *kubernetes.Clientset, resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) (*Client, error) {
+func NewClient(clientset kubernetes.Interface, resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) (*Client, error) {
 	withNewRequirements := func(newReqs []labels.Requirement) informers.SharedInformerOption {
 		return informers.WithTweakListOptions(func(options *metav1.ListOptions) {
 			requirements, err := labels.ParseToRequirements(options.LabelSelector)

@@ -44,7 +44,7 @@ func (r *controller) Start(stopCh <-chan struct{}) error {
 		"buildGoLangVersion", version.GetGoLangVersion())
 
 	namespaceInformer := r.k8sClient.NamespaceInformer()
-	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	namespaceInformer.AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc:    r.handleNewNamespace,
 		UpdateFunc: r.handleUpdateNamespace,
 		DeleteFunc: r.handleDeleteNamespace,
