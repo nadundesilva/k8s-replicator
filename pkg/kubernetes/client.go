@@ -13,8 +13,6 @@
 package kubernetes
 
 import (
-	"fmt"
-	"reflect"
 	"time"
 
 	"go.uber.org/zap"
@@ -56,26 +54,4 @@ func NewClient(clientset kubernetes.Interface, resourceSelectorReqs, namespaceSe
 		namespaceInformerFactory: namespaceInformerFactory,
 		resourceInformerFactory:  resourceInformerFactory,
 	}, nil
-}
-
-func (c *Client) Start(stopCh <-chan struct{}) error {
-	err := c.startInformerFactory(stopCh, c.namespaceInformerFactory)
-	if err != nil {
-		return err
-	}
-	return c.startInformerFactory(stopCh, c.resourceInformerFactory)
-}
-
-func (c *Client) startInformerFactory(stopCh <-chan struct{}, factory informers.SharedInformerFactory) error {
-	factory.Start(stopCh)
-	return func(results ...map[reflect.Type]bool) error {
-		for i := range results {
-			for t, ok := range results[i] {
-				if !ok {
-					return fmt.Errorf("failed to wait for cache with type %s", t)
-				}
-			}
-		}
-		return nil
-	}(factory.WaitForCacheSync(stopCh))
 }
