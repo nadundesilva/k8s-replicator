@@ -15,13 +15,16 @@ package kubernetes
 import (
 	"fmt"
 	"reflect"
-
-	"k8s.io/client-go/informers"
 )
 
-type InformerFactoryStarterFunc func(<-chan struct{}, informers.SharedInformerFactory) error
+type informerFactory interface {
+	Start(stopCh <-chan struct{})
+	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
+}
 
-func startInformerFactory(stopCh <-chan struct{}, factory informers.SharedInformerFactory) error {
+type InformerFactoryStarterFunc func(<-chan struct{}, informerFactory) error
+
+func startInformerFactory(stopCh <-chan struct{}, factory informerFactory) error {
 	factory.Start(stopCh)
 	return func(results ...map[reflect.Type]bool) error {
 		for i := range results {

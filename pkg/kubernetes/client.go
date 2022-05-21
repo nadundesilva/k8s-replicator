@@ -18,9 +18,14 @@ import (
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 )
+
+type LabelParserFunc func(selector string, opts ...field.PathOption) ([]labels.Requirement, error)
+
+var defaultLabelParserFunc = labels.ParseToRequirements
 
 type Client struct {
 	clientset                kubernetes.Interface
@@ -30,10 +35,11 @@ type Client struct {
 
 var _ ClientInterface = (*Client)(nil)
 
-func NewClient(clientset kubernetes.Interface, resourceSelectorReqs, namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) (*Client, error) {
+func NewClient(clientset kubernetes.Interface, resourceSelectorReqs,
+	namespaceSelectorReqs []labels.Requirement, logger *zap.SugaredLogger) (*Client, error) {
 	withNewRequirements := func(newReqs []labels.Requirement) informers.SharedInformerOption {
 		return informers.WithTweakListOptions(func(options *metav1.ListOptions) {
-			requirements, err := labels.ParseToRequirements(options.LabelSelector)
+			requirements, err := defaultLabelParserFunc(options.LabelSelector)
 			if err != nil {
 				logger.Errorw("failed to parse label selector", "error", err)
 				return

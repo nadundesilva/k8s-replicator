@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
@@ -36,21 +37,24 @@ import (
 
 func TestClientResourceOperations(t *testing.T) {
 	type testDatum struct {
-		name           string
-		resource       string
-		newEmptyObject func() runtime.Object
-		equals         func(objA runtime.Object, objB runtime.Object) bool
-		initialObjects []runtime.Object
-		informer       func(k8sClient *Client) cache.SharedIndexInformer
-		apply          func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error)
-		list           func(k8sClient *Client, namespace string) ([]metav1.Object, error)
-		get            func(ctx context.Context, k8sClient *Client, namespace, name string) (metav1.Object, error)
-		delete         func(ctx context.Context, k8sClient *Client, namespace, name string) error
+		name            string
+		resource        string
+		labelParserFunc LabelParserFunc
+		newEmptyObject  func() runtime.Object
+		equals          func(objA runtime.Object, objB runtime.Object) bool
+		initialObjects  []runtime.Object
+		informer        func(k8sClient *Client) cache.SharedIndexInformer
+		apply           func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error)
+		list            func(k8sClient *Client, namespace string) ([]metav1.Object, error)
+		get             func(ctx context.Context, k8sClient *Client, namespace, name string) (metav1.Object, error)
+		delete          func(ctx context.Context, k8sClient *Client, namespace, name string) error
 	}
+	originalLabelParserFunc := defaultLabelParserFunc
 	testData := []testDatum{
 		{
-			name:     "Namespace operations",
-			resource: "namespaces",
+			name:            "Namespace operations",
+			resource:        "namespaces",
+			labelParserFunc: originalLabelParserFunc,
 			newEmptyObject: func() runtime.Object {
 				return &corev1.Namespace{}
 			},
@@ -84,8 +88,47 @@ func TestClientResourceOperations(t *testing.T) {
 			delete: nil,
 		},
 		{
-			name:     "Secret operations",
-			resource: "secrets",
+			name:     "Namespace operations with label parser failure",
+			resource: "namespaces",
+			labelParserFunc: func(selector string, opts ...field.PathOption) ([]labels.Requirement, error) {
+				return nil, fmt.Errorf("label-parsing-error")
+			},
+			newEmptyObject: func() runtime.Object {
+				return &corev1.Namespace{}
+			},
+			equals: func(objA, objB runtime.Object) bool {
+				namespaceA := objA.(*corev1.Namespace)
+				namespaceB := objB.(*corev1.Namespace)
+				return reflect.DeepEqual(namespaceA.Spec, namespaceB.Spec)
+			},
+			initialObjects: []runtime.Object{
+				&corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-ns",
+					},
+				},
+			},
+			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+				return k8sClient.NamespaceInformer()
+			},
+			apply: nil,
+			list: func(k8sClient *Client, namespace string) ([]metav1.Object, error) {
+				namespaces, err := k8sClient.ListNamespaces(labels.Everything())
+				objects := []metav1.Object{}
+				for _, ns := range namespaces {
+					objects = append(objects, ns)
+				}
+				return objects, err
+			},
+			get: func(ctx context.Context, k8sClient *Client, namespace, name string) (metav1.Object, error) {
+				return k8sClient.GetNamespace(ctx, name)
+			},
+			delete: nil,
+		},
+		{
+			name:            "Secret operations",
+			resource:        "secrets",
+			labelParserFunc: originalLabelParserFunc,
 			newEmptyObject: func() runtime.Object {
 				return &corev1.Secret{}
 			},
@@ -141,8 +184,69 @@ func TestClientResourceOperations(t *testing.T) {
 			},
 		},
 		{
-			name:     "ConfigMap operations",
-			resource: "configmaps",
+			name:     "Secret operations with label parser failure",
+			resource: "secrets",
+			labelParserFunc: func(selector string, opts ...field.PathOption) ([]labels.Requirement, error) {
+				return nil, fmt.Errorf("label-parsing-error")
+			},
+			newEmptyObject: func() runtime.Object {
+				return &corev1.Secret{}
+			},
+			equals: func(objA runtime.Object, objB runtime.Object) bool {
+				secretA := objA.(*corev1.Secret)
+				secretB := objB.(*corev1.Secret)
+				return reflect.DeepEqual(secretA.StringData, secretB.StringData) &&
+					reflect.DeepEqual(secretA.Data, secretB.Data) &&
+					reflect.DeepEqual(secretA.Type, secretB.Type) &&
+					reflect.DeepEqual(secretA.Immutable, secretB.Immutable)
+			},
+			initialObjects: []runtime.Object{
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-secret",
+						Namespace: "test-ns",
+					},
+					StringData: map[string]string{
+						"test-secret-key-1": "test-secret-key-value-1",
+					},
+				},
+			},
+			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+				return k8sClient.SecretInformer()
+			},
+			apply: func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error) {
+				secret := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      namespace,
+						Namespace: name,
+					},
+					StringData: map[string]string{
+						"test-secret-key-2": "test-secret-key-value-2",
+					},
+					Immutable: toPointer(false),
+				}
+				_, err := k8sClient.ApplySecret(ctx, "test-ns", secret)
+				return KindSecret, secret, err
+			},
+			list: func(k8sClient *Client, namespace string) ([]metav1.Object, error) {
+				secrets, err := k8sClient.ListSecrets(namespace, labels.Everything())
+				objects := []metav1.Object{}
+				for _, secret := range secrets {
+					objects = append(objects, secret)
+				}
+				return objects, err
+			},
+			get: func(ctx context.Context, k8sClient *Client, namespace, name string) (metav1.Object, error) {
+				return k8sClient.GetSecret(ctx, namespace, name)
+			},
+			delete: func(ctx context.Context, k8sClient *Client, namespace, name string) error {
+				return k8sClient.DeleteSecret(ctx, namespace, name)
+			},
+		},
+		{
+			name:            "ConfigMap operations",
+			resource:        "configmaps",
+			labelParserFunc: originalLabelParserFunc,
 			newEmptyObject: func() runtime.Object {
 				return &corev1.ConfigMap{}
 			},
@@ -197,8 +301,9 @@ func TestClientResourceOperations(t *testing.T) {
 			},
 		},
 		{
-			name:     "NetworkPolicy operations",
-			resource: "networkpolicies",
+			name:            "NetworkPolicy operations",
+			resource:        "networkpolicies",
+			labelParserFunc: originalLabelParserFunc,
 			newEmptyObject: func() runtime.Object {
 				return &networkingv1.NetworkPolicy{}
 			},
@@ -373,6 +478,7 @@ func TestClientResourceOperations(t *testing.T) {
 	}
 	for _, testDatum := range testData {
 		t.Run(testDatum.name, func(t *testing.T) {
+			defaultLabelParserFunc = testDatum.labelParserFunc
 			stopCh := make(chan struct{})
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -612,4 +718,5 @@ func TestClientResourceOperations(t *testing.T) {
 			close(stopCh)
 		})
 	}
+	defaultLabelParserFunc = originalLabelParserFunc
 }
