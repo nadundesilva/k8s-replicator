@@ -21,7 +21,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 const FieldManager = "replicator.nadundesilva.github.io/apply"
@@ -35,23 +34,23 @@ var defaultDeleteOptions = metav1.DeleteOptions{
 }
 
 type ClientInterface interface {
-	NamespaceInformer() cache.SharedIndexInformer
+	NamespaceInformer() Informer
 	ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error)
 	GetNamespace(ctx context.Context, name string) (*corev1.Namespace, error)
 
-	SecretInformer() cache.SharedIndexInformer
+	SecretInformer() Informer
 	ApplySecret(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
 	ListSecrets(namespace string, selector labels.Selector) ([]*corev1.Secret, error)
 	GetSecret(ctx context.Context, namespace, name string) (*corev1.Secret, error)
 	DeleteSecret(ctx context.Context, namespace, name string) error
 
-	ConfigMapInformer() cache.SharedIndexInformer
+	ConfigMapInformer() Informer
 	ApplyConfigMap(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error)
 	ListConfigMaps(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error)
 	GetConfigMap(ctx context.Context, namespace, name string) (*corev1.ConfigMap, error)
 	DeleteConfigMap(ctx context.Context, namespace, name string) error
 
-	NetworkPolicyInformer() cache.SharedIndexInformer
+	NetworkPolicyInformer() Informer
 	ApplyNetworkPolicy(ctx context.Context, namespace string, netpol *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error)
 	ListNetworkPolicies(namespace string, selector labels.Selector) ([]*networkingv1.NetworkPolicy, error)
 	GetNetworkPolicy(ctx context.Context, namespace, name string) (*networkingv1.NetworkPolicy, error)

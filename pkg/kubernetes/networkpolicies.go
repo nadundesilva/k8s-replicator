@@ -18,12 +18,11 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfignetworkingv1 "k8s.io/client-go/applyconfigurations/networking/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 const KindNetworkPolicy = "NetworkPolicy"
 
-func (c *Client) NetworkPolicyInformer() cache.SharedIndexInformer {
+func (c *Client) NetworkPolicyInformer() Informer {
 	return c.resourceInformerFactory.Networking().V1().NetworkPolicies().Informer()
 }
 

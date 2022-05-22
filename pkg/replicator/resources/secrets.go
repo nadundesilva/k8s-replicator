@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 type secretReplicator struct {
@@ -47,7 +46,7 @@ func (r *secretReplicator) ResourceKind() string {
 	return kubernetes.KindSecret
 }
 
-func (r *secretReplicator) Informer() cache.SharedInformer {
+func (r *secretReplicator) Informer() kubernetes.Informer {
 	return r.k8sClient.SecretInformer()
 }
 

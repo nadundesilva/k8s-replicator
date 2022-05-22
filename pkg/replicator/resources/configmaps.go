@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 type configMapReplicator struct {
@@ -47,7 +46,7 @@ func (r *configMapReplicator) ResourceKind() string {
 	return kubernetes.KindConfigMap
 }
 
-func (r *configMapReplicator) Informer() cache.SharedInformer {
+func (r *configMapReplicator) Informer() kubernetes.Informer {
 	return r.k8sClient.ConfigMapInformer()
 }
 

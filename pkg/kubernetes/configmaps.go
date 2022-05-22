@@ -18,12 +18,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigcorev1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 const KindConfigMap = "ConfigMap"
 
-func (c *Client) ConfigMapInformer() cache.SharedIndexInformer {
+func (c *Client) ConfigMapInformer() Informer {
 	return c.resourceInformerFactory.Core().V1().ConfigMaps().Informer()
 }
 

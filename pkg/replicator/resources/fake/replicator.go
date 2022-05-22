@@ -7,10 +7,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	"github.com/nadundesilva/k8s-replicator/pkg/replicator/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 // Ensure, that ResourceReplicatorMock does implement resources.ResourceReplicator.
@@ -32,7 +32,7 @@ var _ resources.ResourceReplicator = &ResourceReplicatorMock{}
 // 			GetFunc: func(ctx context.Context, namespace string, name string) (metav1.Object, error) {
 // 				panic("mock out the Get method")
 // 			},
-// 			InformerFunc: func() cache.SharedInformer {
+// 			InformerFunc: func() kubernetes.Informer {
 // 				panic("mock out the Informer method")
 // 			},
 // 			ListFunc: func(namespace string, selector labels.Selector) ([]metav1.Object, error) {
@@ -61,7 +61,7 @@ type ResourceReplicatorMock struct {
 	GetFunc func(ctx context.Context, namespace string, name string) (metav1.Object, error)
 
 	// InformerFunc mocks the Informer method.
-	InformerFunc func() cache.SharedInformer
+	InformerFunc func() kubernetes.Informer
 
 	// ListFunc mocks the List method.
 	ListFunc func(namespace string, selector labels.Selector) ([]metav1.Object, error)
@@ -245,7 +245,7 @@ func (mock *ResourceReplicatorMock) GetCalls() []struct {
 }
 
 // Informer calls InformerFunc.
-func (mock *ResourceReplicatorMock) Informer() cache.SharedInformer {
+func (mock *ResourceReplicatorMock) Informer() kubernetes.Informer {
 	if mock.InformerFunc == nil {
 		panic("ResourceReplicatorMock.InformerFunc: method is nil but ResourceReplicator.Informer was just called")
 	}

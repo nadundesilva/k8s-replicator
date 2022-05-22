@@ -12,21 +12,11 @@
  */
 package kubernetes
 
-import (
-	"context"
+//go:generate ${PROJECT_ROOT}/gen-fake.sh informer Informer
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
-)
+import "k8s.io/client-go/tools/cache"
 
-func (c *Client) NamespaceInformer() Informer {
-	return c.namespaceInformerFactory.Core().V1().Namespaces().Informer()
-}
-
-func (c *Client) ListNamespaces(selector labels.Selector) ([]*corev1.Namespace, error) {
-	return c.namespaceInformerFactory.Core().V1().Namespaces().Lister().List(selector)
-}
-
-func (c *Client) GetNamespace(ctx context.Context, name string) (*corev1.Namespace, error) {
-	return c.clientset.CoreV1().Namespaces().Get(ctx, name, defaultGetOptions)
+type Informer interface {
+	AddEventHandler(handler cache.ResourceEventHandler)
+	HasSynced() bool
 }

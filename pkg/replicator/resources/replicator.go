@@ -17,16 +17,16 @@ package resources
 import (
 	"context"
 
+	"github.com/nadundesilva/k8s-replicator/pkg/kubernetes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 type ResourceReplicator interface {
 	ResourceApiVersion() string
 	ResourceKind() string
 
-	Informer() cache.SharedInformer
+	Informer() kubernetes.Informer
 	Apply(ctx context.Context, namespace string, object metav1.Object) error
 	List(namespace string, selector labels.Selector) ([]metav1.Object, error)
 	Get(ctx context.Context, namespace, name string) (metav1.Object, error)

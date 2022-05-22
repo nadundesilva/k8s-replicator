@@ -22,7 +22,7 @@ Replicator supports copying kubernetes resources across namespaces. This control
 #### Quickstart
 
 Run the following command to apply the controller to your cluster. The `<VERSION>` should be replaced with the release version
-to be used (eg:- `0.3.0`) and kubectl CLI should be configured pointing to the cluter in which the controller needs to be started.
+to be used (eg:- `0.3.0`) and kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
 
 ```bash
 curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/install.sh | bash -s <VERSION>
@@ -90,7 +90,7 @@ The folloing labels are used by the controller to track the replication of resou
 
 #### Quick Remove
 
-Run the following command to remove the controller from your cluster. Kubectl CLI should be configured pointing to the cluter in which the controller needs to be started.
+Run the following command to remove the controller from your cluster. Kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
 
 **Note:** This approach would only work if you used the Quickstart option for setting up the controller.
 

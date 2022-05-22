@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 // Ensure, that ClientInterfaceMock does implement kubernetes.ClientInterface.
@@ -33,7 +32,7 @@ var _ kubernetes.ClientInterface = &ClientInterfaceMock{}
 // 			ApplySecretFunc: func(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
 // 				panic("mock out the ApplySecret method")
 // 			},
-// 			ConfigMapInformerFunc: func() cache.SharedIndexInformer {
+// 			ConfigMapInformerFunc: func() kubernetes.Informer {
 // 				panic("mock out the ConfigMapInformer method")
 // 			},
 // 			DeleteConfigMapFunc: func(ctx context.Context, namespace string, name string) error {
@@ -69,13 +68,13 @@ var _ kubernetes.ClientInterface = &ClientInterfaceMock{}
 // 			ListSecretsFunc: func(namespace string, selector labels.Selector) ([]*corev1.Secret, error) {
 // 				panic("mock out the ListSecrets method")
 // 			},
-// 			NamespaceInformerFunc: func() cache.SharedIndexInformer {
+// 			NamespaceInformerFunc: func() kubernetes.Informer {
 // 				panic("mock out the NamespaceInformer method")
 // 			},
-// 			NetworkPolicyInformerFunc: func() cache.SharedIndexInformer {
+// 			NetworkPolicyInformerFunc: func() kubernetes.Informer {
 // 				panic("mock out the NetworkPolicyInformer method")
 // 			},
-// 			SecretInformerFunc: func() cache.SharedIndexInformer {
+// 			SecretInformerFunc: func() kubernetes.Informer {
 // 				panic("mock out the SecretInformer method")
 // 			},
 // 		}
@@ -95,7 +94,7 @@ type ClientInterfaceMock struct {
 	ApplySecretFunc func(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error)
 
 	// ConfigMapInformerFunc mocks the ConfigMapInformer method.
-	ConfigMapInformerFunc func() cache.SharedIndexInformer
+	ConfigMapInformerFunc func() kubernetes.Informer
 
 	// DeleteConfigMapFunc mocks the DeleteConfigMap method.
 	DeleteConfigMapFunc func(ctx context.Context, namespace string, name string) error
@@ -131,13 +130,13 @@ type ClientInterfaceMock struct {
 	ListSecretsFunc func(namespace string, selector labels.Selector) ([]*corev1.Secret, error)
 
 	// NamespaceInformerFunc mocks the NamespaceInformer method.
-	NamespaceInformerFunc func() cache.SharedIndexInformer
+	NamespaceInformerFunc func() kubernetes.Informer
 
 	// NetworkPolicyInformerFunc mocks the NetworkPolicyInformer method.
-	NetworkPolicyInformerFunc func() cache.SharedIndexInformer
+	NetworkPolicyInformerFunc func() kubernetes.Informer
 
 	// SecretInformerFunc mocks the SecretInformer method.
-	SecretInformerFunc func() cache.SharedIndexInformer
+	SecretInformerFunc func() kubernetes.Informer
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -406,7 +405,7 @@ func (mock *ClientInterfaceMock) ApplySecretCalls() []struct {
 }
 
 // ConfigMapInformer calls ConfigMapInformerFunc.
-func (mock *ClientInterfaceMock) ConfigMapInformer() cache.SharedIndexInformer {
+func (mock *ClientInterfaceMock) ConfigMapInformer() kubernetes.Informer {
 	if mock.ConfigMapInformerFunc == nil {
 		panic("ClientInterfaceMock.ConfigMapInformerFunc: method is nil but ClientInterface.ConfigMapInformer was just called")
 	}
@@ -837,7 +836,7 @@ func (mock *ClientInterfaceMock) ListSecretsCalls() []struct {
 }
 
 // NamespaceInformer calls NamespaceInformerFunc.
-func (mock *ClientInterfaceMock) NamespaceInformer() cache.SharedIndexInformer {
+func (mock *ClientInterfaceMock) NamespaceInformer() kubernetes.Informer {
 	if mock.NamespaceInformerFunc == nil {
 		panic("ClientInterfaceMock.NamespaceInformerFunc: method is nil but ClientInterface.NamespaceInformer was just called")
 	}
@@ -863,7 +862,7 @@ func (mock *ClientInterfaceMock) NamespaceInformerCalls() []struct {
 }
 
 // NetworkPolicyInformer calls NetworkPolicyInformerFunc.
-func (mock *ClientInterfaceMock) NetworkPolicyInformer() cache.SharedIndexInformer {
+func (mock *ClientInterfaceMock) NetworkPolicyInformer() kubernetes.Informer {
 	if mock.NetworkPolicyInformerFunc == nil {
 		panic("ClientInterfaceMock.NetworkPolicyInformerFunc: method is nil but ClientInterface.NetworkPolicyInformer was just called")
 	}
@@ -889,7 +888,7 @@ func (mock *ClientInterfaceMock) NetworkPolicyInformerCalls() []struct {
 }
 
 // SecretInformer calls SecretInformerFunc.
-func (mock *ClientInterfaceMock) SecretInformer() cache.SharedIndexInformer {
+func (mock *ClientInterfaceMock) SecretInformer() kubernetes.Informer {
 	if mock.SecretInformerFunc == nil {
 		panic("ClientInterfaceMock.SecretInformerFunc: method is nil but ClientInterface.SecretInformer was just called")
 	}

@@ -132,6 +132,8 @@ type fakeInformerFactory struct {
 	waitForCacheSyncCallStopCh <-chan struct{}
 }
 
+var _ informerFactory = (*fakeInformerFactory)(nil)
+
 func (f *fakeInformerFactory) Start(stopCh <-chan struct{}) {
 	f.startCallStopCh = stopCh
 }

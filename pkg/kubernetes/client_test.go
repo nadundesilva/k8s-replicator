@@ -43,7 +43,7 @@ func TestClientResourceOperations(t *testing.T) {
 		newEmptyObject  func() runtime.Object
 		equals          func(objA runtime.Object, objB runtime.Object) bool
 		initialObjects  []runtime.Object
-		informer        func(k8sClient *Client) cache.SharedIndexInformer
+		informer        func(k8sClient *Client) Informer
 		apply           func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error)
 		list            func(k8sClient *Client, namespace string) ([]metav1.Object, error)
 		get             func(ctx context.Context, k8sClient *Client, namespace, name string) (metav1.Object, error)
@@ -70,7 +70,7 @@ func TestClientResourceOperations(t *testing.T) {
 					},
 				},
 			},
-			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+			informer: func(k8sClient *Client) Informer {
 				return k8sClient.NamespaceInformer()
 			},
 			apply: nil,
@@ -108,7 +108,7 @@ func TestClientResourceOperations(t *testing.T) {
 					},
 				},
 			},
-			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+			informer: func(k8sClient *Client) Informer {
 				return k8sClient.NamespaceInformer()
 			},
 			apply: nil,
@@ -151,7 +151,7 @@ func TestClientResourceOperations(t *testing.T) {
 					},
 				},
 			},
-			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+			informer: func(k8sClient *Client) Informer {
 				return k8sClient.SecretInformer()
 			},
 			apply: func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error) {
@@ -211,7 +211,7 @@ func TestClientResourceOperations(t *testing.T) {
 					},
 				},
 			},
-			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+			informer: func(k8sClient *Client) Informer {
 				return k8sClient.SecretInformer()
 			},
 			apply: func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error) {
@@ -268,7 +268,7 @@ func TestClientResourceOperations(t *testing.T) {
 					},
 				},
 			},
-			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+			informer: func(k8sClient *Client) Informer {
 				return k8sClient.ConfigMapInformer()
 			},
 			apply: func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error) {
@@ -365,7 +365,7 @@ func TestClientResourceOperations(t *testing.T) {
 					},
 				},
 			},
-			informer: func(k8sClient *Client) cache.SharedIndexInformer {
+			informer: func(k8sClient *Client) Informer {
 				return k8sClient.NetworkPolicyInformer()
 			},
 			apply: func(ctx context.Context, k8sClient *Client, namespace, name string) (string, metav1.Object, error) {

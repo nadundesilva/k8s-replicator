@@ -18,12 +18,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	applyconfigcorev1 "k8s.io/client-go/applyconfigurations/core/v1"
-	"k8s.io/client-go/tools/cache"
 )
 
 const KindSecret = "Secret"
 
-func (c *Client) SecretInformer() cache.SharedIndexInformer {
+func (c *Client) SecretInformer() Informer {
 	return c.resourceInformerFactory.Core().V1().Secrets().Informer()
 }
 

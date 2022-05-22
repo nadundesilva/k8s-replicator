@@ -20,7 +20,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
 )
 
 type networkPolicyReplicator struct {
@@ -47,7 +46,7 @@ func (r *networkPolicyReplicator) ResourceKind() string {
 	return kubernetes.KindNetworkPolicy
 }
 
-func (r *networkPolicyReplicator) Informer() cache.SharedInformer {
+func (r *networkPolicyReplicator) Informer() kubernetes.Informer {
 	return r.k8sClient.NetworkPolicyInformer()
 }
 
