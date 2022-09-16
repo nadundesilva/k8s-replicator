@@ -16,22 +16,22 @@ var _ kubernetes.Informer = &InformerMock{}
 
 // InformerMock is a mock implementation of kubernetes.Informer.
 //
-// 	func TestSomethingThatUsesInformer(t *testing.T) {
+//	func TestSomethingThatUsesInformer(t *testing.T) {
 //
-// 		// make and configure a mocked kubernetes.Informer
-// 		mockedInformer := &InformerMock{
-// 			AddEventHandlerFunc: func(handler cache.ResourceEventHandler)  {
-// 				panic("mock out the AddEventHandler method")
-// 			},
-// 			HasSyncedFunc: func() bool {
-// 				panic("mock out the HasSynced method")
-// 			},
-// 		}
+//		// make and configure a mocked kubernetes.Informer
+//		mockedInformer := &InformerMock{
+//			AddEventHandlerFunc: func(handler cache.ResourceEventHandler)  {
+//				panic("mock out the AddEventHandler method")
+//			},
+//			HasSyncedFunc: func() bool {
+//				panic("mock out the HasSynced method")
+//			},
+//		}
 //
-// 		// use mockedInformer in code that requires kubernetes.Informer
-// 		// and then make assertions.
+//		// use mockedInformer in code that requires kubernetes.Informer
+//		// and then make assertions.
 //
-// 	}
+//	}
 type InformerMock struct {
 	// AddEventHandlerFunc mocks the AddEventHandler method.
 	AddEventHandlerFunc func(handler cache.ResourceEventHandler)
@@ -72,7 +72,8 @@ func (mock *InformerMock) AddEventHandler(handler cache.ResourceEventHandler) {
 
 // AddEventHandlerCalls gets all the calls that were made to AddEventHandler.
 // Check the length with:
-//     len(mockedInformer.AddEventHandlerCalls())
+//
+//	len(mockedInformer.AddEventHandlerCalls())
 func (mock *InformerMock) AddEventHandlerCalls() []struct {
 	Handler cache.ResourceEventHandler
 } {
@@ -100,7 +101,8 @@ func (mock *InformerMock) HasSynced() bool {
 
 // HasSyncedCalls gets all the calls that were made to HasSynced.
 // Check the length with:
-//     len(mockedInformer.HasSyncedCalls())
+//
+//	len(mockedInformer.HasSyncedCalls())
 func (mock *InformerMock) HasSyncedCalls() []struct {
 } {
 	var calls []struct {

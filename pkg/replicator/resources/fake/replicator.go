@@ -19,37 +19,37 @@ var _ resources.ResourceReplicator = &ResourceReplicatorMock{}
 
 // ResourceReplicatorMock is a mock implementation of resources.ResourceReplicator.
 //
-// 	func TestSomethingThatUsesResourceReplicator(t *testing.T) {
+//	func TestSomethingThatUsesResourceReplicator(t *testing.T) {
 //
-// 		// make and configure a mocked resources.ResourceReplicator
-// 		mockedResourceReplicator := &ResourceReplicatorMock{
-// 			ApplyFunc: func(ctx context.Context, namespace string, object metav1.Object) error {
-// 				panic("mock out the Apply method")
-// 			},
-// 			DeleteFunc: func(ctx context.Context, namespace string, name string) error {
-// 				panic("mock out the Delete method")
-// 			},
-// 			GetFunc: func(ctx context.Context, namespace string, name string) (metav1.Object, error) {
-// 				panic("mock out the Get method")
-// 			},
-// 			InformerFunc: func() kubernetes.Informer {
-// 				panic("mock out the Informer method")
-// 			},
-// 			ListFunc: func(namespace string, selector labels.Selector) ([]metav1.Object, error) {
-// 				panic("mock out the List method")
-// 			},
-// 			ResourceApiVersionFunc: func() string {
-// 				panic("mock out the ResourceApiVersion method")
-// 			},
-// 			ResourceKindFunc: func() string {
-// 				panic("mock out the ResourceKind method")
-// 			},
-// 		}
+//		// make and configure a mocked resources.ResourceReplicator
+//		mockedResourceReplicator := &ResourceReplicatorMock{
+//			ApplyFunc: func(ctx context.Context, namespace string, object metav1.Object) error {
+//				panic("mock out the Apply method")
+//			},
+//			DeleteFunc: func(ctx context.Context, namespace string, name string) error {
+//				panic("mock out the Delete method")
+//			},
+//			GetFunc: func(ctx context.Context, namespace string, name string) (metav1.Object, error) {
+//				panic("mock out the Get method")
+//			},
+//			InformerFunc: func() kubernetes.Informer {
+//				panic("mock out the Informer method")
+//			},
+//			ListFunc: func(namespace string, selector labels.Selector) ([]metav1.Object, error) {
+//				panic("mock out the List method")
+//			},
+//			ResourceApiVersionFunc: func() string {
+//				panic("mock out the ResourceApiVersion method")
+//			},
+//			ResourceKindFunc: func() string {
+//				panic("mock out the ResourceKind method")
+//			},
+//		}
 //
-// 		// use mockedResourceReplicator in code that requires resources.ResourceReplicator
-// 		// and then make assertions.
+//		// use mockedResourceReplicator in code that requires resources.ResourceReplicator
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ResourceReplicatorMock struct {
 	// ApplyFunc mocks the Apply method.
 	ApplyFunc func(ctx context.Context, namespace string, object metav1.Object) error
@@ -149,7 +149,8 @@ func (mock *ResourceReplicatorMock) Apply(ctx context.Context, namespace string,
 
 // ApplyCalls gets all the calls that were made to Apply.
 // Check the length with:
-//     len(mockedResourceReplicator.ApplyCalls())
+//
+//	len(mockedResourceReplicator.ApplyCalls())
 func (mock *ResourceReplicatorMock) ApplyCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -188,7 +189,8 @@ func (mock *ResourceReplicatorMock) Delete(ctx context.Context, namespace string
 
 // DeleteCalls gets all the calls that were made to Delete.
 // Check the length with:
-//     len(mockedResourceReplicator.DeleteCalls())
+//
+//	len(mockedResourceReplicator.DeleteCalls())
 func (mock *ResourceReplicatorMock) DeleteCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -227,7 +229,8 @@ func (mock *ResourceReplicatorMock) Get(ctx context.Context, namespace string, n
 
 // GetCalls gets all the calls that were made to Get.
 // Check the length with:
-//     len(mockedResourceReplicator.GetCalls())
+//
+//	len(mockedResourceReplicator.GetCalls())
 func (mock *ResourceReplicatorMock) GetCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -259,7 +262,8 @@ func (mock *ResourceReplicatorMock) Informer() kubernetes.Informer {
 
 // InformerCalls gets all the calls that were made to Informer.
 // Check the length with:
-//     len(mockedResourceReplicator.InformerCalls())
+//
+//	len(mockedResourceReplicator.InformerCalls())
 func (mock *ResourceReplicatorMock) InformerCalls() []struct {
 } {
 	var calls []struct {
@@ -290,7 +294,8 @@ func (mock *ResourceReplicatorMock) List(namespace string, selector labels.Selec
 
 // ListCalls gets all the calls that were made to List.
 // Check the length with:
-//     len(mockedResourceReplicator.ListCalls())
+//
+//	len(mockedResourceReplicator.ListCalls())
 func (mock *ResourceReplicatorMock) ListCalls() []struct {
 	Namespace string
 	Selector  labels.Selector
@@ -320,7 +325,8 @@ func (mock *ResourceReplicatorMock) ResourceApiVersion() string {
 
 // ResourceApiVersionCalls gets all the calls that were made to ResourceApiVersion.
 // Check the length with:
-//     len(mockedResourceReplicator.ResourceApiVersionCalls())
+//
+//	len(mockedResourceReplicator.ResourceApiVersionCalls())
 func (mock *ResourceReplicatorMock) ResourceApiVersionCalls() []struct {
 } {
 	var calls []struct {
@@ -346,7 +352,8 @@ func (mock *ResourceReplicatorMock) ResourceKind() string {
 
 // ResourceKindCalls gets all the calls that were made to ResourceKind.
 // Check the length with:
-//     len(mockedResourceReplicator.ResourceKindCalls())
+//
+//	len(mockedResourceReplicator.ResourceKindCalls())
 func (mock *ResourceReplicatorMock) ResourceKindCalls() []struct {
 } {
 	var calls []struct {

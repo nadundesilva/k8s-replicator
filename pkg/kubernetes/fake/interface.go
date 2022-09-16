@@ -19,70 +19,70 @@ var _ kubernetes.ClientInterface = &ClientInterfaceMock{}
 
 // ClientInterfaceMock is a mock implementation of kubernetes.ClientInterface.
 //
-// 	func TestSomethingThatUsesClientInterface(t *testing.T) {
+//	func TestSomethingThatUsesClientInterface(t *testing.T) {
 //
-// 		// make and configure a mocked kubernetes.ClientInterface
-// 		mockedClientInterface := &ClientInterfaceMock{
-// 			ApplyConfigMapFunc: func(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-// 				panic("mock out the ApplyConfigMap method")
-// 			},
-// 			ApplyNetworkPolicyFunc: func(ctx context.Context, namespace string, netpol *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-// 				panic("mock out the ApplyNetworkPolicy method")
-// 			},
-// 			ApplySecretFunc: func(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
-// 				panic("mock out the ApplySecret method")
-// 			},
-// 			ConfigMapInformerFunc: func() kubernetes.Informer {
-// 				panic("mock out the ConfigMapInformer method")
-// 			},
-// 			DeleteConfigMapFunc: func(ctx context.Context, namespace string, name string) error {
-// 				panic("mock out the DeleteConfigMap method")
-// 			},
-// 			DeleteNetworkPolicyFunc: func(ctx context.Context, namespace string, name string) error {
-// 				panic("mock out the DeleteNetworkPolicy method")
-// 			},
-// 			DeleteSecretFunc: func(ctx context.Context, namespace string, name string) error {
-// 				panic("mock out the DeleteSecret method")
-// 			},
-// 			GetConfigMapFunc: func(ctx context.Context, namespace string, name string) (*corev1.ConfigMap, error) {
-// 				panic("mock out the GetConfigMap method")
-// 			},
-// 			GetNamespaceFunc: func(ctx context.Context, name string) (*corev1.Namespace, error) {
-// 				panic("mock out the GetNamespace method")
-// 			},
-// 			GetNetworkPolicyFunc: func(ctx context.Context, namespace string, name string) (*networkingv1.NetworkPolicy, error) {
-// 				panic("mock out the GetNetworkPolicy method")
-// 			},
-// 			GetSecretFunc: func(ctx context.Context, namespace string, name string) (*corev1.Secret, error) {
-// 				panic("mock out the GetSecret method")
-// 			},
-// 			ListConfigMapsFunc: func(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error) {
-// 				panic("mock out the ListConfigMaps method")
-// 			},
-// 			ListNamespacesFunc: func(selector labels.Selector) ([]*corev1.Namespace, error) {
-// 				panic("mock out the ListNamespaces method")
-// 			},
-// 			ListNetworkPoliciesFunc: func(namespace string, selector labels.Selector) ([]*networkingv1.NetworkPolicy, error) {
-// 				panic("mock out the ListNetworkPolicies method")
-// 			},
-// 			ListSecretsFunc: func(namespace string, selector labels.Selector) ([]*corev1.Secret, error) {
-// 				panic("mock out the ListSecrets method")
-// 			},
-// 			NamespaceInformerFunc: func() kubernetes.Informer {
-// 				panic("mock out the NamespaceInformer method")
-// 			},
-// 			NetworkPolicyInformerFunc: func() kubernetes.Informer {
-// 				panic("mock out the NetworkPolicyInformer method")
-// 			},
-// 			SecretInformerFunc: func() kubernetes.Informer {
-// 				panic("mock out the SecretInformer method")
-// 			},
-// 		}
+//		// make and configure a mocked kubernetes.ClientInterface
+//		mockedClientInterface := &ClientInterfaceMock{
+//			ApplyConfigMapFunc: func(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+//				panic("mock out the ApplyConfigMap method")
+//			},
+//			ApplyNetworkPolicyFunc: func(ctx context.Context, namespace string, netpol *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+//				panic("mock out the ApplyNetworkPolicy method")
+//			},
+//			ApplySecretFunc: func(ctx context.Context, namespace string, secret *corev1.Secret) (*corev1.Secret, error) {
+//				panic("mock out the ApplySecret method")
+//			},
+//			ConfigMapInformerFunc: func() kubernetes.Informer {
+//				panic("mock out the ConfigMapInformer method")
+//			},
+//			DeleteConfigMapFunc: func(ctx context.Context, namespace string, name string) error {
+//				panic("mock out the DeleteConfigMap method")
+//			},
+//			DeleteNetworkPolicyFunc: func(ctx context.Context, namespace string, name string) error {
+//				panic("mock out the DeleteNetworkPolicy method")
+//			},
+//			DeleteSecretFunc: func(ctx context.Context, namespace string, name string) error {
+//				panic("mock out the DeleteSecret method")
+//			},
+//			GetConfigMapFunc: func(ctx context.Context, namespace string, name string) (*corev1.ConfigMap, error) {
+//				panic("mock out the GetConfigMap method")
+//			},
+//			GetNamespaceFunc: func(ctx context.Context, name string) (*corev1.Namespace, error) {
+//				panic("mock out the GetNamespace method")
+//			},
+//			GetNetworkPolicyFunc: func(ctx context.Context, namespace string, name string) (*networkingv1.NetworkPolicy, error) {
+//				panic("mock out the GetNetworkPolicy method")
+//			},
+//			GetSecretFunc: func(ctx context.Context, namespace string, name string) (*corev1.Secret, error) {
+//				panic("mock out the GetSecret method")
+//			},
+//			ListConfigMapsFunc: func(namespace string, selector labels.Selector) ([]*corev1.ConfigMap, error) {
+//				panic("mock out the ListConfigMaps method")
+//			},
+//			ListNamespacesFunc: func(selector labels.Selector) ([]*corev1.Namespace, error) {
+//				panic("mock out the ListNamespaces method")
+//			},
+//			ListNetworkPoliciesFunc: func(namespace string, selector labels.Selector) ([]*networkingv1.NetworkPolicy, error) {
+//				panic("mock out the ListNetworkPolicies method")
+//			},
+//			ListSecretsFunc: func(namespace string, selector labels.Selector) ([]*corev1.Secret, error) {
+//				panic("mock out the ListSecrets method")
+//			},
+//			NamespaceInformerFunc: func() kubernetes.Informer {
+//				panic("mock out the NamespaceInformer method")
+//			},
+//			NetworkPolicyInformerFunc: func() kubernetes.Informer {
+//				panic("mock out the NetworkPolicyInformer method")
+//			},
+//			SecretInformerFunc: func() kubernetes.Informer {
+//				panic("mock out the SecretInformer method")
+//			},
+//		}
 //
-// 		// use mockedClientInterface in code that requires kubernetes.ClientInterface
-// 		// and then make assertions.
+//		// use mockedClientInterface in code that requires kubernetes.ClientInterface
+//		// and then make assertions.
 //
-// 	}
+//	}
 type ClientInterfaceMock struct {
 	// ApplyConfigMapFunc mocks the ApplyConfigMap method.
 	ApplyConfigMapFunc func(ctx context.Context, namespace string, configMap *corev1.ConfigMap) (*corev1.ConfigMap, error)
@@ -309,7 +309,8 @@ func (mock *ClientInterfaceMock) ApplyConfigMap(ctx context.Context, namespace s
 
 // ApplyConfigMapCalls gets all the calls that were made to ApplyConfigMap.
 // Check the length with:
-//     len(mockedClientInterface.ApplyConfigMapCalls())
+//
+//	len(mockedClientInterface.ApplyConfigMapCalls())
 func (mock *ClientInterfaceMock) ApplyConfigMapCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -348,7 +349,8 @@ func (mock *ClientInterfaceMock) ApplyNetworkPolicy(ctx context.Context, namespa
 
 // ApplyNetworkPolicyCalls gets all the calls that were made to ApplyNetworkPolicy.
 // Check the length with:
-//     len(mockedClientInterface.ApplyNetworkPolicyCalls())
+//
+//	len(mockedClientInterface.ApplyNetworkPolicyCalls())
 func (mock *ClientInterfaceMock) ApplyNetworkPolicyCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -387,7 +389,8 @@ func (mock *ClientInterfaceMock) ApplySecret(ctx context.Context, namespace stri
 
 // ApplySecretCalls gets all the calls that were made to ApplySecret.
 // Check the length with:
-//     len(mockedClientInterface.ApplySecretCalls())
+//
+//	len(mockedClientInterface.ApplySecretCalls())
 func (mock *ClientInterfaceMock) ApplySecretCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -419,7 +422,8 @@ func (mock *ClientInterfaceMock) ConfigMapInformer() kubernetes.Informer {
 
 // ConfigMapInformerCalls gets all the calls that were made to ConfigMapInformer.
 // Check the length with:
-//     len(mockedClientInterface.ConfigMapInformerCalls())
+//
+//	len(mockedClientInterface.ConfigMapInformerCalls())
 func (mock *ClientInterfaceMock) ConfigMapInformerCalls() []struct {
 } {
 	var calls []struct {
@@ -452,7 +456,8 @@ func (mock *ClientInterfaceMock) DeleteConfigMap(ctx context.Context, namespace 
 
 // DeleteConfigMapCalls gets all the calls that were made to DeleteConfigMap.
 // Check the length with:
-//     len(mockedClientInterface.DeleteConfigMapCalls())
+//
+//	len(mockedClientInterface.DeleteConfigMapCalls())
 func (mock *ClientInterfaceMock) DeleteConfigMapCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -491,7 +496,8 @@ func (mock *ClientInterfaceMock) DeleteNetworkPolicy(ctx context.Context, namesp
 
 // DeleteNetworkPolicyCalls gets all the calls that were made to DeleteNetworkPolicy.
 // Check the length with:
-//     len(mockedClientInterface.DeleteNetworkPolicyCalls())
+//
+//	len(mockedClientInterface.DeleteNetworkPolicyCalls())
 func (mock *ClientInterfaceMock) DeleteNetworkPolicyCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -530,7 +536,8 @@ func (mock *ClientInterfaceMock) DeleteSecret(ctx context.Context, namespace str
 
 // DeleteSecretCalls gets all the calls that were made to DeleteSecret.
 // Check the length with:
-//     len(mockedClientInterface.DeleteSecretCalls())
+//
+//	len(mockedClientInterface.DeleteSecretCalls())
 func (mock *ClientInterfaceMock) DeleteSecretCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -569,7 +576,8 @@ func (mock *ClientInterfaceMock) GetConfigMap(ctx context.Context, namespace str
 
 // GetConfigMapCalls gets all the calls that were made to GetConfigMap.
 // Check the length with:
-//     len(mockedClientInterface.GetConfigMapCalls())
+//
+//	len(mockedClientInterface.GetConfigMapCalls())
 func (mock *ClientInterfaceMock) GetConfigMapCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -606,7 +614,8 @@ func (mock *ClientInterfaceMock) GetNamespace(ctx context.Context, name string) 
 
 // GetNamespaceCalls gets all the calls that were made to GetNamespace.
 // Check the length with:
-//     len(mockedClientInterface.GetNamespaceCalls())
+//
+//	len(mockedClientInterface.GetNamespaceCalls())
 func (mock *ClientInterfaceMock) GetNamespaceCalls() []struct {
 	Ctx  context.Context
 	Name string
@@ -643,7 +652,8 @@ func (mock *ClientInterfaceMock) GetNetworkPolicy(ctx context.Context, namespace
 
 // GetNetworkPolicyCalls gets all the calls that were made to GetNetworkPolicy.
 // Check the length with:
-//     len(mockedClientInterface.GetNetworkPolicyCalls())
+//
+//	len(mockedClientInterface.GetNetworkPolicyCalls())
 func (mock *ClientInterfaceMock) GetNetworkPolicyCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -682,7 +692,8 @@ func (mock *ClientInterfaceMock) GetSecret(ctx context.Context, namespace string
 
 // GetSecretCalls gets all the calls that were made to GetSecret.
 // Check the length with:
-//     len(mockedClientInterface.GetSecretCalls())
+//
+//	len(mockedClientInterface.GetSecretCalls())
 func (mock *ClientInterfaceMock) GetSecretCalls() []struct {
 	Ctx       context.Context
 	Namespace string
@@ -719,7 +730,8 @@ func (mock *ClientInterfaceMock) ListConfigMaps(namespace string, selector label
 
 // ListConfigMapsCalls gets all the calls that were made to ListConfigMaps.
 // Check the length with:
-//     len(mockedClientInterface.ListConfigMapsCalls())
+//
+//	len(mockedClientInterface.ListConfigMapsCalls())
 func (mock *ClientInterfaceMock) ListConfigMapsCalls() []struct {
 	Namespace string
 	Selector  labels.Selector
@@ -752,7 +764,8 @@ func (mock *ClientInterfaceMock) ListNamespaces(selector labels.Selector) ([]*co
 
 // ListNamespacesCalls gets all the calls that were made to ListNamespaces.
 // Check the length with:
-//     len(mockedClientInterface.ListNamespacesCalls())
+//
+//	len(mockedClientInterface.ListNamespacesCalls())
 func (mock *ClientInterfaceMock) ListNamespacesCalls() []struct {
 	Selector labels.Selector
 } {
@@ -785,7 +798,8 @@ func (mock *ClientInterfaceMock) ListNetworkPolicies(namespace string, selector 
 
 // ListNetworkPoliciesCalls gets all the calls that were made to ListNetworkPolicies.
 // Check the length with:
-//     len(mockedClientInterface.ListNetworkPoliciesCalls())
+//
+//	len(mockedClientInterface.ListNetworkPoliciesCalls())
 func (mock *ClientInterfaceMock) ListNetworkPoliciesCalls() []struct {
 	Namespace string
 	Selector  labels.Selector
@@ -820,7 +834,8 @@ func (mock *ClientInterfaceMock) ListSecrets(namespace string, selector labels.S
 
 // ListSecretsCalls gets all the calls that were made to ListSecrets.
 // Check the length with:
-//     len(mockedClientInterface.ListSecretsCalls())
+//
+//	len(mockedClientInterface.ListSecretsCalls())
 func (mock *ClientInterfaceMock) ListSecretsCalls() []struct {
 	Namespace string
 	Selector  labels.Selector
@@ -850,7 +865,8 @@ func (mock *ClientInterfaceMock) NamespaceInformer() kubernetes.Informer {
 
 // NamespaceInformerCalls gets all the calls that were made to NamespaceInformer.
 // Check the length with:
-//     len(mockedClientInterface.NamespaceInformerCalls())
+//
+//	len(mockedClientInterface.NamespaceInformerCalls())
 func (mock *ClientInterfaceMock) NamespaceInformerCalls() []struct {
 } {
 	var calls []struct {
@@ -876,7 +892,8 @@ func (mock *ClientInterfaceMock) NetworkPolicyInformer() kubernetes.Informer {
 
 // NetworkPolicyInformerCalls gets all the calls that were made to NetworkPolicyInformer.
 // Check the length with:
-//     len(mockedClientInterface.NetworkPolicyInformerCalls())
+//
+//	len(mockedClientInterface.NetworkPolicyInformerCalls())
 func (mock *ClientInterfaceMock) NetworkPolicyInformerCalls() []struct {
 } {
 	var calls []struct {
@@ -902,7 +919,8 @@ func (mock *ClientInterfaceMock) SecretInformer() kubernetes.Informer {
 
 // SecretInformerCalls gets all the calls that were made to SecretInformer.
 // Check the length with:
-//     len(mockedClientInterface.SecretInformerCalls())
+//
+//	len(mockedClientInterface.SecretInformerCalls())
 func (mock *ClientInterfaceMock) SecretInformerCalls() []struct {
 } {
 	var calls []struct {

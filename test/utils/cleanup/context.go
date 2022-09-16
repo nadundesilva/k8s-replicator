@@ -24,10 +24,8 @@ import (
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
-const (
-	testObjectsContextKey           = "__test_objects__"
-	testControllerObjectsContextKey = "__test_controller_objects__"
-)
+type testObjectsContextKey struct{}
+type testControllerObjectsContextKey struct{}
 
 type testObjects struct {
 	namespaces          corev1.NamespaceList
@@ -36,14 +34,14 @@ type testObjects struct {
 }
 
 func AddTestObjectToContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
-	return addObjectToContext(ctx, t, object, testObjectsContextKey, "test")
+	return addObjectToContext(ctx, t, object, testObjectsContextKey{}, "test")
 }
 
 func AddControllerObjectToContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
-	return addObjectToContext(ctx, t, object, testControllerObjectsContextKey, "controller")
+	return addObjectToContext(ctx, t, object, testControllerObjectsContextKey{}, "controller")
 }
 
-func addObjectToContext(ctx context.Context, t *testing.T, object k8s.Object, contextKey, usage string) context.Context {
+func addObjectToContext(ctx context.Context, t *testing.T, object k8s.Object, contextKey any, usage string) context.Context {
 	ctxValue := ctx.Value(contextKey)
 	var objects *testObjects
 	if ctxValue == nil {
@@ -70,14 +68,14 @@ func addObjectToContext(ctx context.Context, t *testing.T, object k8s.Object, co
 }
 
 func RemoveTestObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
-	return removeObjectFromContext(ctx, t, object, testObjectsContextKey, "test")
+	return removeObjectFromContext(ctx, t, object, testObjectsContextKey{}, "test")
 }
 
 func RemoveControllerObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object) context.Context {
-	return removeObjectFromContext(ctx, t, object, testControllerObjectsContextKey, "controller")
+	return removeObjectFromContext(ctx, t, object, testControllerObjectsContextKey{}, "controller")
 }
 
-func removeObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object, contextKey, usage string) context.Context {
+func removeObjectFromContext(ctx context.Context, t *testing.T, object k8s.Object, contextKey any, usage string) context.Context {
 	ctxValue := ctx.Value(contextKey)
 	var objects *testObjects
 	if ctxValue == nil {

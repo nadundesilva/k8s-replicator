@@ -586,7 +586,7 @@ func TestClientResourceOperations(t *testing.T) {
 					if event.eventType != Add {
 						t.Errorf("received event of unexpected type %s", event.eventType)
 					}
-					if !testDatum.equals(event.newObj.(runtime.Object), testDatum.initialObjects[i].(runtime.Object)) {
+					if !testDatum.equals(event.newObj.(runtime.Object), testDatum.initialObjects[i]) {
 						t.Errorf("received add event with unexpected object: want %+v; got %+v", testDatum.initialObjects[i], event.newObj)
 					}
 				case <-time.After(wait.ForeverTestTimeout):
@@ -662,7 +662,7 @@ func TestClientResourceOperations(t *testing.T) {
 			if err != nil {
 				t.Errorf("getting resource failed with error: %v", err)
 			}
-			if !testDatum.equals(object.(runtime.Object), firstObject.(runtime.Object)) {
+			if !testDatum.equals(object.(runtime.Object), firstObject) {
 				t.Errorf("resource returned in get call did not match the requested initial object: want %+v; got %+v",
 					firstObject, object)
 			}
@@ -693,7 +693,7 @@ func TestClientResourceOperations(t *testing.T) {
 					if event.eventType != Delete {
 						t.Errorf("received event of unexpected type %s", event.eventType)
 					}
-					if !testDatum.equals(event.prevObj.(runtime.Object), firstObject.(runtime.Object)) {
+					if !testDatum.equals(event.prevObj.(runtime.Object), firstObject) {
 						t.Errorf("received delete event with unexpected object: want %+v; got %+v", firstObject, event.prevObj)
 					}
 				case <-time.After(wait.ForeverTestTimeout):

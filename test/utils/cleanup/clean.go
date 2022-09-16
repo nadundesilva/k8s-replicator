@@ -24,11 +24,11 @@ import (
 )
 
 func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey)
-	return cleanObjects(ctx, t, cfg, testObjectsContextKey)
+	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey{})
+	return cleanObjects(ctx, t, cfg, testObjectsContextKey{})
 }
 
-func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey string) context.Context {
+func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey any) context.Context {
 	ctxValue := ctx.Value(contextKey)
 	if ctxValue != nil {
 		deleteObjs := func(object k8s.Object, objectType string) {

@@ -38,13 +38,13 @@ const (
 	defaulControllerNamespace  = "k8s-replicator"
 	defaultTestNamespacePrefix = "replicator-e2e"
 	defaultImage               = "nadunrds/k8s-replicator:test"
-
-	controllerNamespaceContextKey = "__controller_namespace__"
 )
 
 var (
 	image = os.Getenv("CONTROLLER_IMAGE")
 )
+
+type controllerNamespaceContextKey struct{}
 
 func GetImage() string {
 	if image == "" {
@@ -54,7 +54,7 @@ func GetImage() string {
 }
 
 func GetNamspace(ctx context.Context) string {
-	namespace := ctx.Value(controllerNamespaceContextKey)
+	namespace := ctx.Value(controllerNamespaceContextKey{})
 	return namespace.(string)
 }
 
@@ -67,7 +67,7 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 	}
 
 	namespace := envconf.RandomName(defaultTestNamespacePrefix, 32)
-	ctx = context.WithValue(ctx, controllerNamespaceContextKey, namespace)
+	ctx = context.WithValue(ctx, controllerNamespaceContextKey{}, namespace)
 
 	kustomizeDir, err := filepath.Abs(filepath.Join("..", "..", kustomizeDirName))
 	if err != nil {

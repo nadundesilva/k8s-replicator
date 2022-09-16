@@ -24,8 +24,9 @@ import (
 
 const (
 	namespacePrefix           = "replicator-e2e-ns"
-	sourceNamespaceContextKey = "__source_namespace__"
 )
+
+type sourceNamespaceContextKey struct{}
 
 func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CreateOption) (*corev1.Namespace, context.Context) {
 	opts := &CreateOptions{
@@ -52,10 +53,10 @@ func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, option
 
 func CreateSource(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CreateOption) context.Context {
 	ns, ctx := CreateRandom(ctx, t, cfg, options...)
-	ctx = context.WithValue(ctx, sourceNamespaceContextKey, ns)
+	ctx = context.WithValue(ctx, sourceNamespaceContextKey{}, ns)
 	return ctx
 }
 
 func GetSource(ctx context.Context) *corev1.Namespace {
-	return ctx.Value(sourceNamespaceContextKey).(*corev1.Namespace)
+	return ctx.Value(sourceNamespaceContextKey{}).(*corev1.Namespace)
 }

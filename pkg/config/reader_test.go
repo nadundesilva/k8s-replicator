@@ -15,7 +15,6 @@ package config
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -128,7 +127,7 @@ func TestReplaceEnv(t *testing.T) {
 					t.Errorf("expected returned reader to be nil, but found %+v", replacedReader)
 				}
 			} else {
-				replacedBytes, err := ioutil.ReadAll(replacedReader)
+				replacedBytes, err := io.ReadAll(replacedReader)
 				if err != nil {
 					t.Errorf("returned io.Reader returned error: %v", err)
 				}
