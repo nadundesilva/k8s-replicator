@@ -1,6 +1,6 @@
-## K8s Replicator - Benchmark Results
+# K8s Replicator - Benchmark Results
 
-### Namespace Creation
+## Namespace Creation
 
 This is a benchmark on the duration taken to replicate resources to a set of new namespaces with varying initial and new namespaces counts. The initial namespaces are created beforehand and only the time taken to create the new namespaces and replicate to them are measured for the benchmark.
 
@@ -15,7 +15,7 @@ This is a benchmark on the duration taken to replicate resources to a set of new
 | 100 | 100 | 1m4.436625486s |
 | 1000 | 100 | 3m59.32179761s |
 
-### Resource Creation
+## Resource Creation
 
 This is a benchmark on replicating a new resource to namespaces with varying namespaces counts. The namespaces are created beforehand and only the time to replicate to the new namespaces are measured.
 

@@ -69,8 +69,8 @@ func (r Report) export() error {
 }
 
 func (r Report) generateMarkdownReport() error {
-	content := "## K8s Replicator - Benchmark Results\n\n" +
-		"### Namespace Creation\n\n" +
+	content := "# K8s Replicator - Benchmark Results\n\n" +
+		"## Namespace Creation\n\n" +
 		"This is a benchmark on the duration taken to replicate resources to a set of new namespaces with varying initial and new " +
 		"namespaces counts. The initial namespaces are created beforehand and only the time taken to create the new namespaces " +
 		"and replicate to them are measured for the benchmark.\n\n" +
@@ -80,7 +80,7 @@ func (r Report) generateMarkdownReport() error {
 		content += fmt.Sprintf("| %d | %d | %s |\n", reportItem.InitialNamespaceCount, reportItem.NewNamespaceCount, reportItem.Duration)
 	}
 	content += "\n" +
-		"### Resource Creation\n\n" +
+		"## Resource Creation\n\n" +
 		"This is a benchmark on replicating a new resource to namespaces with varying namespaces counts. The namespaces are " +
 		"created beforehand and only the time to replicate to the new namespaces are measured.\n\n" +
 		"| Namespace Count | Duration |\n" +

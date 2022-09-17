@@ -9,7 +9,7 @@
 [![Docker Image](https://img.shields.io/docker/image-size/nadunrds/k8s-replicator/latest?style=flat-square)](https://hub.docker.com/r/nadunrds/k8s-replicator)
 [![Docker Pulls](https://img.shields.io/docker/pulls/nadunrds/k8s-replicator?style=flat-square)](https://hub.docker.com/r/nadunrds/k8s-replicator)
 
-Replicator supports copying kubernetes resources across namespaces. This controller was written keeping extensibility and performance in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
+Replicator supports copying kubernetes resources across namespaces. This controller was written keeping extensibility and [performance](./BENCHMARK.md) in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
 
 * Secrets
 * Config Maps
