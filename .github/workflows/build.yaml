@@ -6,11 +6,10 @@ on:
             publish-snapshots:
                 description: Whether the snapshots should be published (true/false)
                 required: true
-                type: string
+                type: boolean
         secrets:
             docker_hub_token:
                 description: Docker Hub token
-                required: true
 
 jobs:
     check-code-gen:
@@ -273,13 +272,13 @@ jobs:
                   exit-code: '1'
                   ignore-unfixed: true
             - name: Login to the Container registry
-              if: ${{ inputs.publish-snapshots != '' }}
+              if: ${{ inputs.publish-snapshots == true }}
               uses: docker/login-action@v2
               with:
                   username: nadunrds
                   password: ${{ secrets.docker_hub_token }}
             - name: Build & Push Docker Image
-              if: ${{ inputs.publish-snapshots != '' }}
+              if: ${{ inputs.publish-snapshots == true }}
               uses: docker/build-push-action@v3
               with:
                   context: .

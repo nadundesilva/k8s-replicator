@@ -10,4 +10,4 @@ jobs:
         name: Check Pull Request
         uses: ./.github/workflows/build.yaml
         with:
-            publish-snapshots: "false"
+            publish-snapshots: false

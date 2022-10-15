@@ -10,6 +10,6 @@ jobs:
         name: Build Branch
         uses: ./.github/workflows/build.yaml
         with:
-            publish-snapshots: "true"
+            publish-snapshots: true
         secrets:
             docker_hub_token: ${{ secrets.DOCKER_HUB_TOKEN }}
