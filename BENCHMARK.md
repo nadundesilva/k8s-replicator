@@ -6,14 +6,14 @@ This is a benchmark on the duration taken to replicate resources to a set of new
 
 | Initial Namespace Count | New Namespace Count | Duration |
 | -- | -- | -- |
-| 0 | 1 | 22.724364ms |
-| 0 | 10 | 4.691715001s |
-| 0 | 100 | 58.621989867s |
-| 0 | 1000 | 10m8.718282655s |
-| 1 | 100 | 57.824094674s |
-| 10 | 100 | 58.626700309s |
-| 100 | 100 | 1m4.436625486s |
-| 1000 | 100 | 3m59.32179761s |
+| 0 | 1 | 33.42301ms |
+| 0 | 10 | 4.706934676s |
+| 0 | 100 | 58.628938201s |
+| 0 | 1000 | 10m8.772157407s |
+| 1 | 100 | 57.834245965s |
+| 10 | 100 | 58.624531031s |
+| 100 | 100 | 1m3.431816922s |
+| 1000 | 100 | 3m59.559109427s |
 
 ## Resource Creation
 
@@ -21,7 +21,7 @@ This is a benchmark on replicating a new resource to namespaces with varying nam
 
 | Namespace Count | Duration |
 | -- | -- |
-| 1 | 1.045284328s |
-| 10 | 3.808940571s |
-| 100 | 41.20444918s |
-| 1000 | 7m4.204291703s |
+| 1 | 1.055666516s |
+| 10 | 3.81482857s |
+| 100 | 41.204071538s |
+| 1000 | 7m0.609495945s |
