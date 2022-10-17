@@ -6,4 +6,9 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: k8s-replicator
 repo: github.com/nadundesilva/k8s-replicator
+resources:
+- controller: true
+  domain: nadundesilva.github.io
+  kind: Secret
+  version: v1
 version: "3"
