@@ -1,0 +1,9 @@
+domain: nadundesilva.github.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: k8s-replicator
+repo: github.com/nadundesilva/k8s-replicator
+version: "3"

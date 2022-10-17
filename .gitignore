@@ -11,9 +11,9 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Build
-out/
-coverage.txt
+# Dependency directories (remove the comment below to include it)
+# vendor/
 
-# Benchmark Report
-test/benchmark/report.md
+# Operator SDK
+bin/
+cache/
