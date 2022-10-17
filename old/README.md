@@ -1,7 +1,6 @@
-# Kubernetes Replicator
+# K8s Replicator
 
 [![Main Branch Build](https://github.com/nadundesilva/k8s-replicator/actions/workflows/branch-build.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/branch-build.yaml)
-[![codecov](https://codecov.io/gh/nadundesilva/k8s-replicator/branch/main/graph/badge.svg?token=P05ZSUPDT3)](https://codecov.io/gh/nadundesilva/k8s-replicator)
 [![Vulnerabilities Scan](https://github.com/nadundesilva/k8s-replicator/actions/workflows/vulnerabilities-scan.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/vulnerabilities-scan.yaml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -17,12 +16,25 @@ Replicator supports copying kubernetes resources across namespaces. This control
 
 ## How to Use
 
-### How to Setup Controller
+### Prerequisites
+
+The following tools are expected to be installed and ready.
+- Kubectl
+- Operator SDK
+
+The following tools can be either installed on your own or let the installation scripts handle it.
+- OLM to be installed in the cluster
+  OLM can be installed using the [operator-sdk](https://sdk.operatorframework.io/docs/installation/)
+  ```bash
+  operator-sdk olm install
+  ```
+
+### How to Setup Operator
 
 #### Quickstart
 
 Run the following command to apply the controller to your cluster. The `<VERSION>` should be replaced with the release version
-to be used (eg:- `0.3.0`) and kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
+to be used (eg:- `0.1.0`) and kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
 
 ```bash
 curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/install.sh | bash -s <VERSION>
@@ -30,12 +42,11 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 
 #### Manual Installation
 
-* Clone this repository and checkout the required version of K8s Replicator.
-* Update the configuration (`<REPOSITORY_ROOT>/kustomize/config.yaml`) to match your needs.
-* Apply the controller into your cluster by running the following command.
-
+* Make sure all the pre-requisites are installed (including the dependencies which are normally installed by the installation scripts)
+* Install the Operator Bundle using the Operator SDK. The `<VERSION>` should be replaced with the release version
+  to be used (eg:- `0.1.0`) and kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
   ```bash
-  kubectl apply -k kustomize
+  operator-sdk run bundle docker.io/nadunrds/k8s-replicator-bundle:<VERSION>
   ```
 
 ### How to mark a object to be replicated
@@ -67,7 +78,7 @@ replicator.nadundesilva.github.io/namespace-type=managed
 
 ### Examples
 
-Examples based on the K8s Replicator can be found [here](./examples/).
+Examples for the CRDs used by the Operator can be found in the [samples](./config/samples) directory.
 
 ### Additional labels/annotations used by the controller
 
@@ -86,13 +97,11 @@ The folloing labels are used by the controller to track the replication of resou
   replicator.nadundesilva.github.io/source-resource-version=<resource-version>
   ```
 
-### How to Cleanup Controller
+### How to Cleanup Operator
 
 #### Quick Remove
 
 Run the following command to remove the controller from your cluster. Kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
-
-**Note:** This approach would only work if you used the Quickstart option for setting up the controller.
 
 ```bash
 curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/uninstall.sh | bash -s
@@ -100,12 +109,11 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 
 #### Manual Removal
 
-* Clone this repository and checkout the installed version of K8s Replicator.
-* Remove the controller from your cluster by running the following command.
+Remove the controller from your cluster by running the following command.
 
-  ```bash
-  kubectl delete -k kustomize
-  ```
+```bash
+operator-sdk cleanup k8s-replicator
+```
 
 ## Support
 
