@@ -1,0 +1,46 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.24.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: k8s-replicator.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Replicator supports copying kubernetes resources across namespaces.
+  displayName: K8s Replicator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: []
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - copy
+  - replicate
+  - reflect
+  links:
+  - name: K8s Replicator
+    url: https://nadundesilva.github.io/projects/personal
+  maintainers:
+  - email: nadunrds@gmail.com
+    name: nadundesilva
+  maturity: alpha
+  provider:
+    name: Nadun De Silva
+    url: https://nadundesilva.github.io/
+  version: 0.0.1
