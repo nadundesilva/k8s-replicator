@@ -1,4 +1,4 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: replicator-sample
+  name: replicator-sample-namespace
