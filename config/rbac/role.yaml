@@ -6,7 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - nadundesilva.github.io
+  - ""
   resources:
   - secrets
   verbs:
@@ -18,13 +18,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - nadundesilva.github.io
+  - ""
   resources:
   - secrets/finalizers
   verbs:
   - update
 - apiGroups:
-  - nadundesilva.github.io
+  - ""
   resources:
   - secrets/status
   verbs:
