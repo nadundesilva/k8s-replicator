@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
+	"github.com/nadundesilva/k8s-replicator/controllers"
 	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
 	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
 	corev1 "k8s.io/api/core/v1"
@@ -85,7 +85,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		func(object k8s.Object) bool {
 			matchMap := func(sourceMap map[string]string, replicaMap map[string]string) error {
 				for k, v := range sourceMap {
-					if k == replicator.ObjectTypeLabelKey {
+					if k == controllers.ObjectTypeLabelKey {
 						continue
 					}
 					if value, ok := replicaMap[k]; ok {
@@ -111,38 +111,38 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 				return false
 			}
 
-			objType, objTypeOk := object.GetLabels()[replicator.ObjectTypeLabelKey]
+			objType, objTypeOk := object.GetLabels()[controllers.ObjectTypeLabelKey]
 			if !objTypeOk {
 				t.Logf("object %s/%s does not contain label key %s", object.GetNamespace(), object.GetName(),
-					replicator.ObjectTypeLabelKey)
+					controllers.ObjectTypeLabelKey)
 				return false
 			}
 			if namespaces.GetSource(ctx).GetName() == object.GetNamespace() {
-				if objTypeOk && objType != replicator.ObjectTypeLabelValueSource {
+				if objTypeOk && objType != controllers.ObjectTypeLabelValueSource {
 					t.Logf("object %s/%s label %s does not contain the expected value; want %s, got %s",
-						object.GetNamespace(), object.GetName(), replicator.ObjectTypeLabelKey,
-						replicator.ObjectTypeLabelValueSource, objType)
+						object.GetNamespace(), object.GetName(), controllers.ObjectTypeLabelKey,
+						controllers.ObjectTypeLabelValueSource, objType)
 					return false
 				}
 			} else {
-				if objTypeOk && objType != replicator.ObjectTypeLabelValueReplica {
+				if objTypeOk && objType != controllers.ObjectTypeLabelValueReplica {
 					t.Logf("object %s/%s label %s does not contain the expected value; want %s, got %s",
-						object.GetNamespace(), object.GetName(), replicator.ObjectTypeLabelKey,
-						replicator.ObjectTypeLabelValueReplica, objType)
+						object.GetNamespace(), object.GetName(), controllers.ObjectTypeLabelKey,
+						controllers.ObjectTypeLabelValueReplica, objType)
 					return false
 				}
 
-				sourceNs, sourceNsOk := object.GetAnnotations()[replicator.SourceNamespaceAnnotationKey]
+				sourceNs, sourceNsOk := object.GetAnnotations()[controllers.SourceNamespaceAnnotationKey]
 				if sourceNsOk {
 					if sourceNs != namespaces.GetSource(ctx).GetName() {
 						t.Logf("object %s/%s annotation %s does not contain the source namespace; want %s, got %s",
-							object.GetNamespace(), object.GetName(), replicator.SourceNamespaceAnnotationKey,
+							object.GetNamespace(), object.GetName(), controllers.SourceNamespaceAnnotationKey,
 							namespaces.GetSource(ctx).GetName(), sourceNs)
 						return false
 					}
 				} else {
 					t.Logf("object %s/%s does not contain annotation key %s", object.GetNamespace(), object.GetName(),
-						replicator.SourceNamespaceAnnotationKey)
+						controllers.SourceNamespaceAnnotationKey)
 					return false
 				}
 			}
