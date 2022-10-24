@@ -16,7 +16,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
+	"github.com/nadundesilva/k8s-replicator/controllers"
 	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
 	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
 	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
@@ -186,7 +186,7 @@ func TestResourcesUpdation(t *testing.T) {
 
 				updatedObject := resource.SourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
-				delete(sourceObjectLabels, replicator.ObjectTypeLabelKey)
+				delete(sourceObjectLabels, controllers.ObjectTypeLabelKey)
 				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), updatedObject)
 				return ctx
 			}).
@@ -212,7 +212,7 @@ func TestResourcesUpdation(t *testing.T) {
 
 				updatedObject := resource.SourceObject.DeepCopyObject().(k8s.Object)
 				sourceObjectLabels := updatedObject.GetLabels()
-				sourceObjectLabels[replicator.ObjectTypeLabelKey] = "ignored"
+				sourceObjectLabels[controllers.ObjectTypeLabelKey] = "ignored"
 				resources.UpdateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), updatedObject)
 				return ctx
 			}).

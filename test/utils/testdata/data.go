@@ -15,7 +15,7 @@ package testdata
 import (
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/pkg/replicator"
+	"github.com/nadundesilva/k8s-replicator/controllers"
 	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
@@ -31,8 +31,8 @@ type Resource struct {
 func GenerateResourceTestData(t *testing.T) []Resource {
 	resources := []Resource{
 		GenerateSecretTestDatum(),
-		GenerateConfigMapTestDatum(),
-		GenerateNetworkPolicyTestDatum(),
+		// GenerateConfigMapTestDatum(),
+		// GenerateNetworkPolicyTestDatum(),
 	}
 	filteredResources := []Resource{}
 	for _, resource := range resources {
@@ -49,7 +49,7 @@ func process(resource Resource) Resource {
 
 	updateSourceObjectLabels := func(sourceObject k8s.Object) {
 		labels := sourceObject.GetLabels()
-		labels[replicator.ObjectTypeLabelKey] = replicator.ObjectTypeLabelValueSource
+		labels[controllers.ObjectTypeLabelKey] = controllers.ObjectTypeLabelValueSource
 	}
 	updateSourceObjectLabels(resource.SourceObject)
 	updateSourceObjectLabels(resource.SourceObjectUpdate)
