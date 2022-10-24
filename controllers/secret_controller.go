@@ -25,6 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -63,7 +64,11 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	isSecretDeleted := secret.GetDeletionTimestamp() != nil
 	objectType, objectTypeOk := secret.GetLabels()[ObjectTypeLabelKey]
-	isReplica := objectTypeOk && objectType == ObjectTypeLabelValueReplica
+	if !objectTypeOk {
+		return ctrl.Result{}, nil
+	}
+	isReplica := objectType == ObjectTypeLabelValueReplica
+	isSource := objectType == ObjectTypeLabelValueSource
 	if isSecretDeleted {
 		if isReplica {
 			sourceNamespace, sourceNamespaceOk := secret.GetAnnotations()[SourceNamespaceAnnotationKey]
@@ -83,7 +88,31 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				}
 			}
 
-			err := r.CreateResource(ctx, secret, secret.GetNamespace())
+			if sourceSecret.GetDeletionTimestamp() == nil {
+				err := r.createResource(ctx, secret, secret.GetNamespace())
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		} else if isSource && controllerutil.ContainsFinalizer(secret, resourceFinalizer) {
+			clonedObj := secret.DeepCopyObject().(client.Object)
+			propagationStrategy := metav1.DeletePropagationBackground
+			err := r.iterateNamespaces(ctx, func(ns corev1.Namespace) error {
+				if ns.GetName() == secret.GetNamespace() {
+					return nil
+				}
+
+				clonedObj.SetNamespace(ns.GetName())
+				return r.Delete(ctx, clonedObj, &client.DeleteOptions{
+					PropagationPolicy: &propagationStrategy,
+				})
+			})
+			if err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to finalize source secret: %+w", err)
+			}
+
+			controllerutil.RemoveFinalizer(secret, resourceFinalizer)
+			err = r.Update(ctx, secret)
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -93,12 +122,31 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	// Adding finalizer
+	if !controllerutil.ContainsFinalizer(secret, resourceFinalizer) {
+		controllerutil.AddFinalizer(secret, resourceFinalizer)
+		err := r.Update(ctx, secret)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to add finalizer: %+w", err)
+		}
+	}
+
+	return ctrl.Result{}, r.iterateNamespaces(ctx, func(ns corev1.Namespace) error {
+		if ns.GetName() == secret.GetNamespace() {
+			return nil
+		}
+
+		return r.createResource(ctx, secret, ns.GetName())
+	})
+}
+
+func (r *SecretReconciler) iterateNamespaces(ctx context.Context, handler func(ns corev1.Namespace) error) error {
 	namespaceList := &corev1.NamespaceList{}
 	err := r.List(ctx, namespaceList, &client.ListOptions{
 		LabelSelector: namespaceSelector,
 	})
 	if err != nil {
-		return ctrl.Result{}, err
+		return err
 	}
 
 	errs := []error{}
@@ -110,18 +158,19 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 		}
 
-		err := r.CreateResource(ctx, secret, ns.GetName())
+		err = handler(ns)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to replicate resource to namespace: %+w", err))
+			continue
 		}
 	}
 	if len(errs) > 0 {
-		return ctrl.Result{}, fmt.Errorf("failed to replicate resource: %+v", errs)
+		return fmt.Errorf("failed to iterate namespaces: %+v", errs)
 	}
-	return ctrl.Result{}, nil
+	return nil
 }
 
-func (r *SecretReconciler) CreateResource(ctx context.Context, sourceSecret *corev1.Secret, ns string) error {
+func (r *SecretReconciler) createResource(ctx context.Context, sourceSecret *corev1.Secret, ns string) error {
 	clonedSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sourceSecret.GetName(),
@@ -130,7 +179,9 @@ func (r *SecretReconciler) CreateResource(ctx context.Context, sourceSecret *cor
 	}
 	_, err := ctrl.CreateOrUpdate(ctx, r.Client, clonedSecret, func() error {
 		clonedSecret.ObjectMeta.SetLabels(map[string]string{
-			ObjectTypeLabelKey:           ObjectTypeLabelValueReplica,
+			ObjectTypeLabelKey: ObjectTypeLabelValueReplica,
+		})
+		clonedSecret.SetAnnotations(map[string]string{
 			SourceNamespaceAnnotationKey: sourceSecret.GetNamespace(),
 		})
 		clonedSecret.Immutable = sourceSecret.Immutable

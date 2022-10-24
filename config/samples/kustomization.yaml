@@ -3,6 +3,7 @@ resources:
 - namespace.yaml
 - ignored-namespace.yaml
 - managed-kube-namespace.yaml
+- replicated-sample-namespace.yaml
 - secret.yaml
 - ignored-secret.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

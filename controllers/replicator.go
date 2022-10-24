@@ -24,15 +24,19 @@ import (
 )
 
 const (
-	NamespaceTypeLabelKey          = "replicator.nadundesilva.github.io/namespace-type"
+	groupFqn = "replicator.nadundesilva.github.io"
+
+	NamespaceTypeLabelKey          = groupFqn + "/namespace-type"
 	NamespaceTypeLabelValueManaged = "managed"
 	NamespaceTypeLabelValueIgnored = "ignored"
 
-	ObjectTypeLabelKey          = "replicator.nadundesilva.github.io/object-type"
+	ObjectTypeLabelKey          = groupFqn + "/object-type"
 	ObjectTypeLabelValueSource  = "source"
 	ObjectTypeLabelValueReplica = "replica"
 
-	SourceNamespaceAnnotationKey = "replicator.nadundesilva.github.io/source-namespace"
+	resourceFinalizer = groupFqn + "/finalizer"
+
+	SourceNamespaceAnnotationKey = groupFqn + "/source-namespace"
 )
 
 var (
@@ -56,7 +60,7 @@ func init() {
 	namespaceSelector = labels.NewSelector().Add(*namespaceSelectorReq)
 
 	sourceResourcesPredicate = predicate.NewPredicateFuncs(func(object client.Object) bool {
-		val, ok := object.GetAnnotations()[ObjectTypeLabelKey]
-		return ok && val == ObjectTypeLabelValueSource
+		val, ok := object.GetLabels()[ObjectTypeLabelKey]
+		return ok && (val == ObjectTypeLabelValueSource || val == ObjectTypeLabelValueReplica)
 	})
 }
