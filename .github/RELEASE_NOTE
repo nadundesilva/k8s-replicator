@@ -1,7 +1,7 @@
 #### How to use
 
-Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#how-to-use) for instructions on how to use the controller.
+Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#how-to-use) for instructions on how to use the Operator.
 
 #### Changelog:
 
-- 
+- Migrate to the Operator Framework

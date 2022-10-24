@@ -101,9 +101,22 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+##@ Run tests
+
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+test: test.unit test.e2e test.benchmark
+
+.PHONY: test.unit
+test.unit: manifests generate fmt vet envtest
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./controllers/... -coverprofile cover.out
+
+.PHONY: test.e2e
+test.e2e:
+	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
+
+.PHONY: test.benchmark
+test.benchmark:
+	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
 
 ##@ Build
 
@@ -116,7 +129,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
+docker-build: test.unit ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push

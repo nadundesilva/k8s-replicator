@@ -24,14 +24,39 @@ jobs:
               uses: actions/setup-go@v3
               with:
                   go-version: "^1.19"
+            - name: Setup Operator SDK
+              run: |
+                  .github/scripts/setup-operator-sdk.sh
             - name: Generate code
-              run: make gen
+              run: make generate manifests bundle
             - name: Check for changes
               run: |
-                if [ -n "$(git status --porcelain)" ]; then
-                  echo "There are new changes after the code generation. Please run 'make gen' and commit the changes"
-                  exit 1
-                fi
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "There are new changes after the code generation. Please run 'make generate manifests bundle' and commit the changes"
+                    exit 1
+                  fi
+
+    check-code:
+        name: Check Code
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Setup GoLang
+              uses: actions/setup-go@v3
+              with:
+                  go-version: "^1.19"
+            - name: Vet Code
+              run: make vet
+            - name: Check Code Format
+              run: |
+                  make fmt
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "There are new changes after the code format. Please run 'make fmt' and commit the changes"
+                    exit 1
+                  fi
 
     run-super-linter:
         name: Run GitHub Super Linter
@@ -49,26 +74,7 @@ jobs:
                   VALIDATE_ALL_CODEBASE: "true"
                   VALIDATE_GO: "false"
                   VALIDATE_KUBERNETES_KUBEVAL: "false"
-
-    run-golangci-lint:
-        name: Run GoLangCI Lint
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v3
-              with:
-                  go-version: "^1.19"
-            - name: Install Dependencies
-              run: |
-                  go get ./...
-                  go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0
-            - name: Lint Go Code
-              run: |
-                  golangci-lint run -c .github/linters/.golangci.yml --timeout 10m
+                  KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
     run-codeql-analysis:
         name: Run CodeQL Analysis
@@ -91,23 +97,6 @@ jobs:
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v2
 
-    run-checkov-scan:
-        name: Run Checkov Scan
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repo
-              uses: actions/checkout@v3
-            - name: Build Kubernetes Artifacts
-              run: |
-                  mkdir -p out
-                  docker run -v ${{ github.workspace }}/kustomize:/artifacts k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                      build /artifacts > out/kustomize-all.yaml
-            - name: Run Checkov Scan
-              uses: bridgecrewio/checkov-action@master
-              with:
-                  directory: out
-                  download_external_modules: true
-
     run-unit-tests:
         name: Run Unit Tests
         runs-on: ubuntu-latest
@@ -121,123 +110,116 @@ jobs:
               with:
                   go-version: "^1.19"
             - name: Run Unit Tests
-              run: |
-                make test.unit
-                echo "TEST_TYPE=unit" >> "${GITHUB_ENV}"
-            - name: Upload coverage to Codecov
-              uses: codecov/codecov-action@v3
-              with:
-                env_vars: TEST_TYPE
+              run: make test.unit
 
-    run-benchmark-tests:
-        name: Run Benchmark Tests
-        runs-on: ubuntu-latest
-        permissions:
-          checks: write
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v3
-              with:
-                  go-version: "^1.19"
-            - name: Run Benchmark Tests
-              run: make test.benchmark
-              env:
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
-            - name: Upload Benchmark Report
-              run: |
-                curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
-                  -H "Accept: application/vnd.github.antiope-preview+json" \
-                  -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
+    # run-benchmark-tests:
+    #     name: Run Benchmark Tests
+    #     runs-on: ubuntu-latest
+    #     permissions:
+    #       checks: write
+    #     steps:
+    #         - name: Checkout repository
+    #           uses: actions/checkout@v3
+    #           with:
+    #               fetch-depth: 0
+    #         - name: Setup GoLang
+    #           uses: actions/setup-go@v3
+    #           with:
+    #               go-version: "^1.19"
+    #         - name: Run Benchmark Tests
+    #           run: make test.benchmark
+    #           env:
+    #               CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+    #         - name: Upload Benchmark Report
+    #           run: |
+    #             curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
+    #               -H "Accept: application/vnd.github.antiope-preview+json" \
+    #               -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+    #               -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
 
-    run-e2e-tests:
-        name: Run E2E Tests
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                resource:
-                    - Secret
-                    - ConfigMap
-                    - NetworkPolicy
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v3
-              with:
-                  go-version: "^1.19"
-            - name: Run E2E Tests
-              run: make test.e2e
-              env:
-                  TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+    # run-e2e-tests:
+    #     name: Run E2E Tests
+    #     runs-on: ubuntu-latest
+    #     strategy:
+    #         matrix:
+    #             resource:
+    #                 - Secret
+    #                 - ConfigMap
+    #                 - NetworkPolicy
+    #     steps:
+    #         - name: Checkout repository
+    #           uses: actions/checkout@v3
+    #           with:
+    #               fetch-depth: 0
+    #         - name: Setup GoLang
+    #           uses: actions/setup-go@v3
+    #           with:
+    #               go-version: "^1.19"
+    #         - name: Run E2E Tests
+    #           run: make test.e2e
+    #           env:
+    #               TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
+    #               CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
 
-    validate-examples:
-        name: Validate Examples
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                example:
-                    - cert-manager
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v3
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v3
-              with:
-                  go-version: "^1.19"
-            - name: Setup Kind
-              run: |
-                go get sigs.k8s.io/kind
-                echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
-            - name: Setup K8s Cluster
-              run: |
-                kind create cluster --name=example-validation-cluster
-                make docker
-                kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
-                NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
+    # validate-examples:
+    #     name: Validate Examples
+    #     runs-on: ubuntu-latest
+    #     strategy:
+    #         matrix:
+    #             example:
+    #                 - cert-manager
+    #     steps:
+    #         - name: Checkout repository
+    #           uses: actions/checkout@v3
+    #           with:
+    #               fetch-depth: 0
+    #         - name: Setup GoLang
+    #           uses: actions/setup-go@v3
+    #           with:
+    #               go-version: "^1.19"
+    #         - name: Setup Kind
+    #           run: |
+    #             go get sigs.k8s.io/kind
+    #             echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
+    #         - name: Setup K8s Cluster
+    #           run: |
+    #             kind create cluster --name=example-validation-cluster
+    #             make docker
+    #             kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
+    #             NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
-                kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-                kubectl label node "${NODE_NAME}" ingress-ready=true
-                kubectl wait --namespace ingress-nginx \
-                  --for=condition=ready pod \
-                  --selector=app.kubernetes.io/component=controller \
-                  --timeout=90s
+    #             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+    #             kubectl label node "${NODE_NAME}" ingress-ready=true
+    #             kubectl wait --namespace ingress-nginx \
+    #               --for=condition=ready pod \
+    #               --selector=app.kubernetes.io/component=controller \
+    #               --timeout=90s
 
-                K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
-                echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
-              env:
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
-            - name: Validate Example
-              run: |
-                source .github/scripts/utils.sh
-                update_controller_image ${{ github.workspace }}/kustomize ${{ github.sha }}
+    #             K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+    #             echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
+    #           env:
+    #               CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+    #         - name: Validate Example
+    #           run: |
+    #             source .github/scripts/utils.sh
+    #             update_controller_image ${{ github.workspace }}/kustomize ${{ github.sha }}
 
-                pushd examples/${{ matrix.example }}
-                ./validate.sh
-                popd
+    #             pushd examples/${{ matrix.example }}
+    #             ./validate.sh
+    #             popd
 
-    build:
-        name: Build
+    build-operator:
+        name: Build Operator
         runs-on: ubuntu-latest
         needs:
             - check-code-gen
+            - check-code
             - run-super-linter
-            - run-golangci-lint
             - run-codeql-analysis
-            - run-checkov-scan
             - run-unit-tests
-            - run-e2e-tests
-            - run-benchmark-tests
-            - validate-examples
+            # - run-benchmark-tests
+            # - run-e2e-tests
+            # - validate-examples
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -247,27 +229,33 @@ jobs:
               uses: actions/setup-go@v3
               with:
                   go-version: "^1.19"
+            - name: Setup Operator SDK
+              run: |
+                  .github/scripts/setup-operator-sdk.sh
+            - name: Generate code
+              run: make generate manifests bundle
+              env:
+                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
             - name: Building Controller
-              run: make all
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v2
-            - name: Set up Docker Buildx
-              id: buildx
-              uses: docker/setup-buildx-action@v2
-              with:
-                  install: true
-            - name: Available platforms
-              run: echo ${{ steps.buildx.outputs.platforms }}
-            - name: Build Docker Image for scanning
-              uses: docker/build-push-action@v3
-              with:
-                  context: .
-                  load: true
-                  tags: nadunrds/k8s-replicator:${{ github.sha }}
-            - name: Run Trivy vulnerability scanner
+              run: make docker-build
+              env:
+                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+            - name: Run Trivy vulnerability scanner on Controller
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ github.sha }}
+                  image-ref: nadunrds/k8s-replicator:${{ github.ref_name }}
+                  format: 'table'
+                  exit-code: '1'
+                  ignore-unfixed: true
+            - name: Building Controller Bundle
+              run: make bundle-build
+              env:
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+            - name: Run Trivy vulnerability scanner on Controller Bundle
+              uses: aquasecurity/trivy-action@master
+              with:
+                  image-ref: nadunrds/k8s-replicator-bundle:${{ github.ref_name }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -278,12 +266,13 @@ jobs:
               with:
                   username: nadunrds
                   password: ${{ secrets.docker_hub_token }}
-            - name: Build & Push Docker Image
+            - name: Pushing Controller
               if: ${{ inputs.publish-snapshots == true }}
-              uses: docker/build-push-action@v3
-              with:
-                  context: .
-                  platforms: linux/amd64,linux/arm64,linux/arm/v7
-                  push: ${{ github.event_name == 'push' && github.repository_owner == 'nadundesilva' }}
-                  tags: |
-                    nadunrds/k8s-replicator:${{ github.ref_name }}
+              run: make docker-push
+              env:
+                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+            - name: Pushing Controller Bundle
+              if: ${{ inputs.publish-snapshots == true }}
+              run: make bundle-push
+              env:
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"

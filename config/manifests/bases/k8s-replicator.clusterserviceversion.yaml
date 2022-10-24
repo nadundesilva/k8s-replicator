@@ -33,7 +33,7 @@ spec:
   - reflect
   links:
   - name: K8s Replicator
-    url: https://k8s-replicator.domain
+    url: https://nadundesilva.github.io/projects/personal
   maintainers:
   - email: nadunrds@gmail.com
     name: nadundesilva

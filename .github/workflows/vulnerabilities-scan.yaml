@@ -17,9 +17,14 @@ on:
                 type: string
 
 jobs:
-    run-trivy-scan:
+    trivy-scan:
         name: Run Trivy Scan
         runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                image:
+                    - k8s-replicator
+                    - k8s-replicator-bundle
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
@@ -28,7 +33,7 @@ jobs:
             - name: Run Trivy vulnerability scanner
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ github.event.inputs.image-tag || 'latest' }}
+                  image-ref: nadunrds/${{ matrix.image }}:${{ github.event.inputs.image-tag || 'latest' }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
