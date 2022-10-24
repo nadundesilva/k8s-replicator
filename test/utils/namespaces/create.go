@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	namespacePrefix           = "replicator-e2e-ns"
+	namespacePrefix = "replicator-e2e-ns"
 )
 
 type sourceNamespaceContextKey struct{}

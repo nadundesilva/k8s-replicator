@@ -9,14 +9,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 set -e
 
-update_controller_image() {
-    KUSTOMIZE_DIR=${1}
-    CONTROLLER_IMAGE_TAG=${2}
+ARCH=$(case $(uname -m) in x86_64) echo -n amd64 ;; aarch64) echo -n arm64 ;; *) echo -n "$(uname -m)" ;; esac)
+OS=$(uname | awk '{print tolower($0)}')
 
-    echo "🚜 Updating controller image to ${CONTROLLER_IMAGE}"
-    docker run --workdir=/artifacts --entrypoint=/app/kustomize \
-        -v "${KUSTOMIZE_DIR}:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-        edit set image "nadunrds/k8s-replicator=nadunrds/k8s-replicator:${CONTROLLER_IMAGE_TAG}"
-}
+OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/v1.24.0
+curl -LO "${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH}"
+
+chmod +x "operator-sdk_${OS}_${ARCH}" && sudo mv "operator-sdk_${OS}_${ARCH}" /usr/local/bin/operator-sdk
