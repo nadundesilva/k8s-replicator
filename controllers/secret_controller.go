@@ -58,7 +58,7 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if errors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		} else {
-			return ctrl.Result{}, fmt.Errorf("failed to get existing secret: %+w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to get secret being reconciled: %+w", err)
 		}
 	}
 
