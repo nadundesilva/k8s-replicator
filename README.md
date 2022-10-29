@@ -92,10 +92,6 @@ The folloing labels are used by the controller to track the replication of resou
   ```properties
   replicator.nadundesilva.github.io/source-namespace=<namespace>
   ```
-* The following annotation is used to store a replicated resource's source resource version.
-  ```properties
-  replicator.nadundesilva.github.io/source-resource-version=<resource-version>
-  ```
 
 ### How to Cleanup Operator
 
