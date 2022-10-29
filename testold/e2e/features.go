@@ -15,7 +15,7 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/testdata"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 

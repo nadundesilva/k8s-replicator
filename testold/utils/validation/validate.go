@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/nadundesilva/k8s-replicator/controllers"
-	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
-	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/namespaces"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"

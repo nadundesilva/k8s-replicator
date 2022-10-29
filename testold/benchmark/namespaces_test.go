@@ -18,54 +18,59 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
-	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
-	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
-	"github.com/nadundesilva/k8s-replicator/test/utils/resources"
-	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
-	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/cleanup"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/namespaces"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/resources"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/testdata"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/validation"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func TestResourceCreation(t *testing.T) {
+func TestNamespaceCreation(t *testing.T) {
 	testFeatures := []features.Feature{}
 
 	resource := testdata.GenerateSecretTestDatum()
-	namespaceCounts := []int{1, 10, 100, 1000}
+	initialNamespaceCounts := []int{1, 10, 100, 1000}
+	newNamespaceCount := 100
 
-	measureReplication := func(ctx context.Context, t *testing.T, cfg *envconf.Config, namespaceCount int) context.Context {
+	measureReplication := func(ctx context.Context, t *testing.T, cfg *envconf.Config, initialNamespaceCount, newNamespaceCount int) context.Context {
 		startTime := time.Now()
-		resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+		for i := 0; i < newNamespaceCount; i++ {
+			_, ctx = namespaces.CreateRandom(ctx, t, cfg)
+		}
 		validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
 			validation.WithReplicationTimeout(time.Minute*10))
 
 		duration := time.Since(startTime)
-		report.resource = append(report.resource, ReportItem{
-			InitialNamespaceCount: namespaceCount,
-			NewNamespaceCount:     0,
+		report.namespace = append(report.namespace, ReportItem{
+			InitialNamespaceCount: initialNamespaceCount,
+			NewNamespaceCount:     newNamespaceCount,
 			Duration:              fmt.Sprint(duration),
 		})
 		return ctx
 	}
 
-	for _, namespaceCount := range namespaceCounts {
-		initialNamespaceCount := namespaceCount
-		featureName := fmt.Sprintf("resource creation with %d namespaces", initialNamespaceCount)
+	for _, initialNamespaceCount := range initialNamespaceCounts {
+		startingNamespaceCount := initialNamespaceCount
+		featureName := fmt.Sprintf("namespace count increases by %d from %d", newNamespaceCount, startingNamespaceCount)
 		testFeatures = append(testFeatures, features.New(featureName).
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				for i := 0; i < initialNamespaceCount; i++ {
-					_, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				}
+				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replication time", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				// Testing creating initial namespaces set
 				time.Sleep(time.Second * 30)
-				ctx = measureReplication(ctx, t, cfg, initialNamespaceCount)
+				ctx = measureReplication(ctx, t, cfg, 0, startingNamespaceCount)
+
+				// Testing creating namespaces with an initial set of namespaces already in cluster
+				time.Sleep(time.Second * 30)
+				ctx = measureReplication(ctx, t, cfg, startingNamespaceCount, newNamespaceCount)
 				return ctx
 			}).
 			Feature())

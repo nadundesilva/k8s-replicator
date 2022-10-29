@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"github.com/nadundesilva/k8s-replicator/controllers"
-	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/validation"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 )
 
