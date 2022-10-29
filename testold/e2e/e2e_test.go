@@ -10,14 +10,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package benchmark
+package e2e
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/testold/utils/testdata"
 	"sigs.k8s.io/e2e-framework/pkg/env"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/envfuncs"
@@ -25,19 +26,18 @@ import (
 
 var (
 	testenv env.Environment
-	report  Report
 )
 
 func TestMain(m *testing.M) {
-	fmt.Printf("running benchmark tests using controller image: \"%s\"\n", controller.GetImage())
-	report = Report{}
+	fmt.Printf("running E2E tests with resources filter: \"%s\" using controller image: \"%s\"\n", testdata.GetFilterRegex(),
+		controller.GetImage())
 
 	cfg, err := envconf.NewFromFlags()
 	if err != nil {
-		fmt.Printf("failed to generate benchmark test config from flags: %v", err)
+		fmt.Printf("failed to generate e2e test config from flags: %v", err)
 	}
 	testenv = env.NewWithConfig(cfg)
-	kindClusterName := envconf.RandomName("replicator-benchmark-tests-cluster", 32)
+	kindClusterName := envconf.RandomName("replicator-e2e-tests-cluster", 32)
 
 	testenv.Setup(
 		envfuncs.CreateKindCluster(kindClusterName),
@@ -48,10 +48,5 @@ func TestMain(m *testing.M) {
 		envfuncs.DestroyKindCluster(kindClusterName),
 	)
 
-	exitCode := testenv.Run(m)
-	err = report.export()
-	if err != nil {
-		fmt.Printf("failed to print benchmark results: %v", err)
-	}
-	os.Exit(exitCode)
+	os.Exit(testenv.Run(m))
 }
