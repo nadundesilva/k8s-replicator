@@ -178,12 +178,30 @@ func (r *SecretReconciler) createResource(ctx context.Context, sourceSecret *cor
 		},
 	}
 	_, err := ctrl.CreateOrUpdate(ctx, r.Client, clonedSecret, func() error {
-		clonedSecret.ObjectMeta.SetLabels(map[string]string{
-			ObjectTypeLabelKey: ObjectTypeLabelValueReplica,
-		})
-		clonedSecret.SetAnnotations(map[string]string{
-			SourceNamespaceAnnotationKey: sourceSecret.GetNamespace(),
-		})
+		addToMap := func(sourceMap map[string]string, targetMap map[string]string) {
+			for k, v := range sourceMap {
+				if !strings.HasPrefix(k, groupFqn) {
+					targetMap[k] = v
+				}
+			}
+		}
+
+		labels := clonedSecret.ObjectMeta.GetLabels()
+		if labels == nil {
+			labels = map[string]string{}
+		}
+		addToMap(sourceSecret.GetLabels(), labels)
+		labels[ObjectTypeLabelKey] = ObjectTypeLabelValueReplica
+		clonedSecret.ObjectMeta.SetLabels(labels)
+
+		annotations := clonedSecret.ObjectMeta.GetAnnotations()
+		if annotations == nil {
+			annotations = map[string]string{}
+		}
+		addToMap(sourceSecret.GetAnnotations(), annotations)
+		annotations[SourceNamespaceAnnotationKey] = sourceSecret.GetNamespace()
+		clonedSecret.SetAnnotations(annotations)
+
 		clonedSecret.Immutable = sourceSecret.Immutable
 		clonedSecret.Data = sourceSecret.Data
 		clonedSecret.StringData = sourceSecret.StringData
