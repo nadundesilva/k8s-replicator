@@ -1,0 +1,5 @@
+# Ignored Trivy Vulnerabilities
+
+# No Fixed Version (golang.org/x/net)
+CVE-2022-41717
+CVE-2022-41721

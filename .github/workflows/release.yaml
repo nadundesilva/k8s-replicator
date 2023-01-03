@@ -86,6 +86,7 @@ jobs:
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
+                  trivyignores: .trivyignore
             - name: Run Unit Tests
               run: |
                 rm -f coverage.out
