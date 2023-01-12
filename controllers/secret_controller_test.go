@@ -24,7 +24,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
