@@ -15,6 +15,12 @@ set -e
 OLM_VERSION="v0.21.2"
 K8S_REPLICATOR_NAMESPACE="k8s-replicator-system"
 
+if ! command -v jq &> /dev/null
+then
+    echo "'jq' command could not be found. Please install and retry."
+    exit
+fi
+
 if [ "${1}" == "" ]; then
     echo "✋ Expected version argument not provided"
     exit 1
