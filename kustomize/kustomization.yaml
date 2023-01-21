@@ -17,6 +17,7 @@ resources:
 - namespace.yaml
 - deployment.yaml
 - rbac.yaml
+- network-policy.yaml
 
 configMapGenerator:
 - files:
