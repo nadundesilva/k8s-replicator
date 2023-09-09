@@ -1,3 +1,0 @@
-# Disable failing linters for Go 1.19 (https://github.com/golangci/golangci-lint/pull/2438)
-linters:
-    disable: []

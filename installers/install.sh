@@ -12,7 +12,7 @@
 
 set -e
 
-OLM_VERSION="v0.21.2"
+OLM_VERSION="v0.25.0"
 K8S_REPLICATOR_NAMESPACE="k8s-replicator-system"
 
 if ! command -v jq &> /dev/null
