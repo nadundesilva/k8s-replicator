@@ -19,19 +19,24 @@ import (
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-type namespaceDatum struct {
-	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels"`
+type clusterObject struct {
+	Name              string                  `json:"name,omitempty"`
+	Kind              schema.GroupVersionKind `json:"kind,omitempty"`
+	Labels            map[string]string       `json:"labels,omitempty"`
+	Annotations       map[string]string       `json:"annotations,omitempty"`
+	Finalizers        []string                `json:"finalizers,omitempty"`
+	DeletionTimestamp *metav1.Time            `json:"deletionTimestamp,omitempty"`
 }
 
-type objectDatum struct {
-	Namespace string            `json:"namespace"`
-	Name      string            `json:"name"`
-	Labels    map[string]string `json:"labels"`
+type namespacedObject struct {
+	clusterObject
+	Namespace string `json:"namespace,omitempty"`
 }
 
 func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object) error {
@@ -41,12 +46,16 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 		return fmt.Errorf("failed to get the list of namespace: %w", err)
 	}
 
-	namespaceData := []*namespaceDatum{}
-	objectData := []*objectDatum{}
+	namespaceData := []*clusterObject{}
+	objectData := []*namespacedObject{}
 	for _, namespace := range namespaceList.Items {
-		namespaceData = append(namespaceData, &namespaceDatum{
-			Name:   namespace.GetName(),
-			Labels: namespace.GetLabels(),
+		namespaceData = append(namespaceData, &clusterObject{
+			Kind:              namespace.GetObjectKind().GroupVersionKind(),
+			Name:              namespace.GetName(),
+			Labels:            namespace.GetLabels(),
+			Annotations:       namespace.GetAnnotations(),
+			Finalizers:        namespace.GetFinalizers(),
+			DeletionTimestamp: namespace.GetDeletionTimestamp(),
 		})
 
 		clonedObj := sourceObject.DeepCopyObject().(k8s.Object)
@@ -54,10 +63,16 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 		if err != nil {
 			t.Logf("failed to get object %s in namespace %s: %v", clonedObj.GetName(), namespace.GetName(), err)
 		} else {
-			objectData = append(objectData, &objectDatum{
+			objectData = append(objectData, &namespacedObject{
 				Namespace: namespace.GetName(),
-				Name:      clonedObj.GetName(),
-				Labels:    clonedObj.GetLabels(),
+				clusterObject: clusterObject{
+					Kind:              namespace.GetObjectKind().GroupVersionKind(),
+					Name:              clonedObj.GetName(),
+					Labels:            clonedObj.GetLabels(),
+					Annotations:       clonedObj.GetAnnotations(),
+					Finalizers:        clonedObj.GetFinalizers(),
+					DeletionTimestamp: clonedObj.GetDeletionTimestamp(),
+				},
 			})
 		}
 	}

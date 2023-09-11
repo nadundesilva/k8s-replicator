@@ -14,6 +14,7 @@
 package testdata
 
 import (
+	"github.com/nadundesilva/k8s-replicator/test/utils/common"
 	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,6 +24,7 @@ type resourceData struct {
 	SourceObject       client.Object
 	SourceObjectUpdate client.Object
 	EmptyObject        client.Object
+	EmptyObjectList    client.ObjectList
 	IsEqual            validation.ObjectMatcher
 }
 
@@ -41,15 +43,33 @@ type Resource struct {
 }
 
 func (r *Resource) SourceObject() client.Object {
-	return r.data.SourceObject.DeepCopyObject().(client.Object)
+	obj := r.data.SourceObject.DeepCopyObject().(client.Object)
+	objLabels := obj.GetLabels()
+	if objLabels == nil {
+		objLabels = map[string]string{}
+	}
+	objLabels[common.ObjectTypeLabelKey] = common.ObjectTypeLabelValueReplicated
+	obj.SetLabels(objLabels)
+	return obj
 }
 
 func (r *Resource) SourceObjectUpdate() client.Object {
-	return r.data.SourceObjectUpdate.DeepCopyObject().(client.Object)
+	obj := r.data.SourceObjectUpdate.DeepCopyObject().(client.Object)
+	objLabels := obj.GetLabels()
+	if objLabels == nil {
+		objLabels = map[string]string{}
+	}
+	objLabels[common.ObjectTypeLabelKey] = common.ObjectTypeLabelValueReplicated
+	obj.SetLabels(objLabels)
+	return obj
 }
 
 func (r *Resource) EmptyObject() client.Object {
 	return r.data.EmptyObject.DeepCopyObject().(client.Object)
+}
+
+func (r *Resource) EmptyObjectList() client.ObjectList {
+	return r.data.EmptyObjectList.DeepCopyObject().(client.ObjectList)
 }
 
 func GenerateResourceTestData() []Resource {

@@ -16,20 +16,20 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nadundesilva/k8s-replicator/controllers"
-	"github.com/nadundesilva/k8s-replicator/testold/utils/cleanup"
-	"github.com/nadundesilva/k8s-replicator/testold/utils/controller"
-	"github.com/nadundesilva/k8s-replicator/testold/utils/namespaces"
-	"github.com/nadundesilva/k8s-replicator/testold/utils/resources"
-	"github.com/nadundesilva/k8s-replicator/testold/utils/testdata"
-	"github.com/nadundesilva/k8s-replicator/testold/utils/validation"
+	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
+	"github.com/nadundesilva/k8s-replicator/test/utils/common"
+	"github.com/nadundesilva/k8s-replicator/test/utils/controller"
+	"github.com/nadundesilva/k8s-replicator/test/utils/namespaces"
+	"github.com/nadundesilva/k8s-replicator/test/utils/resources"
+	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
+	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
 func TestNamespaceLabels(t *testing.T) {
-	testResources := testdata.GenerateResourceTestData(t)
+	testResources := testdata.GenerateResourceTestData()
 
 	testFeatures := []features.Feature{}
 	for _, resource := range testResources {
@@ -40,17 +40,17 @@ func TestNamespaceLabels(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithLabels(map[string]string{
-					controllers.NamespaceTypeLabelKey: controllers.NamespaceTypeLabelValueIgnored,
+					common.NamespaceTypeLabelKey: common.NamespaceTypeLabelValueIgnored,
 				}))
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher),
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
@@ -61,15 +61,15 @@ func TestNamespaceLabels(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube"))
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher),
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
@@ -80,18 +80,18 @@ func TestNamespaceLabels(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube"),
 					namespaces.WithLabels(map[string]string{
-						controllers.NamespaceTypeLabelKey: controllers.NamespaceTypeLabelValueManaged,
+						common.NamespaceTypeLabelKey: common.NamespaceTypeLabelValueManaged,
 					}))
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher), validation.WithReplicatedNamespaces(testedNs.GetName()))
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual), validation.WithReplicatedNamespaces(testedNs.GetName()))
 				return ctx
 			}).
 			Feature())
@@ -101,16 +101,16 @@ func TestNamespaceLabels(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher),
-					validation.WithReplicationIgnoredNamespaces(controller.GetNamspace(ctx)))
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationIgnoredNamespaces(common.GetControllerNamespace(ctx)))
 				return ctx
 			}).
 			Feature())
@@ -119,19 +119,19 @@ func TestNamespaceLabels(t *testing.T) {
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg, controller.WithNamespaceLabels(map[string]string{
-					controllers.NamespaceTypeLabelKey: controllers.NamespaceTypeLabelValueManaged,
+					common.NamespaceTypeLabelKey: common.NamespaceTypeLabelValueManaged,
 				}))
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher),
-					validation.WithReplicatedNamespaces(controller.GetNamspace(ctx)))
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicatedNamespaces(common.GetControllerNamespace(ctx)))
 				return ctx
 			}).
 			Feature())
@@ -141,43 +141,43 @@ func TestNamespaceLabels(t *testing.T) {
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher))
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual))
 
-				testedNs.GetLabels()[controllers.NamespaceTypeLabelKey] = controllers.NamespaceTypeLabelValueIgnored
+				testedNs.GetLabels()[common.NamespaceTypeLabelKey] = common.NamespaceTypeLabelValueIgnored
 				namespaces.Update(ctx, t, cfg, testedNs)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher),
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
 			Feature())
 
-		testFeatures = append(testFeatures, newFeatureBuilder("controller creates replica when replicate label is added to ignored namespace", resource).
+		testFeatures = append(testFeatures, newFeatureBuilder("controller creates replica when managed label is added to ignored namespace", resource).
 			WithLabel("operation", "create").
 			Setup(func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				ctx = controller.SetupReplicator(ctx, t, cfg)
 				ctx = namespaces.CreateSource(ctx, t, cfg)
-				resources.CreateObject(ctx, t, cfg, namespaces.GetSource(ctx).GetName(), resource.SourceObject)
+				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube-"))
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList)
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList())
 
-				testedNs.GetLabels()[controllers.NamespaceTypeLabelKey] = controllers.NamespaceTypeLabelValueManaged
+				testedNs.GetLabels()[common.NamespaceTypeLabelKey] = common.NamespaceTypeLabelValueManaged
 				namespaces.Update(ctx, t, cfg, testedNs)
 				return ctx
 			}).
 			Teardown(cleanup.CleanTestObjects).
 			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject, resource.ObjectList,
-					validation.WithObjectMatcher(resource.Matcher),
+				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
+					validation.WithObjectMatcher(resource.IsEqual),
 					validation.WithReplicatedNamespaces(testedNs.GetName()))
 				return ctx
 			}).

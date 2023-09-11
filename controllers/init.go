@@ -30,9 +30,9 @@ const (
 	NamespaceTypeLabelValueManaged = "managed"
 	NamespaceTypeLabelValueIgnored = "ignored"
 
-	ObjectTypeLabelKey          = groupFqn + "/object-type"
-	ObjectTypeLabelValueSource  = "source"
-	ObjectTypeLabelValueReplica = "replica"
+	ObjectTypeLabelKey             = groupFqn + "/object-type"
+	ObjectTypeLabelValueReplicated = "replicated"
+	ObjectTypeLabelValueReplica    = "replica"
 
 	resourceFinalizer = groupFqn + "/finalizer"
 
@@ -40,8 +40,8 @@ const (
 )
 
 var (
-	namespaceSelector        labels.Selector
-	sourceResourcesPredicate predicate.Predicate
+	namespaceSelector         labels.Selector
+	managedResourcesPredicate predicate.Predicate
 
 	operatorNamespace = os.Getenv("OPERATOR_NAMESPACE")
 )
@@ -59,8 +59,8 @@ func init() {
 	}
 	namespaceSelector = labels.NewSelector().Add(*namespaceSelectorReq)
 
-	sourceResourcesPredicate = predicate.NewPredicateFuncs(func(object client.Object) bool {
+	managedResourcesPredicate = predicate.NewPredicateFuncs(func(object client.Object) bool {
 		val, ok := object.GetLabels()[ObjectTypeLabelKey]
-		return ok && (val == ObjectTypeLabelValueSource || val == ObjectTypeLabelValueReplica)
+		return ok && (val == ObjectTypeLabelValueReplicated || val == ObjectTypeLabelValueReplica)
 	})
 }

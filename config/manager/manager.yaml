@@ -76,7 +76,7 @@ spec:
         - name: OPERATOR_NAMESPACE
           valueFrom:
             fieldRef:
-              fieldPath: spec.namespace
+              fieldPath: metadata.namespace
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

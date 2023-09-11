@@ -10,7 +10,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package controllers
 
 import (
@@ -54,7 +53,7 @@ var _ = Describe("Object Replication", func() {
 
 				sourceObject = resource.SourceObject()
 				sourceObject.SetNamespace(sourceNamespace.GetName())
-				sourceObject.GetLabels()[ObjectTypeLabelKey] = ObjectTypeLabelValueSource
+				sourceObject.GetLabels()[ObjectTypeLabelKey] = ObjectTypeLabelValueReplicated
 			})
 
 			AfterEach(func() {

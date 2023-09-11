@@ -38,6 +38,7 @@ type SecretReconciler struct {
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=secrets/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -68,7 +69,7 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 	isReplica := objectType == ObjectTypeLabelValueReplica
-	isSource := objectType == ObjectTypeLabelValueSource
+	isSource := objectType == ObjectTypeLabelValueReplicated
 	if isSecretDeleted {
 		if isReplica {
 			sourceNamespace, sourceNamespaceOk := secret.GetAnnotations()[SourceNamespaceAnnotationKey]
@@ -217,6 +218,6 @@ func (r *SecretReconciler) createResource(ctx context.Context, sourceSecret *cor
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Secret{}, builder.WithPredicates(sourceResourcesPredicate)).
+		For(&corev1.Secret{}, builder.WithPredicates(managedResourcesPredicate)).
 		Complete(r)
 }

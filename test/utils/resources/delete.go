@@ -15,6 +15,7 @@ package resources
 import (
 	"context"
 	"testing"
+	"time"
 
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -39,7 +40,12 @@ func DeleteObjectWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config
 	DeleteObject(ctx, t, cfg, namespace, clonedObj)
 
 	t.Logf("waiting for object %s/%s to delete", namespace, clonedObj.GetName())
-	err := wait.For(conditions.New(cfg.Client().Resources(namespace)).ResourceDeleted(clonedObj))
+	err := wait.For(
+		conditions.New(cfg.Client().Resources(namespace)).ResourceDeleted(clonedObj),
+		wait.WithTimeout(time.Minute),
+		wait.WithImmediate(),
+		wait.WithInterval(time.Second*5),
+	)
 	if err != nil {
 		t.Fatalf("failed to wait for object to delete: %v", err)
 	}

@@ -35,6 +35,7 @@ func buildKustomizeResources(t *testing.T, kustomizeDir string) ([]kustomizeBuil
 	}
 
 	k := krusty.MakeKustomizer(&krusty.Options{
+		Reorder:           krusty.ReorderOptionUnspecified,
 		AddManagedbyLabel: true,
 		PluginConfig: &types.PluginConfig{
 			FnpLoadingOptions: types.FnPluginLoadingOptions{},

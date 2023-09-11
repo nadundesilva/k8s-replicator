@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Nadun De Silva. All Rights Reserved.
+ * Copyright (c) 2023, Nadun De Silva. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -10,16 +10,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package e2e
+
+package common
 
 import (
-	"fmt"
+	"context"
 
-	"github.com/nadundesilva/k8s-replicator/testold/utils/testdata"
-	"sigs.k8s.io/e2e-framework/pkg/features"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func newFeatureBuilder(name string, datum testdata.Resource) *features.FeatureBuilder {
-	return features.New(fmt.Sprintf("%s: %s", datum.Name, name)).
-		WithLabel("resource", datum.Name)
+type sourceNamespaceContextKey struct{}
+
+func WithSourceObjectNamespace(ctx context.Context, ns *corev1.Namespace) context.Context {
+	return context.WithValue(ctx, sourceNamespaceContextKey{}, ns)
+}
+
+func GetSourceObjectNamespace(ctx context.Context) *corev1.Namespace {
+	return ctx.Value(sourceNamespaceContextKey{}).(*corev1.Namespace)
 }
