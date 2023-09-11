@@ -56,6 +56,7 @@ func GenerateSecretTestDatum() Resource {
 			},
 		},
 		EmptyObject: &corev1.Secret{},
+		EmptyObjectList: &corev1.SecretList{},
 		IsEqual: func(sourceObject client.Object, replicaObject client.Object) bool {
 			sourceSecret := sourceObject.(*corev1.Secret)
 			replicaSecret := replicaObject.(*corev1.Secret)

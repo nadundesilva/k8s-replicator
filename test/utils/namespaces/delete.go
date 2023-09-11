@@ -15,8 +15,9 @@ package namespaces
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/nadundesilva/k8s-replicator/testold/utils/cleanup"
+	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -40,7 +41,12 @@ func DeleteWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config, name
 	ctx = Delete(ctx, t, cfg, namespace)
 
 	t.Logf("waiting for namespace %s to delete", clonedNamespace.GetName())
-	err := wait.For(conditions.New(cfg.Client().Resources()).ResourceDeleted(clonedNamespace))
+	err := wait.For(
+		conditions.New(cfg.Client().Resources()).ResourceDeleted(clonedNamespace),
+		wait.WithTimeout(time.Minute),
+		wait.WithImmediate(),
+		wait.WithInterval(time.Second*5),
+	)
 	if err != nil {
 		t.Fatalf("failed to wait for namespace to delete: %v", err)
 	}

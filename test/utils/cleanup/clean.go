@@ -15,7 +15,10 @@ package cleanup
 import (
 	"context"
 	"testing"
+	"time"
 
+	"github.com/nadundesilva/k8s-replicator/test/utils/common"
+	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -24,8 +27,10 @@ import (
 )
 
 func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
+	ctx = cleanObjects(ctx, t, cfg, testObjectsContextKey{})
 	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey{})
-	return cleanObjects(ctx, t, cfg, testObjectsContextKey{})
+	common.GetControllerLogsWaitGroup(ctx).Wait()
+	return ctx
 }
 
 func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey any) context.Context {
@@ -35,14 +40,19 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 			err := cfg.Client().Resources().Delete(ctx, object.DeepCopyObject().(k8s.Object),
 				resources.WithDeletePropagation("Background"))
 			if err != nil {
-				t.Errorf("failed to delete test object %s: %v", object.GetName(), err)
+				t.Fatalf("failed to delete test object %s: %v", object.GetName(), err)
 			}
 			t.Logf("deleted test %s object %s", objectType, object.GetName())
 		}
 		waitForDeleteObjs := func(objList k8s.ObjectList, objectType string) {
 			clonedObjList := objList.DeepCopyObject().(k8s.ObjectList)
 			t.Logf("waiting for test %s objects to delete", objectType)
-			err := wait.For(conditions.New(cfg.Client().Resources()).ResourcesDeleted(clonedObjList))
+			err := wait.For(
+				conditions.New(cfg.Client().Resources()).ResourcesDeleted(clonedObjList),
+				wait.WithTimeout(time.Minute),
+				wait.WithImmediate(),
+				wait.WithInterval(time.Second*5),
+			)
 			if err != nil {
 				t.Fatalf("failed to wait for objects to delete: %v", err)
 			}
@@ -50,6 +60,34 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 		}
 
 		objects := ctxValue.(*testObjects)
+		for _, obj := range objects.managedObjects {
+			deleteObjs(obj, "object")
+		}
+		for _, obj := range objects.managedObjects {
+			clonedObj := obj.DeepCopyObject().(k8s.Object)
+			t.Logf("waiting for managed test object %s/%s to delete", clonedObj.GetNamespace(), clonedObj.GetName())
+			err := wait.For(
+				conditions.New(cfg.Client().Resources(clonedObj.GetNamespace())).ResourceDeleted(clonedObj),
+				wait.WithTimeout(time.Minute),
+				wait.WithImmediate(),
+				wait.WithInterval(time.Second*5),
+			)
+			if err != nil {
+				t.Fatalf(
+					"failed to wait for managed test object %s/%s with finalizers %v to delete: %v",
+					clonedObj.GetNamespace(),
+					clonedObj.GetName(),
+					clonedObj.GetFinalizers(),
+					err,
+				)
+			}
+			t.Logf("waiting for managed test object %s/%s to delete complete", clonedObj.GetNamespace(), clonedObj.GetName())
+
+			t.Logf("waiting for replicas of managed test object %s/%s to delete", clonedObj.GetNamespace(), clonedObj.GetName())
+			validation.ValidateResourceDeletion(ctx, t, cfg, clonedObj)
+			t.Logf("waiting for replicas of managed test object %s/%s to delete complete", clonedObj.GetNamespace(), clonedObj.GetName())
+		}
+
 		for _, obj := range objects.namespaces.Items {
 			deleteObjs(&obj, "namespace")
 		}

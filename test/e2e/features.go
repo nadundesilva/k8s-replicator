@@ -10,23 +10,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package resources
+package e2e
 
 import (
-	"context"
-	"testing"
+	"fmt"
 
-	"sigs.k8s.io/e2e-framework/klient/k8s"
-	"sigs.k8s.io/e2e-framework/pkg/envconf"
+	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
+	"sigs.k8s.io/e2e-framework/pkg/features"
 )
 
-func CreateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace string, obj k8s.Object) {
-	clonedObj := obj.DeepCopyObject().(k8s.Object)
-	clonedObj.SetNamespace(namespace)
-
-	err := cfg.Client().Resources(namespace).Create(ctx, clonedObj)
-	if err != nil {
-		t.Fatalf("failed to create object: %v", err)
-	}
-	t.Logf("created new object %s/%s with labels %s", namespace, obj.GetName(), obj.GetLabels())
+func newFeatureBuilder(name string, datum testdata.Resource) *features.FeatureBuilder {
+	return features.New(fmt.Sprintf("%s: %s", datum.Name, name)).
+		WithLabel("resource", datum.Name)
 }

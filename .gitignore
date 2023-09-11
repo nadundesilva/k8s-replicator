@@ -24,3 +24,6 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+
+# E2E Testing
+test/e2e/cluster-logs/*

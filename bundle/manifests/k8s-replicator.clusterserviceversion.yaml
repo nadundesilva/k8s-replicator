@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    createdAt: "2023-09-09T10:02:14Z"
+    createdAt: "2023-09-14T08:25:06Z"
     operators.operatorframework.io/builder: operator-sdk-v1.31.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
   name: k8s-replicator.v0.0.1
@@ -21,6 +21,14 @@ spec:
     spec:
       clusterPermissions:
       - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -133,8 +141,8 @@ spec:
                 - name: OPERATOR_NAMESPACE
                   valueFrom:
                     fieldRef:
-                      fieldPath: spec.namespace
-                image: controller:latest
+                      fieldPath: metadata.namespace
+                image: nadundesilva/k8s-replicator:latest
                 livenessProbe:
                   httpGet:
                     path: /healthz

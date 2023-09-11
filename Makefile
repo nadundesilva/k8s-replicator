@@ -29,7 +29,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # nadundesilva.github.io/k8s-replicator-bundle:$VERSION and nadundesilva.github.io/k8s-replicator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= nadundesilva.github.io/k8s-replicator
+IMAGE_TAG_BASE ?= nadundesilva/k8s-replicator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
@@ -51,7 +51,7 @@ endif
 OPERATOR_SDK_VERSION ?= v1.31.0
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= $(IMAGE_TAG_BASE):latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.26.0
 
@@ -111,16 +111,18 @@ vet: ## Run go vet against code.
 test: test.unit test.e2e test.benchmark
 
 .PHONY: test.unit
-test.unit: manifests generate fmt vet envtest
+test.unit: manifests generate envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./controllers/... -coverprofile cover.out
 
 .PHONY: test.e2e
 test.e2e:
-	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
+	docker build -t ${IMAGE_TAG_BASE}:test .
+	KUBERNETES_VERSION="1.26.3" CONTROLLER_IMAGE=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
 
 .PHONY: test.benchmark
 test.benchmark:
-	CONTROLLER_IMAGE=$(CONTROLLER_IMAGE) go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
+	docker build -t ${IMAGE_TAG_BASE}:test .
+	CONTROLLER_IMAGE=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
 
 ##@ Build
 

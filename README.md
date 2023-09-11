@@ -54,7 +54,7 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 Use the following label to mark the object to be replicated.
 
 ```properties
-replicator.nadundesilva.github.io/object-type=source
+replicator.nadundesilva.github.io/object-type=replicated
 ```
 
 All objects with the above label will replicated into all namespaces.

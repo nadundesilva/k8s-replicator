@@ -14,8 +14,10 @@ package cleanup
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/nadundesilva/k8s-replicator/test/utils/common"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -28,6 +30,7 @@ type testObjectsContextKey struct{}
 type testControllerObjectsContextKey struct{}
 
 type testObjects struct {
+	managedObjects      []k8s.Object
 	namespaces          corev1.NamespaceList
 	clusterRoles        rbacv1.ClusterRoleList
 	clusterRoleBindings rbacv1.ClusterRoleBindingList
@@ -61,7 +64,23 @@ func addObjectToContext(ctx context.Context, t *testing.T, object k8s.Object, co
 		objects.clusterRoleBindings.Items = append(objects.clusterRoleBindings.Items, *clusterrolebinding)
 		objectType = "cluster role binding"
 	} else {
-		t.Fatalf("cannot add unknown object type %s as %s object", object.GetObjectKind().GroupVersionKind().String(), usage)
+		objectType, objectTypeOk := object.GetLabels()[common.ObjectTypeLabelKey]
+		if objectTypeOk && objectType == common.ObjectTypeLabelValueReplicated {
+			objects.managedObjects = append(objects.managedObjects, object)
+			version := object.GetObjectKind().GroupVersionKind()
+			objectType = fmt.Sprintf("%s/%s/%s", version.Group, version.Kind, version.Version)
+		} else {
+			objectKind := object.GetObjectKind().GroupVersionKind()
+			t.Fatalf(
+				"cannot add unknown object %s/%s of type %s/%s/%s as %s object",
+				object.GetNamespace(),
+				object.GetName(),
+				objectKind.Group,
+				objectKind.Kind,
+				objectKind.Version,
+				usage,
+			)
+		}
 	}
 	t.Logf("added %s %s object %s to context", usage, objectType, object.GetName())
 	return context.WithValue(ctx, contextKey, objects)

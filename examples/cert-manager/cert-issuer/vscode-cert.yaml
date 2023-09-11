@@ -28,7 +28,7 @@ spec:
   secretName: vscode-wildcard-tls
   secretTemplate:
     labels:
-      replicator.nadundesilva.github.io/object-type: source
+      replicator.nadundesilva.github.io/object-type: replicated
   privateKey:
     algorithm: ECDSA
     size: 256
