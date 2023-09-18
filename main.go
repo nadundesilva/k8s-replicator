@@ -90,7 +90,14 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Secret")
+		setupLog.Error(err, "unable to create controller", "resource", "Secret")
+		os.Exit(1)
+	}
+	if err = (&controllers.NamespaceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "resource", "Namepsace")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

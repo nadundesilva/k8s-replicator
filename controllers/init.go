@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -40,8 +41,10 @@ const (
 )
 
 var (
-	namespaceSelector         labels.Selector
-	managedResourcesPredicate predicate.Predicate
+	namespaceSelector           labels.Selector
+	replicatedResourcesSelector labels.Selector
+	replicaResourcesSelector    labels.Selector
+	managedResourcesPredicate   predicate.Predicate
 
 	operatorNamespace = os.Getenv("OPERATOR_NAMESPACE")
 )
@@ -50,17 +53,38 @@ func init() {
 	namespaceSelectorReq, err := labels.NewRequirement(
 		NamespaceTypeLabelKey,
 		selection.NotEquals,
-		[]string{
-			NamespaceTypeLabelValueIgnored,
-		},
+		[]string{NamespaceTypeLabelValueIgnored},
 	)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize namespace selector %+w", err))
 	}
 	namespaceSelector = labels.NewSelector().Add(*namespaceSelectorReq)
 
+	replicatedResourcesSelectorReq, err := labels.NewRequirement(
+		ObjectTypeLabelKey,
+		selection.Equals,
+		[]string{ObjectTypeLabelValueReplicated},
+	)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize replicated resources selector %+w", err))
+	}
+	replicatedResourcesSelector = labels.NewSelector().Add(*replicatedResourcesSelectorReq)
+
+	replicaResourcesSelectorReq, err := labels.NewRequirement(
+		ObjectTypeLabelKey,
+		selection.Equals,
+		[]string{ObjectTypeLabelValueReplica},
+	)
+	if err != nil {
+		panic(fmt.Errorf("failed to initialize replica resources selector %+w", err))
+	}
+	replicaResourcesSelector = labels.NewSelector().Add(*replicaResourcesSelectorReq)
+
 	managedResourcesPredicate = predicate.NewPredicateFuncs(func(object client.Object) bool {
-		val, ok := object.GetLabels()[ObjectTypeLabelKey]
-		return ok && (val == ObjectTypeLabelValueReplicated || val == ObjectTypeLabelValueReplica)
+		objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]
+		if objectTypeOk && (objectType == ObjectTypeLabelValueReplicated || objectType == ObjectTypeLabelValueReplica) {
+			return true
+		}
+		return controllerutil.ContainsFinalizer(object, resourceFinalizer)
 	})
 }

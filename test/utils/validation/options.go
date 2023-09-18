@@ -13,10 +13,13 @@
 
 package validation
 
-import "time"
+import (
+	"time"
+)
 
 type ReplicationOptions struct {
 	objectMatcher        ObjectMatcher
+	printState           bool
 	ignoreedNamespaces   []string
 	replicatedNamespaces []string
 	timeout              time.Duration
@@ -24,9 +27,15 @@ type ReplicationOptions struct {
 
 type ReplicationOption func(*ReplicationOptions)
 
-func WithObjectMatcher(objectMatcher ObjectMatcher) ReplicationOption {
+func WithReplicationObjectMatcher(objectMatcher ObjectMatcher) ReplicationOption {
 	return func(options *ReplicationOptions) {
 		options.objectMatcher = objectMatcher
+	}
+}
+
+func WithReplicationPrintStateOnFail(enabled bool) ReplicationOption {
+	return func(options *ReplicationOptions) {
+		options.printState = enabled
 	}
 }
 
@@ -49,10 +58,17 @@ func WithReplicationTimeout(timeout time.Duration) ReplicationOption {
 }
 
 type DeletionOptions struct {
+	printState         bool
 	ignoreedNamespaces []string
 }
 
 type DeletionOption func(*DeletionOptions)
+
+func WithDeletionPrintStateOnFail(enabled bool) DeletionOption {
+	return func(options *DeletionOptions) {
+		options.printState = enabled
+	}
+}
 
 func WithDeletionIgnoredNamespaces(namespaces ...string) DeletionOption {
 	return func(options *DeletionOptions) {

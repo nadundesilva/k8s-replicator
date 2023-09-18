@@ -19,6 +19,7 @@ import (
 
 	"github.com/nadundesilva/k8s-replicator/test/utils/common"
 	"github.com/nadundesilva/k8s-replicator/test/utils/validation"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
 	"sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
@@ -40,9 +41,14 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 			err := cfg.Client().Resources().Delete(ctx, object.DeepCopyObject().(k8s.Object),
 				resources.WithDeletePropagation("Background"))
 			if err != nil {
-				t.Fatalf("failed to delete test object %s: %v", object.GetName(), err)
+				if errors.IsNotFound(err) {
+					t.Logf("test %s object %s already deleted", objectType, object.GetName())
+				} else {
+					t.Fatalf("failed to delete test object %s: %v", object.GetName(), err)
+				}
+			} else {
+				t.Logf("deleted test %s object %s", objectType, object.GetName())
 			}
-			t.Logf("deleted test %s object %s", objectType, object.GetName())
 		}
 		waitForDeleteObjs := func(objList k8s.ObjectList, objectType string) {
 			clonedObjList := objList.DeepCopyObject().(k8s.ObjectList)
@@ -84,7 +90,7 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 			t.Logf("waiting for managed test object %s/%s to delete complete", clonedObj.GetNamespace(), clonedObj.GetName())
 
 			t.Logf("waiting for replicas of managed test object %s/%s to delete", clonedObj.GetNamespace(), clonedObj.GetName())
-			validation.ValidateResourceDeletion(ctx, t, cfg, clonedObj)
+			validation.ValidateResourceDeletion(ctx, t, cfg, clonedObj, validation.WithDeletionPrintStateOnFail(false))
 			t.Logf("waiting for replicas of managed test object %s/%s to delete complete", clonedObj.GetNamespace(), clonedObj.GetName())
 		}
 

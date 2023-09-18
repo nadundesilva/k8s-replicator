@@ -28,5 +28,12 @@ func UpdateObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namesp
 	if err != nil {
 		t.Fatalf("failed to update object: %v", err)
 	}
-	t.Logf("updated namespace %s/%s with labels %s", namespace, clonedObj.GetName(), clonedObj.GetLabels())
+	t.Logf("updated object %s/%s with labels %s", namespace, clonedObj.GetName(), clonedObj.GetLabels())
+}
+
+func GetObject(ctx context.Context, t *testing.T, cfg *envconf.Config, namespace, name string, obj k8s.Object) {
+	err := cfg.Client().Resources(namespace).Get(ctx, name, namespace, obj)
+	if err != nil {
+		t.Fatalf("failed to update object: %v", err)
+	}
 }
