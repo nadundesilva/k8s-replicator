@@ -36,7 +36,8 @@ type ObjectMatcher func(sourceObject client.Object, replicaObject client.Object)
 func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	sourceObject k8s.Object, objectList k8s.ObjectList, options ...ReplicationOption) {
 	opts := &ReplicationOptions{
-		timeout: time.Minute,
+		printState: true,
+		timeout:    time.Minute,
 	}
 	for _, option := range options {
 		option(opts)
@@ -120,14 +121,14 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 				}
 				if common.GetSourceObjectNamespace(ctx).GetName() == object.GetNamespace() {
 					if objTypeOk && objType != common.ObjectTypeLabelValueReplicated {
-						t.Logf("object %s/%s label %s does not contain the expected value; want %s, got %s",
+						t.Fatalf("object %s/%s label %s does not contain the expected value; want %s, got %s",
 							object.GetNamespace(), object.GetName(), common.ObjectTypeLabelKey,
 							common.ObjectTypeLabelValueReplicated, objType)
 						return false
 					}
 				} else {
 					if objTypeOk && objType != common.ObjectTypeLabelValueReplica {
-						t.Logf("object %s/%s label %s does not contain the expected value; want %s, got %s",
+						t.Fatalf("object %s/%s label %s does not contain the expected value; want %s, got %s",
 							object.GetNamespace(), object.GetName(), common.ObjectTypeLabelKey,
 							common.ObjectTypeLabelValueReplica, objType)
 						return false
@@ -162,9 +163,11 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 	)
 	if err != nil {
 		t.Errorf("failed to wait for replicated objects: %v", err)
-		err = printState(ctx, t, cfg, sourceObject)
-		if err != nil {
-			t.Fatalf("failed to print the cluster state after replication validation failure: %v", err)
+		if opts.printState {
+			err = printState(ctx, t, cfg, sourceObject)
+			if err != nil {
+				t.Fatalf("failed to print the cluster state after replication validation failure: %v", err)
+			}
 		}
 		t.FailNow()
 	}
@@ -173,7 +176,9 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 
 func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object,
 	options ...DeletionOption) {
-	opts := &DeletionOptions{}
+	opts := &DeletionOptions{
+		printState: true,
+	}
 	for _, option := range options {
 		option(opts)
 	}
@@ -211,9 +216,11 @@ func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 				clonedObj.GetName(),
 				err,
 			)
-			err = printState(ctx, t, cfg, sourceObject)
-			if err != nil {
-				t.Fatalf("failed to print the cluster state after deletion validation failure: %v", err)
+			if opts.printState {
+				err = printState(ctx, t, cfg, sourceObject)
+				if err != nil {
+					t.Fatalf("failed to print the cluster state after deletion validation failure: %v", err)
+				}
 			}
 			t.FailNow()
 		}

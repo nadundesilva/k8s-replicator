@@ -50,7 +50,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
@@ -69,7 +69,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
@@ -91,7 +91,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual), validation.WithReplicatedNamespaces(testedNs.GetName()))
+					validation.WithReplicationObjectMatcher(resource.IsEqual), validation.WithReplicatedNamespaces(testedNs.GetName()))
 				return ctx
 			}).
 			Feature())
@@ -109,7 +109,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(common.GetControllerNamespace(ctx)))
 				return ctx
 			}).
@@ -130,7 +130,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("replicated objects", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationObjectMatcher(resource.IsEqual),
 					validation.WithReplicatedNamespaces(common.GetControllerNamespace(ctx)))
 				return ctx
 			}).
@@ -145,7 +145,7 @@ func TestNamespaceLabels(t *testing.T) {
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg)
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual))
+					validation.WithReplicationObjectMatcher(resource.IsEqual))
 
 				testedNs.GetLabels()[common.NamespaceTypeLabelKey] = common.NamespaceTypeLabelValueIgnored
 				namespaces.Update(ctx, t, cfg, testedNs)
@@ -154,7 +154,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationObjectMatcher(resource.IsEqual),
 					validation.WithReplicationIgnoredNamespaces(testedNs.GetName()))
 				return ctx
 			}).
@@ -177,7 +177,7 @@ func TestNamespaceLabels(t *testing.T) {
 			Teardown(cleanup.CleanTestObjects).
 			Assess("ignored object", func(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList(),
-					validation.WithObjectMatcher(resource.IsEqual),
+					validation.WithReplicationObjectMatcher(resource.IsEqual),
 					validation.WithReplicatedNamespaces(testedNs.GetName()))
 				return ctx
 			}).

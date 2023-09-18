@@ -26,17 +26,17 @@ import (
 )
 
 type clusterObject struct {
-	Name              string                  `json:"name,omitempty"`
-	Kind              schema.GroupVersionKind `json:"kind,omitempty"`
-	Labels            map[string]string       `json:"labels,omitempty"`
-	Annotations       map[string]string       `json:"annotations,omitempty"`
-	Finalizers        []string                `json:"finalizers,omitempty"`
-	DeletionTimestamp *metav1.Time            `json:"deletionTimestamp,omitempty"`
+	Name              string            `json:"name,omitempty"`
+	Labels            map[string]string `json:"labels,omitempty"`
+	Annotations       map[string]string `json:"annotations,omitempty"`
+	Finalizers        []string          `json:"finalizers,omitempty"`
+	DeletionTimestamp *metav1.Time      `json:"deletionTimestamp,omitempty"`
 }
 
 type namespacedObject struct {
 	clusterObject
-	Namespace string `json:"namespace,omitempty"`
+	Kind      schema.GroupVersionKind `json:"kind,omitempty"`
+	Namespace string                  `json:"namespace,omitempty"`
 }
 
 func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceObject k8s.Object) error {
@@ -50,7 +50,6 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 	objectData := []*namespacedObject{}
 	for _, namespace := range namespaceList.Items {
 		namespaceData = append(namespaceData, &clusterObject{
-			Kind:              namespace.GetObjectKind().GroupVersionKind(),
 			Name:              namespace.GetName(),
 			Labels:            namespace.GetLabels(),
 			Annotations:       namespace.GetAnnotations(),
@@ -64,9 +63,9 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 			t.Logf("failed to get object %s in namespace %s: %v", clonedObj.GetName(), namespace.GetName(), err)
 		} else {
 			objectData = append(objectData, &namespacedObject{
+				Kind:      namespace.GetObjectKind().GroupVersionKind(),
 				Namespace: namespace.GetName(),
 				clusterObject: clusterObject{
-					Kind:              namespace.GetObjectKind().GroupVersionKind(),
 					Name:              clonedObj.GetName(),
 					Labels:            clonedObj.GetLabels(),
 					Annotations:       clonedObj.GetAnnotations(),
@@ -81,13 +80,13 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 	if err != nil {
 		return fmt.Errorf("failed to format namespace data into json: %w", err)
 	}
-	t.Logf("namespace data: %s", formattedJson)
+	t.Logf("namespaces: %s", formattedJson)
 
 	formattedJson, err = json.MarshalIndent(objectData, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to format object data into json: %w", err)
 	}
-	t.Logf("object data: %s", formattedJson)
+	t.Logf("objects: %s", formattedJson)
 
 	return nil
 }
