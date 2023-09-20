@@ -25,5 +25,8 @@ Dockerfile.cross
 *.swo
 *~
 
+# Operator framework output
+bundle/
+
 # E2E Testing
 test/e2e/cluster-logs/*
