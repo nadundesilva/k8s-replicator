@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,45 +27,51 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// SecretReconciler reconciles a Secret object
-type SecretReconciler struct {
+// ReplicationReconciler reconciles a replicated object
+type ReplicationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	replication.Replicator
 }
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=secrets/finalizers,verbs=update
 
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=configmaps/finalizers,verbs=update
+
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies/finalizers,verbs=update
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Secret object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
-func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("replicaName", req.Name))
+	log.FromContext(ctx).V(1).Info("Reconciling object")
+
 	// Fetching object
-	isSecretDeleted := false
-	secret := &corev1.Secret{}
-	if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
+	isObjectDeleted := false
+	object := r.Replicator.EmptyObject()
+	if err := r.Get(ctx, req.NamespacedName, object); err != nil {
 		if errors.IsNotFound(err) {
-			isSecretDeleted = true
+			isObjectDeleted = true
 		} else {
-			return ctrl.Result{}, fmt.Errorf("failed to get secret being reconciled: %+w", err)
+			return ctrl.Result{}, fmt.Errorf("failed to get object being reconciled: %+w", err)
 		}
 	}
-	isSecretDeleted = isSecretDeleted || secret.GetDeletionTimestamp() != nil
+	isObjectDeleted = isObjectDeleted || object.GetDeletionTimestamp() != nil
 
 	// Identifying object type
-	objectType, objectTypeOk := secret.GetLabels()[ObjectTypeLabelKey]
+	objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]
 	if !objectTypeOk {
 		logger := log.FromContext(ctx).WithValues("reason", "object type not present in object")
-		if controllerutil.ContainsFinalizer(secret, resourceFinalizer) {
+		if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
 			logger.Info("Removing replicas of unmarked object")
-			return ctrl.Result{}, r.handleSourceRemoval(ctx, secret)
+			return ctrl.Result{}, r.handleSourceRemoval(ctx, object)
 		} else {
 			logger.Info("Ignoring unmarked object")
 			return ctrl.Result{}, nil
@@ -74,35 +81,38 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// Reconciling
 	switch objectType {
 	case ObjectTypeLabelValueReplica:
-		ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("replicaNamespace", secret.GetNamespace()))
-		sourceStatus, err := getReplicaSourceStatus(ctx, r.Client, secret)
+		ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("replicaNamespace", object.GetNamespace()))
+
+		sourceStatus, err := getReplicaSourceStatus(ctx, r.Client, object, r.Replicator)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+
 		if sourceStatus != sourceStatusAvailable {
 			logger := log.FromContext(ctx).WithValues("reason", "source object not available",
 				"sourceStatus", sourceStatus)
-			if isSecretDeleted {
+			if isObjectDeleted {
 				logger.Info("Removing finalizer from replica")
-				return ctrl.Result{}, removeFinalizer(ctx, r.Client, secret)
+				return ctrl.Result{}, removeFinalizer(ctx, r.Client, object)
 			} else {
 				logger.Info("Deleting replica")
-				return ctrl.Result{}, deleteObject(ctx, r.Client, secret)
+				return ctrl.Result{}, deleteObject(ctx, r.Client, object)
 			}
 		}
 		return ctrl.Result{}, nil
 	case ObjectTypeLabelValueReplicated:
-		ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("sourceNamespace", secret.GetNamespace()))
-		if isSecretDeleted {
-			return ctrl.Result{}, r.handleSourceRemoval(ctx, secret)
+		ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("sourceNamespace", object.GetNamespace()))
+
+		if isObjectDeleted {
+			return ctrl.Result{}, r.handleSourceRemoval(ctx, object)
 		} else {
-			return ctrl.Result{}, r.handleSourceUpdate(ctx, secret)
+			return ctrl.Result{}, r.handleSourceUpdate(ctx, object)
 		}
 	default:
 		logger := log.FromContext(ctx).WithValues("objectType", objectType)
-		if controllerutil.ContainsFinalizer(secret, resourceFinalizer) {
+		if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
 			logger.Info("Removing any replicas of unknown object type if present")
-			return ctrl.Result{}, r.handleSourceRemoval(ctx, secret)
+			return ctrl.Result{}, r.handleSourceRemoval(ctx, object)
 		} else {
 			logger.Info("Ignoring unknown object type")
 			return ctrl.Result{}, nil
@@ -110,14 +120,14 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 }
 
-func (r *SecretReconciler) handleSourceRemoval(ctx context.Context, secret *corev1.Secret) error {
+func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object client.Object) error {
 	err := r.iterateNamespaces(ctx, func(ns corev1.Namespace) error {
-		if ns.GetName() == secret.GetNamespace() {
+		if ns.GetName() == object.GetNamespace() {
 			return nil
 		}
 
-		replica := &corev1.Secret{}
-		err := r.Get(ctx, client.ObjectKey{Namespace: ns.GetName(), Name: secret.GetName()}, replica)
+		replica := r.Replicator.EmptyObject()
+		err := r.Get(ctx, client.ObjectKey{Namespace: ns.GetName(), Name: object.GetName()}, replica)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -131,28 +141,30 @@ func (r *SecretReconciler) handleSourceRemoval(ctx context.Context, secret *core
 		return deleteObject(ctx, r.Client, replica)
 	})
 	if err != nil {
-		return fmt.Errorf("failed to finalize source secret: %+w", err)
+		return fmt.Errorf("failed to finalize source object: %+w", err)
 	}
-	return removeFinalizer(ctx, r.Client, secret)
+
+	return removeFinalizer(ctx, r.Client, object)
 }
 
-func (r *SecretReconciler) handleSourceUpdate(ctx context.Context, secret *corev1.Secret) error {
-	err := addFinalizer(ctx, r.Client, secret)
+func (r *ReplicationReconciler) handleSourceUpdate(ctx context.Context, object client.Object) error {
+	err := addFinalizer(ctx, r.Client, object)
 	if err != nil {
 		return err
 	}
+
 	err = r.iterateNamespaces(ctx, func(ns corev1.Namespace) error {
-		if ns.GetName() == secret.GetNamespace() {
+		if ns.GetName() == object.GetNamespace() {
 			return nil
 		}
 
 		log.FromContext(ctx).Info("Creating/Updating replica", "replicaNamespace", ns.GetName())
-		return replicateObject(ctx, r.Client, ns.GetName(), secret)
+		return replicateObject(ctx, r.Client, ns.GetName(), object, r.Replicator)
 	})
 	return err
 }
 
-func (r *SecretReconciler) iterateNamespaces(ctx context.Context, handler func(ns corev1.Namespace) error) error {
+func (r *ReplicationReconciler) iterateNamespaces(ctx context.Context, handler func(ns corev1.Namespace) error) error {
 	namespaceList := &corev1.NamespaceList{}
 	err := r.List(ctx, namespaceList, &client.ListOptions{
 		LabelSelector: namespaceSelector,
@@ -180,8 +192,8 @@ func (r *SecretReconciler) iterateNamespaces(ctx context.Context, handler func(n
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *SecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ReplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Secret{}, builder.WithPredicates(managedResourcesPredicate)).
+		For(r.Replicator.EmptyObject(), builder.WithPredicates(managedResourcesPredicate)).
 		Complete(r)
 }

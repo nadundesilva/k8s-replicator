@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,10 +25,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// SecretReconciler reconciles a Namespace object
+// NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	Replicators []replication.Replicator
 }
 
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch
@@ -42,7 +45,8 @@ type NamespaceReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("namespace", req.NamespacedName.Name))
+	ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("targetNamespace", req.Name))
+	log.FromContext(ctx).V(1).Info("Reconciling namespace")
 
 	// Fetching object
 	isNamespaceDeleted := false
@@ -61,60 +65,79 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// Reconciling
 	if isNamespaceDeleted || isNamespaceIgnored {
-		replicaSecrets := &corev1.SecretList{}
-		err := r.List(ctx, replicaSecrets, &client.ListOptions{
-			Namespace:     namespaceName,
-			LabelSelector: replicaResourcesSelector,
-		})
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+		for _, replicator := range r.Replicators {
+			ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("objectKind", replicator.GetKind()))
+			log.FromContext(ctx).V(1).Info("Replicating object kind")
 
-		errs := []error{}
-		for _, secret := range replicaSecrets.Items {
-			if isNamespaceDeleted {
-				log.FromContext(ctx).Info("Removing finalizer from replica in deleted namespace")
-				err := removeFinalizer(ctx, r.Client, &secret)
-				if err != nil {
-					errs = append(errs, fmt.Errorf("failed to delete secret: %+w", err))
+			replicaObjects := replicator.EmptyObjectList()
+			err := r.List(ctx, replicaObjects, &client.ListOptions{
+				Namespace:     namespaceName,
+				LabelSelector: replicaResourcesSelector,
+			})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			errs := []error{}
+			for _, object := range replicator.ObjectListToArray(replicaObjects) {
+				ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("sourceNamespace", object.GetNamespace(),
+					"replicaName", object.GetName()))
+
+				if isNamespaceDeleted {
+					log.FromContext(ctx).Info("Removing finalizer from replica in deleted namespace")
+					err := removeFinalizer(ctx, r.Client, object)
+					if err != nil {
+						errs = append(errs, fmt.Errorf("failed to remove finalizer: %+w", err))
+					}
+				}
+				if isNamespaceIgnored {
+					log.FromContext(ctx).Info("Deleting replica in ignored namespace")
+					err := deleteObject(ctx, r.Client, object)
+					if err != nil {
+						errs = append(errs, fmt.Errorf("failed to delete object: %+w", err))
+					}
 				}
 			}
-			if isNamespaceIgnored {
-				log.FromContext(ctx).Info("Deleting replica in ignored namespace")
-				err := deleteObject(ctx, r.Client, &secret)
-				if err != nil {
-					errs = append(errs, fmt.Errorf("failed to delete secret: %+w", err))
-				}
+			if len(errs) > 0 {
+				return ctrl.Result{}, fmt.Errorf("failed to iterate replicated objects in removed namespace: %+v", errs)
 			}
-		}
-		if len(errs) > 0 {
-			return ctrl.Result{}, fmt.Errorf("failed to iterate replicated secrets in removed namespace: %+v", errs)
 		}
 	} else {
-		replicatedSecrets := &corev1.SecretList{}
-		err := r.List(ctx, replicatedSecrets)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
+		for _, replicator := range r.Replicators {
+			ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("objectKind", replicator.GetKind()))
+			log.FromContext(ctx).V(1).Info("Replicating object kind")
 
-		errs := []error{}
-		for _, secret := range replicatedSecrets.Items {
-			if secret.GetDeletionTimestamp() != nil { // Secret already
-				continue
+			replicatedObjects := replicator.EmptyObjectList()
+			err := r.List(ctx, replicatedObjects)
+			if err != nil {
+				return ctrl.Result{}, err
 			}
-			if secret.GetNamespace() == namespaceName { // Replicated resource is from current namespace
-				continue
-			}
-			if objectType, objectTypeOk := secret.GetLabels()[ObjectTypeLabelKey]; objectTypeOk && objectType == ObjectTypeLabelValueReplicated {
-				log.FromContext(ctx).Info("Creating/Updating replica")
-				err := replicateObject(ctx, r.Client, namespaceName, &secret)
-				if err != nil {
-					errs = append(errs, err)
+
+			errs := []error{}
+			for _, object := range replicator.ObjectListToArray(replicatedObjects) {
+				ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("sourceNamespace", object.GetNamespace(),
+					"replicaName", object.GetName()))
+
+				if objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]; objectTypeOk && objectType == ObjectTypeLabelValueReplicated {
+					if object.GetDeletionTimestamp() != nil { // Object already deleted
+						log.FromContext(ctx).V(1).Info("Ignoring deleted object")
+						continue
+					}
+					if object.GetNamespace() == namespaceName { // Replicated resource is from current namespace
+						log.FromContext(ctx).V(1).Info("Ignoring source object in current namespace")
+						continue
+					}
+
+					log.FromContext(ctx).Info("Creating/Updating replica")
+					err := replicateObject(ctx, r.Client, namespaceName, object, replicator)
+					if err != nil {
+						errs = append(errs, err)
+					}
 				}
 			}
-		}
-		if len(errs) > 0 {
-			return ctrl.Result{}, fmt.Errorf("failed to iterate replicated secrets in namespace: %+v", errs)
+			if len(errs) > 0 {
+				return ctrl.Result{}, fmt.Errorf("failed to iterate replicated objects in namespace: %+v", errs)
+			}
 		}
 	}
 	return ctrl.Result{}, nil

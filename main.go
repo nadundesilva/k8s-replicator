@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"github.com/nadundesilva/k8s-replicator/controllers"
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -86,18 +87,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.SecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "resource", "Secret")
-		os.Exit(1)
+	replicators := replication.NewReplicators()
+	for _, replicator := range replicators {
+		if err = (&controllers.ReplicationReconciler{
+			Client:     mgr.GetClient(),
+			Scheme:     mgr.GetScheme(),
+			Replicator: replicator,
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "kind", replicator.GetKind())
+			os.Exit(1)
+		}
 	}
 	if err = (&controllers.NamespaceReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		Replicators: replicators,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "resource", "Namepsace")
+		setupLog.Error(err, "unable to create controller", "kind", "Namepsace")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

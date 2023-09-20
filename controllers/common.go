@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,49 +26,43 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func replicateObject(ctx context.Context, k8sClient client.Client, ns string, sourceSecret *corev1.Secret) error {
-	clonedSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sourceSecret.GetName(),
-			Namespace: ns,
-		},
-	}
-	_, err := ctrl.CreateOrUpdate(ctx, k8sClient, clonedSecret, func() error {
-		addToMap := func(sourceMap map[string]string, targetMap map[string]string) {
+func replicateObject(ctx context.Context, k8sClient client.Client, ns string, sourceObject client.Object, replicator replication.Replicator) error {
+	clonedObject := replicator.EmptyObject()
+	clonedObject.SetNamespace(ns)
+	clonedObject.SetName(sourceObject.GetName())
+
+	_, err := ctrl.CreateOrUpdate(ctx, k8sClient, clonedObject, func() error {
+		copyMap := func(sourceMap map[string]string, targetMap map[string]string) {
 			for k, v := range sourceMap {
 				if !strings.HasPrefix(k, groupFqn) {
 					targetMap[k] = v
 				}
 			}
 		}
+		replicator.Replicate(sourceObject, clonedObject)
 
-		labels := clonedSecret.ObjectMeta.GetLabels()
+		labels := clonedObject.GetLabels()
 		if labels == nil {
 			labels = map[string]string{}
 		}
-		addToMap(sourceSecret.GetLabels(), labels)
+		copyMap(sourceObject.GetLabels(), labels)
 		labels[ObjectTypeLabelKey] = ObjectTypeLabelValueReplica
-		clonedSecret.ObjectMeta.SetLabels(labels)
+		clonedObject.SetLabels(labels)
 
-		annotations := clonedSecret.ObjectMeta.GetAnnotations()
+		annotations := clonedObject.GetAnnotations()
 		if annotations == nil {
 			annotations = map[string]string{}
 		}
-		addToMap(sourceSecret.GetAnnotations(), annotations)
-		annotations[SourceNamespaceAnnotationKey] = sourceSecret.GetNamespace()
-		clonedSecret.SetAnnotations(annotations)
-
-		clonedSecret.Immutable = sourceSecret.Immutable
-		clonedSecret.Data = sourceSecret.Data
-		clonedSecret.StringData = sourceSecret.StringData
-		clonedSecret.Type = sourceSecret.Type
+		copyMap(sourceObject.GetAnnotations(), annotations)
+		annotations[SourceNamespaceAnnotationKey] = sourceObject.GetNamespace()
+		clonedObject.SetAnnotations(annotations)
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to replicate resource to namespace %v: %+w", ns, err)
 	}
 
-	addFinalizer(ctx, k8sClient, clonedSecret)
+	addFinalizer(ctx, k8sClient, clonedObject)
 	return nil
 }
 
@@ -122,27 +117,28 @@ const (
 	sourceStatusAvailable sourceStatus = "Available"
 )
 
-func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replica client.Object) (sourceStatus, error) {
+func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replica client.Object,
+	replicator replication.Replicator) (sourceStatus, error) {
 	sourceNamespace, sourceNamespaceOk := replica.GetAnnotations()[SourceNamespaceAnnotationKey]
 	if !sourceNamespaceOk {
 		return "", fmt.Errorf("replica does not contain %s annotation", SourceNamespaceAnnotationKey)
 	}
 
-	sourceSecret := &corev1.Secret{}
+	sourceObject := replicator.EmptyObject()
 	sourceSeretKey := client.ObjectKey{Namespace: sourceNamespace, Name: replica.GetName()}
-	if err := k8sClient.Get(ctx, sourceSeretKey, sourceSecret); err != nil {
+	if err := k8sClient.Get(ctx, sourceSeretKey, sourceObject); err != nil {
 		if errors.IsNotFound(err) {
 			return sourceStatusNotFound, nil
 		} else {
-			return "", fmt.Errorf("failed to get source secret: %+w", err)
+			return "", fmt.Errorf("failed to get source object: %+w", err)
 		}
 	}
 
-	if sourceSecret.GetDeletionTimestamp() != nil {
+	if sourceObject.GetDeletionTimestamp() != nil {
 		return sourceStatusDeleted, nil
 	}
 
-	sourceObjectType, sourceObjectTypeOk := sourceSecret.GetLabels()[ObjectTypeLabelKey]
+	sourceObjectType, sourceObjectTypeOk := sourceObject.GetLabels()[ObjectTypeLabelKey]
 	if sourceObjectTypeOk {
 		if sourceObjectType != ObjectTypeLabelValueReplicated {
 			return "", fmt.Errorf("Unexpected object type %s in source", sourceObjectType)

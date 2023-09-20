@@ -9,9 +9,35 @@ on:
                 type: string
 
 jobs:
+    run-e2e-tests:
+        name: Run E2E Tests
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                resource:
+                    - Secret
+                    - ConfigMap
+                    - NetworkPolicy
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Setup GoLang
+              uses: actions/setup-go@v3
+              with:
+                  go-version: "^1.21"
+            - name: Run E2E Tests
+              run: make test.e2e
+              env:
+                  TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
+                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+
     publish-release:
         name: Publish Release
         runs-on: ubuntu-latest
+        needs:
+            - run-e2e-tests
         steps:
             - name: Generate Version
               run: |
@@ -85,12 +111,12 @@ jobs:
                   exit-code: '1'
                   ignore-unfixed: true
                   trivyignores: .trivyignore
-            # - name: Run E2E Tests
-            #   run: make test.e2e
-            #   env:
-            #       TEST_RESOURCES_FILTER_REGEX: Secret
-            #       CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
-            #       DISABLE_IMAGE_BUILD: true
+            - name: Run E2E Tests
+              run: make test.e2e
+              env:
+                  TEST_RESOURCES_FILTER_REGEX: Secret
+                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  DISABLE_IMAGE_BUILD: true
             # - name: Run Benchmark Tests
             #   run: make test.benchmark
             #   env:
