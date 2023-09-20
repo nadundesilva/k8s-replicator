@@ -14,11 +14,10 @@
 package controllers
 
 import (
-	"context"
-	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -40,7 +39,6 @@ var (
 	cfg       *rest.Config
 	k8sClient client.Client
 	testEnv   *envtest.Environment
-	cancel    context.CancelFunc
 )
 
 func TestAPIs(t *testing.T) {
@@ -49,12 +47,11 @@ func TestAPIs(t *testing.T) {
 	RunSpecs(t, "Controller Suite")
 }
 
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: false,
 	}
 
@@ -78,9 +75,19 @@ var _ = BeforeSuite(func(done Done) {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&SecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+	replicators := replication.NewReplicators()
+	for _, replicator := range replicators {
+		err = (&ReplicationReconciler{
+			Client:     mgr.GetClient(),
+			Scheme:     mgr.GetScheme(),
+			Replicator: replicator,
+		}).SetupWithManager(mgr)
+		Expect(err).ToNot(HaveOccurred())
+	}
+	err = (&NamespaceReconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		Replicators: replicators,
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
@@ -89,17 +96,23 @@ var _ = BeforeSuite(func(done Done) {
 		err = mgr.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
-
-	close(done)
 })
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
 	gexec.KillAndWait(5 * time.Second)
-	err := testEnv.Stop()
-	if err != nil {
-		time.Sleep(4 * time.Second)
+
+	var err error
+	stopAttemptStartTime := time.Now()
+	for true {
+		err = testEnv.Stop()
+		if err != nil && time.Since(stopAttemptStartTime) < time.Minute {
+			time.Sleep(5 * time.Second)
+		} else {
+			break
+		}
 	}
+
 	err = testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

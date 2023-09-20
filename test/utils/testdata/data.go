@@ -75,8 +75,8 @@ func (r *Resource) EmptyObjectList() client.ObjectList {
 func GenerateResourceTestData() []Resource {
 	resources := []Resource{
 		GenerateSecretTestDatum(),
-		// GenerateConfigMapTestDatum(),
-		// GenerateNetworkPolicyTestDatum(),
+		GenerateConfigMapTestDatum(),
+		GenerateNetworkPolicyTestDatum(),
 	}
 	filteredResources := []Resource{}
 	for _, resource := range resources {

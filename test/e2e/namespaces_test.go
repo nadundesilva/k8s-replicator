@@ -167,7 +167,7 @@ func TestNamespaceLabels(t *testing.T) {
 				ctx = namespaces.CreateSource(ctx, t, cfg)
 				resources.CreateObject(ctx, t, cfg, common.GetSourceObjectNamespace(ctx).GetName(), resource.SourceObject())
 				_, ctx = namespaces.CreateRandom(ctx, t, cfg)
-				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube-"))
+				testedNs, ctx = namespaces.CreateRandom(ctx, t, cfg, namespaces.WithPrefix("kube"))
 				validation.ValidateReplication(ctx, t, cfg, resource.SourceObject(), resource.EmptyObjectList())
 
 				testedNs.GetLabels()[common.NamespaceTypeLabelKey] = common.NamespaceTypeLabelValueManaged

@@ -143,8 +143,8 @@ jobs:
             matrix:
                 resource:
                     - Secret
-                    # - ConfigMap
-                    # - NetworkPolicy
+                    - ConfigMap
+                    - NetworkPolicy
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
