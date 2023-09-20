@@ -109,3 +109,7 @@ func process(resourceData resourceData) Resource {
 
 	return resourceData.GenerateResource()
 }
+
+func toPointer[T interface{}](val T) *T {
+	return &val
+}
