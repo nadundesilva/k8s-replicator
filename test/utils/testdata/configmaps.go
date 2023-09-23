@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func GenerateConfigMapTestDatum() Resource {
+func generateConfigMapTestDatum() Resource {
 	return process(resourceData{
 		Name: "ConfigMap",
 		SourceObject: &corev1.ConfigMap{

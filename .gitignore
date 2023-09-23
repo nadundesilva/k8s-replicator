@@ -28,5 +28,7 @@ Dockerfile.cross
 # Operator framework output
 bundle/
 
-# E2E Testing
+# Testing artifacts
 test/e2e/cluster-logs/*
+test/benchmark/report.md
+test/benchmark/cluster-logs/*

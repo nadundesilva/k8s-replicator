@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GenerateSecretTestDatum() Resource {
+func generateSecretTestDatum() Resource {
 	return process(resourceData{
 		Name:       "Secret",
 		SourceObject: &corev1.Secret{

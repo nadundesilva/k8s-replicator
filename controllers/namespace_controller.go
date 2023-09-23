@@ -45,8 +45,8 @@ type NamespaceReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("targetNamespace", req.Name))
-	log.FromContext(ctx).V(1).Info("Reconciling namespace")
+	ctx = log.IntoContext(ctx, log.FromContext(ctx).V(1).WithValues("targetNamespace", req.Name))
+	log.FromContext(ctx).V(2).Info("Reconciling namespace")
 
 	// Fetching object
 	isNamespaceDeleted := false
@@ -67,7 +67,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if isNamespaceDeleted || isNamespaceIgnored {
 		for _, replicator := range r.Replicators {
 			ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("objectKind", replicator.GetKind()))
-			log.FromContext(ctx).V(1).Info("Replicating object kind")
+			log.FromContext(ctx).V(2).Info("Replicating object kind")
 
 			replicaObjects := replicator.EmptyObjectList()
 			err := r.List(ctx, replicaObjects, &client.ListOptions{
@@ -84,14 +84,14 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					"replicaName", object.GetName()))
 
 				if isNamespaceDeleted {
-					log.FromContext(ctx).Info("Removing finalizer from replica in deleted namespace")
+					log.FromContext(ctx).V(1).Info("Removing finalizer from replica in deleted namespace")
 					err := removeFinalizer(ctx, r.Client, object)
 					if err != nil {
 						errs = append(errs, fmt.Errorf("failed to remove finalizer: %+w", err))
 					}
 				}
 				if isNamespaceIgnored {
-					log.FromContext(ctx).Info("Deleting replica in ignored namespace")
+					log.FromContext(ctx).V(1).Info("Deleting replica in ignored namespace")
 					err := deleteObject(ctx, r.Client, object)
 					if err != nil {
 						errs = append(errs, fmt.Errorf("failed to delete object: %+w", err))
@@ -105,7 +105,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	} else {
 		for _, replicator := range r.Replicators {
 			ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("objectKind", replicator.GetKind()))
-			log.FromContext(ctx).V(1).Info("Replicating object kind")
+			log.FromContext(ctx).V(2).Info("Replicating object kind")
 
 			replicatedObjects := replicator.EmptyObjectList()
 			err := r.List(ctx, replicatedObjects)
@@ -120,15 +120,15 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 				if objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]; objectTypeOk && objectType == ObjectTypeLabelValueReplicated {
 					if object.GetDeletionTimestamp() != nil { // Object already deleted
-						log.FromContext(ctx).V(1).Info("Ignoring deleted object")
+						log.FromContext(ctx).V(2).Info("Ignoring deleted object")
 						continue
 					}
 					if object.GetNamespace() == namespaceName { // Replicated resource is from current namespace
-						log.FromContext(ctx).V(1).Info("Ignoring source object in current namespace")
+						log.FromContext(ctx).V(2).Info("Ignoring source object in current namespace")
 						continue
 					}
 
-					log.FromContext(ctx).Info("Creating/Updating replica")
+					log.FromContext(ctx).V(1).Info("Creating/Updating replica")
 					err := replicateObject(ctx, r.Client, namespaceName, object, replicator)
 					if err != nil {
 						errs = append(errs, err)

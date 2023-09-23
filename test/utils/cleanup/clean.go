@@ -28,15 +28,26 @@ import (
 )
 
 func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) context.Context {
-	ctx = cleanObjects(ctx, t, cfg, testObjectsContextKey{})
-	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey{})
+	return CleanTestObjectsWithOptions(ctx, t, cfg)
+}
+
+func CleanTestObjectsWithOptions(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CleanupOption) context.Context {
+	ctx = cleanObjects(ctx, t, cfg, testObjectsContextKey{}, options...)
+	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey{}, options...)
 	common.GetControllerLogsWaitGroup(ctx).Wait()
 	return ctx
 }
 
-func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey any) context.Context {
+func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey any, options ...CleanupOption) context.Context {
 	ctxValue := ctx.Value(contextKey)
 	if ctxValue != nil {
+		opts := &CleanupOptions{
+			timeout: time.Minute,
+		}
+		for _, option := range options {
+			option(opts)
+		}
+
 		deleteObjs := func(object k8s.Object, objectType string) {
 			err := cfg.Client().Resources().Delete(ctx, object.DeepCopyObject().(k8s.Object),
 				resources.WithDeletePropagation("Background"))
@@ -55,7 +66,7 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 			t.Logf("waiting for test %s objects to delete", objectType)
 			err := wait.For(
 				conditions.New(cfg.Client().Resources()).ResourcesDeleted(clonedObjList),
-				wait.WithTimeout(time.Minute),
+				wait.WithTimeout(opts.timeout),
 				wait.WithImmediate(),
 				wait.WithInterval(time.Second*5),
 			)
@@ -74,7 +85,7 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 			t.Logf("waiting for managed test object %s/%s to delete", clonedObj.GetNamespace(), clonedObj.GetName())
 			err := wait.For(
 				conditions.New(cfg.Client().Resources(clonedObj.GetNamespace())).ResourceDeleted(clonedObj),
-				wait.WithTimeout(time.Minute),
+				wait.WithTimeout(opts.timeout),
 				wait.WithImmediate(),
 				wait.WithInterval(time.Second*5),
 			)
