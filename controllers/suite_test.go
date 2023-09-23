@@ -14,6 +14,7 @@
 package controllers
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +40,7 @@ var (
 	cfg       *rest.Config
 	k8sClient client.Client
 	testEnv   *envtest.Environment
+	cancel    context.CancelFunc
 )
 
 func TestAPIs(t *testing.T) {
@@ -61,21 +63,23 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = scheme.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
+	scheme := runtime.NewScheme()
+	replicators := replication.NewReplicators()
+	for _, replicator := range replicators {
+		Expect(replicator.AddToScheme(scheme)).NotTo(HaveOccurred())
+	}
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme: scheme,
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	replicators := replication.NewReplicators()
 	for _, replicator := range replicators {
 		err = (&ReplicationReconciler{
 			Client:     mgr.GetClient(),
@@ -91,15 +95,20 @@ var _ = BeforeSuite(func() {
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())
 
+	var ctx context.Context
+	ctx, cancel = context.WithCancel(ctrl.SetupSignalHandler())
 	go func() {
 		defer GinkgoRecover()
-		err = mgr.Start(ctrl.SetupSignalHandler())
+		err = mgr.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
 })
 
 var _ = AfterSuite(func() {
-	By("tearing down the test environment")
+	By("shutting down the controller")
+	cancel()
+
+	By("shutting down the envtest environment")
 	gexec.KillAndWait(5 * time.Second)
 
 	var err error

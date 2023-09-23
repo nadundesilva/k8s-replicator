@@ -15,6 +15,7 @@ package replication
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,6 +27,10 @@ type configMapReplicator struct{}
 
 func (r *configMapReplicator) GetKind() string {
 	return "ConfigMap"
+}
+
+func (r *configMapReplicator) AddToScheme(scheme *runtime.Scheme) error {
+	return corev1.AddToScheme(scheme)
 }
 
 func (r *configMapReplicator) EmptyObject() client.Object {

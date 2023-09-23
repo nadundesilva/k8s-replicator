@@ -70,6 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
+        - --zap-log-level=1
         image: controller:latest
         name: manager
         env:

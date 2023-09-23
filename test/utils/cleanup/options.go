@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Nadun De Silva. All Rights Reserved.
+ * Copyright (c) 2023, Nadun De Silva. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -10,25 +10,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controller
 
-type Options struct {
-	labels       map[string]string
-	logVerbosity int
+package cleanup
+
+import (
+	"time"
+)
+
+type CleanupOptions struct {
+	timeout time.Duration
 }
 
-type Option func(*Options)
+type CleanupOption func(*CleanupOptions)
 
-func WithNamespaceLabels(labels map[string]string) Option {
-	return func(options *Options) {
-		for k, v := range labels {
-			options.labels[k] = v
-		}
-	}
-}
-
-func WithVerbosityLevel(logVerbosity int) Option {
-	return func(options *Options) {
-		options.logVerbosity = logVerbosity
+func WithTimeout(timeout time.Duration) CleanupOption {
+	return func(options *CleanupOptions) {
+		options.timeout = timeout
 	}
 }

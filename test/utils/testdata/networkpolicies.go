@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
 
-func GenerateNetworkPolicyTestDatum() Resource {
+func generateNetworkPolicyTestDatum() Resource {
 	return process(resourceData{
 		Name: "NetworkPolicy",
 		SourceObject: &networkingv1.NetworkPolicy{

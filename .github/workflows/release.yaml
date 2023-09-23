@@ -117,18 +117,18 @@ jobs:
                   TEST_RESOURCES_FILTER_REGEX: Secret
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
                   DISABLE_IMAGE_BUILD: true
-            # - name: Run Benchmark Tests
-            #   run: make test.benchmark
-            #   env:
-            #       CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
-            #       DISABLE_IMAGE_BUILD: true
-            # - name: Commit Release Files
-            #   run: |
-            #     rm -f BENCHMARK.md
-            #     cp test/benchmark/report.md BENCHMARK.md
-            #     git add BENCHMARK.md
+            - name: Run Benchmark Tests
+              run: make test.benchmark
+              env:
+                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  DISABLE_IMAGE_BUILD: true
+            - name: Commit Release Files
+              run: |
+                rm -f BENCHMARK.md
+                cp test/benchmark/report.md BENCHMARK.md
+                git add BENCHMARK.md
 
-            #     git commit -m "[Automated] Preparing for Release v${{ github.event.inputs.release-version }}"
+                git commit -m "[Automated] Preparing for Release v${{ github.event.inputs.release-version }}"
             - name: Login to the Container registry
               uses: docker/login-action@v2
               with:

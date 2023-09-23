@@ -50,8 +50,8 @@ type ReplicationReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("replicaName", req.Name))
-	log.FromContext(ctx).V(1).Info("Reconciling object")
+	ctx = log.IntoContext(ctx, log.FromContext(ctx).V(1).WithValues("replicaName", req.Name))
+	log.FromContext(ctx).V(2).Info("Reconciling object")
 
 	// Fetching object
 	isObjectDeleted := false
@@ -70,10 +70,10 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	if !objectTypeOk {
 		logger := log.FromContext(ctx).WithValues("reason", "object type not present in object")
 		if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
-			logger.Info("Removing replicas of unmarked object")
+			logger.V(1).Info("Removing replicas of unmarked object")
 			return ctrl.Result{}, r.handleSourceRemoval(ctx, object)
 		} else {
-			logger.Info("Ignoring unmarked object")
+			logger.V(1).Info("Ignoring unmarked object")
 			return ctrl.Result{}, nil
 		}
 	}
@@ -92,10 +92,10 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			logger := log.FromContext(ctx).WithValues("reason", "source object not available",
 				"sourceStatus", sourceStatus)
 			if isObjectDeleted {
-				logger.Info("Removing finalizer from replica")
+				logger.V(1).Info("Removing finalizer from replica")
 				return ctrl.Result{}, removeFinalizer(ctx, r.Client, object)
 			} else {
-				logger.Info("Deleting replica")
+				logger.V(1).Info("Deleting replica")
 				return ctrl.Result{}, deleteObject(ctx, r.Client, object)
 			}
 		}
@@ -111,10 +111,10 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	default:
 		logger := log.FromContext(ctx).WithValues("objectType", objectType)
 		if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
-			logger.Info("Removing any replicas of unknown object type if present")
+			logger.V(1).Info("Removing any replicas of unknown object type if present")
 			return ctrl.Result{}, r.handleSourceRemoval(ctx, object)
 		} else {
-			logger.Info("Ignoring unknown object type")
+			logger.V(1).Info("Ignoring unknown object type")
 			return ctrl.Result{}, nil
 		}
 	}
@@ -136,7 +136,7 @@ func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object 
 			}
 		}
 
-		log.FromContext(ctx).Info("Deleting replica", "replicaNamespace", ns.GetName(),
+		log.FromContext(ctx).V(1).Info("Deleting replica", "replicaNamespace", ns.GetName(),
 			"reason", "source object deleted")
 		return deleteObject(ctx, r.Client, replica)
 	})
@@ -158,7 +158,7 @@ func (r *ReplicationReconciler) handleSourceUpdate(ctx context.Context, object c
 			return nil
 		}
 
-		log.FromContext(ctx).Info("Creating/Updating replica", "replicaNamespace", ns.GetName())
+		log.FromContext(ctx).V(1).Info("Creating/Updating replica", "replicaNamespace", ns.GetName())
 		return replicateObject(ctx, r.Client, ns.GetName(), object, r.Replicator)
 	})
 	return err

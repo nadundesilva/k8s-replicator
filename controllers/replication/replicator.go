@@ -13,13 +13,19 @@
 
 package replication
 
-import "sigs.k8s.io/controller-runtime/pkg/client"
+import (
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
 type Replicator interface {
 	GetKind() string
+	AddToScheme(scheme *runtime.Scheme) error
+
 	EmptyObject() client.Object
 	EmptyObjectList() client.ObjectList
 	ObjectListToArray(client.ObjectList) []client.Object
+
 	Replicate(sourceObject client.Object, targetObject client.Object)
 }
 

@@ -15,6 +15,7 @@ package replication
 
 import (
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,6 +27,10 @@ type networkPolicyReplicator struct{}
 
 func (r *networkPolicyReplicator) GetKind() string {
 	return "NetworkPolicy"
+}
+
+func (r *networkPolicyReplicator) AddToScheme(scheme *runtime.Scheme) error {
+	return networkingv1.AddToScheme(scheme)
 }
 
 func (r *networkPolicyReplicator) EmptyObject() client.Object {

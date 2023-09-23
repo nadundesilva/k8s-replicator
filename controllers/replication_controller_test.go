@@ -47,7 +47,7 @@ var _ = Describe("Object Replication", func() {
 						Name: "source-ns-" + uuid.New().String(),
 					},
 				}
-				Expect(k8sClient.Create(ctx, sourceNamespace)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, sourceNamespace)).To(Succeed())
 
 				sourceObject = resource.SourceObject()
 				sourceObject.SetNamespace(sourceNamespace.GetName())
@@ -55,24 +55,24 @@ var _ = Describe("Object Replication", func() {
 			})
 
 			AfterEach(func(ctx SpecContext) {
-				Expect(k8sClient.Delete(ctx, sourceNamespace)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, sourceNamespace)).To(Succeed())
 				sourceNamespace = nil
 
-				Expect(k8sClient.Delete(ctx, sourceObject)).Should(Succeed())
+				Expect(k8sClient.Delete(ctx, sourceObject)).To(Succeed())
 				sourceObject = nil
 			})
 
 			Context("When creating object", func() {
 				It("Should replicate to all normal namespaces", func(ctx SpecContext) {
 					targetNamespaces := createNamespaces(ctx, "test-ns", 5, nil)
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, targetNamespaces...)
 				}, testTimeout)
 
 				It("Should not change source object", func(ctx SpecContext) {
 					normalNamespaces := createNamespaces(ctx, "test-ns", 3, nil)
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
 					Consistently(func() bool {
@@ -93,7 +93,7 @@ var _ = Describe("Object Replication", func() {
 					normalNamespaces := createNamespaces(ctx, "test-ns", 3, nil)
 
 					kubeNamespaces := createNamespaces(ctx, "kube", 2, nil)
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
 					validateNoReplication(ctx, sourceObject, resource, kubeNamespaces...)
@@ -103,7 +103,7 @@ var _ = Describe("Object Replication", func() {
 					normalNamespaces := createNamespaces(ctx, "test-ns", 3, nil)
 
 					operatorNamespace = createNamespaces(ctx, "operator-ns", 1, nil)[0]
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
 					validateNoReplication(ctx, sourceObject, resource, operatorNamespace)
@@ -117,7 +117,7 @@ var _ = Describe("Object Replication", func() {
 						NamespaceTypeLabelKey: NamespaceTypeLabelValueIgnored,
 					}
 					ignoredNamespaces := createNamespaces(ctx, "test-ns", 2, labels)
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
 					validateNoReplication(ctx, sourceObject, resource, ignoredNamespaces...)
@@ -132,7 +132,7 @@ var _ = Describe("Object Replication", func() {
 						NamespaceTypeLabelKey: NamespaceTypeLabelValueManaged,
 					}
 					kubeNamespaces := createNamespaces(ctx, "kube", 2, labels)
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
 					validateReplication(ctx, sourceObject, resource, kubeNamespaces...)
@@ -145,7 +145,7 @@ var _ = Describe("Object Replication", func() {
 						NamespaceTypeLabelKey: NamespaceTypeLabelValueManaged,
 					}
 					operatorNamespace = createNamespaces(ctx, "operator-ns", 1, labels)[0]
-					Expect(k8sClient.Create(ctx, sourceObject)).Should(Succeed())
+					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
 
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
 					validateReplication(ctx, sourceObject, resource, operatorNamespace)
@@ -166,7 +166,7 @@ func createNamespaces(ctx context.Context, prefix string, count int, labels map[
 				Labels: labels,
 			},
 		}
-		Expect(k8sClient.Create(ctx, &ns)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, &ns)).To(Succeed())
 		namespaces = append(namespaces, namespaceName)
 	}
 	return namespaces
@@ -199,12 +199,12 @@ func validateReplication(ctx context.Context, sourceObject client.Object, resour
 			}
 
 			objectType, objectTypeOk := replicatedObject.GetLabels()[ObjectTypeLabelKey]
-			Expect(objectTypeOk).Should(BeTrue())
-			Expect(objectType).Should(Equal(ObjectTypeLabelValueReplica))
+			Expect(objectTypeOk).To(BeTrue())
+			Expect(objectType).To(Equal(ObjectTypeLabelValueReplica))
 
 			sourceNamespace, sourceNamespaceOk := replicatedObject.GetAnnotations()[SourceNamespaceAnnotationKey]
-			Expect(sourceNamespaceOk).Should(BeTrue())
-			Expect(sourceNamespace).Should(Equal(sourceObject.GetNamespace()))
+			Expect(sourceNamespaceOk).To(BeTrue())
+			Expect(sourceNamespace).To(Equal(sourceObject.GetNamespace()))
 
 			return isMapsEqualWithoutReplicatorKeys(sourceObject.GetLabels(), replicatedObject.GetLabels()) &&
 				isMapsEqualWithoutReplicatorKeys(sourceObject.GetAnnotations(), replicatedObject.GetAnnotations()) &&

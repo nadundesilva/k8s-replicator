@@ -23,7 +23,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -35,12 +34,15 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	replicators = replication.NewReplicators()
+	scheme      = runtime.NewScheme()
+	setupLog    = ctrl.Log.WithName("setup")
 )
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	for _, replicator := range replicators {
+		utilruntime.Must(replicator.AddToScheme(scheme))
+	}
 
 	//+kubebuilder:scaffold:scheme
 }
@@ -87,7 +89,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	replicators := replication.NewReplicators()
 	for _, replicator := range replicators {
 		if err = (&controllers.ReplicationReconciler{
 			Client:     mgr.GetClient(),

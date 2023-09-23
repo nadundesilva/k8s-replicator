@@ -15,7 +15,9 @@ package controller
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -37,6 +39,7 @@ import (
 const (
 	defaulControllerNamespace  = "k8s-replicator-system"
 	defaultTestNamespacePrefix = "replicator-e2e"
+	logLevelArgKey             = "--zap-log-level"
 )
 
 var (
@@ -45,7 +48,8 @@ var (
 
 func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...Option) context.Context {
 	opts := &Options{
-		labels: map[string]string{},
+		labels:       map[string]string{},
+		logVerbosity: 100,
 	}
 	for _, option := range options {
 		option(opts)
@@ -103,8 +107,22 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 				t.Fatalf("Manager container not found")
 			}
 			container := deployment.Spec.Template.Spec.Containers[containerIndex]
+
 			container.Image = common.GetControllerImage()
 			container.ImagePullPolicy = corev1.PullNever
+
+			foundLogLevelArg := false
+			logLevelArg := fmt.Sprintf("%s=%d", logLevelArgKey, opts.logVerbosity)
+			for i, arg := range container.Args {
+				if strings.HasPrefix(arg, logLevelArgKey) {
+					container.Args[i] = logLevelArg
+					foundLogLevelArg = true
+				}
+			}
+			if !foundLogLevelArg {
+				container.Args = append(container.Args, logLevelArg)
+			}
+
 			deployment.Spec.Template.Spec.Containers[containerIndex] = container
 
 			t.Logf("creating controller deployment %s/%s", deployment.GetNamespace(), deployment.GetName())
