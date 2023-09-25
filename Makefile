@@ -29,7 +29,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
 # nadundesilva.github.io/k8s-replicator-bundle:$VERSION and nadundesilva.github.io/k8s-replicator-catalog:$VERSION.
-IMAGE_TAG_BASE ?= nadundesilva/k8s-replicator
+IMAGE_TAG_BASE ?= nadunrds/k8s-replicator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)

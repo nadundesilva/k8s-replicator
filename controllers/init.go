@@ -27,17 +27,17 @@ import (
 const (
 	groupFqn = "replicator.nadundesilva.github.io"
 
-	NamespaceTypeLabelKey          = groupFqn + "/namespace-type"
-	NamespaceTypeLabelValueManaged = "managed"
-	NamespaceTypeLabelValueIgnored = "ignored"
+	namespaceTypeLabelKey          = groupFqn + "/namespace-type"
+	namespaceTypeLabelValueManaged = "managed"
+	namespaceTypeLabelValueIgnored = "ignored"
 
-	ObjectTypeLabelKey             = groupFqn + "/object-type"
-	ObjectTypeLabelValueReplicated = "replicated"
-	ObjectTypeLabelValueReplica    = "replica"
+	objectTypeLabelKey             = groupFqn + "/object-type"
+	objectTypeLabelValueReplicated = "replicated"
+	objectTypeLabelValueReplica    = "replica"
 
 	resourceFinalizer = groupFqn + "/finalizer"
 
-	SourceNamespaceAnnotationKey = groupFqn + "/source-namespace"
+	sourceNamespaceAnnotationKey = groupFqn + "/source-namespace"
 )
 
 var (
@@ -51,9 +51,9 @@ var (
 
 func init() {
 	namespaceSelectorReq, err := labels.NewRequirement(
-		NamespaceTypeLabelKey,
+		namespaceTypeLabelKey,
 		selection.NotEquals,
-		[]string{NamespaceTypeLabelValueIgnored},
+		[]string{namespaceTypeLabelValueIgnored},
 	)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize namespace selector %+w", err))
@@ -61,9 +61,9 @@ func init() {
 	namespaceSelector = labels.NewSelector().Add(*namespaceSelectorReq)
 
 	replicatedResourcesSelectorReq, err := labels.NewRequirement(
-		ObjectTypeLabelKey,
+		objectTypeLabelKey,
 		selection.Equals,
-		[]string{ObjectTypeLabelValueReplicated},
+		[]string{objectTypeLabelValueReplicated},
 	)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize replicated resources selector %+w", err))
@@ -71,9 +71,9 @@ func init() {
 	replicatedResourcesSelector = labels.NewSelector().Add(*replicatedResourcesSelectorReq)
 
 	replicaResourcesSelectorReq, err := labels.NewRequirement(
-		ObjectTypeLabelKey,
+		objectTypeLabelKey,
 		selection.Equals,
-		[]string{ObjectTypeLabelValueReplica},
+		[]string{objectTypeLabelValueReplica},
 	)
 	if err != nil {
 		panic(fmt.Errorf("failed to initialize replica resources selector %+w", err))
@@ -81,8 +81,8 @@ func init() {
 	replicaResourcesSelector = labels.NewSelector().Add(*replicaResourcesSelectorReq)
 
 	managedResourcesPredicate = predicate.NewPredicateFuncs(func(object client.Object) bool {
-		objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]
-		if objectTypeOk && (objectType == ObjectTypeLabelValueReplicated || objectType == ObjectTypeLabelValueReplica) {
+		objectType, objectTypeOk := object.GetLabels()[objectTypeLabelKey]
+		if objectTypeOk && (objectType == objectTypeLabelValueReplicated || objectType == objectTypeLabelValueReplica) {
 			return true
 		}
 		return controllerutil.ContainsFinalizer(object, resourceFinalizer)

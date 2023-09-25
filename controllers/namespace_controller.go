@@ -118,7 +118,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				ctx := log.IntoContext(ctx, log.FromContext(ctx).WithValues("sourceNamespace", object.GetNamespace(),
 					"replicaName", object.GetName()))
 
-				if objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]; objectTypeOk && objectType == ObjectTypeLabelValueReplicated {
+				if objectType, objectTypeOk := object.GetLabels()[objectTypeLabelKey]; objectTypeOk && objectType == objectTypeLabelValueReplicated {
 					if object.GetDeletionTimestamp() != nil { // Object already deleted
 						log.FromContext(ctx).V(2).Info("Ignoring deleted object")
 						continue
