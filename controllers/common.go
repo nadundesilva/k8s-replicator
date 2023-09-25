@@ -46,7 +46,7 @@ func replicateObject(ctx context.Context, k8sClient client.Client, ns string, so
 			labels = map[string]string{}
 		}
 		copyMap(sourceObject.GetLabels(), labels)
-		labels[ObjectTypeLabelKey] = ObjectTypeLabelValueReplica
+		labels[objectTypeLabelKey] = objectTypeLabelValueReplica
 		clonedObject.SetLabels(labels)
 
 		annotations := clonedObject.GetAnnotations()
@@ -54,7 +54,7 @@ func replicateObject(ctx context.Context, k8sClient client.Client, ns string, so
 			annotations = map[string]string{}
 		}
 		copyMap(sourceObject.GetAnnotations(), annotations)
-		annotations[SourceNamespaceAnnotationKey] = sourceObject.GetNamespace()
+		annotations[sourceNamespaceAnnotationKey] = sourceObject.GetNamespace()
 		clonedObject.SetAnnotations(annotations)
 		return nil
 	})
@@ -119,9 +119,9 @@ const (
 
 func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replica client.Object,
 	replicator replication.Replicator) (sourceStatus, error) {
-	sourceNamespace, sourceNamespaceOk := replica.GetAnnotations()[SourceNamespaceAnnotationKey]
+	sourceNamespace, sourceNamespaceOk := replica.GetAnnotations()[sourceNamespaceAnnotationKey]
 	if !sourceNamespaceOk {
-		return "", fmt.Errorf("replica does not contain %s annotation", SourceNamespaceAnnotationKey)
+		return "", fmt.Errorf("replica does not contain %s annotation", sourceNamespaceAnnotationKey)
 	}
 
 	sourceObject := replicator.EmptyObject()
@@ -138,9 +138,9 @@ func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replic
 		return sourceStatusDeleted, nil
 	}
 
-	sourceObjectType, sourceObjectTypeOk := sourceObject.GetLabels()[ObjectTypeLabelKey]
+	sourceObjectType, sourceObjectTypeOk := sourceObject.GetLabels()[objectTypeLabelKey]
 	if sourceObjectTypeOk {
-		if sourceObjectType != ObjectTypeLabelValueReplicated {
+		if sourceObjectType != objectTypeLabelValueReplicated {
 			return "", fmt.Errorf("Unexpected object type %s in source", sourceObjectType)
 		}
 	} else {
@@ -150,11 +150,11 @@ func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replic
 }
 
 func isNamespaceIgnored(ns *corev1.Namespace) bool {
-	namespaceType, namespaceTypeOk := ns.GetLabels()[NamespaceTypeLabelKey]
+	namespaceType, namespaceTypeOk := ns.GetLabels()[namespaceTypeLabelKey]
 	if namespaceTypeOk {
-		if namespaceType == NamespaceTypeLabelValueIgnored {
+		if namespaceType == namespaceTypeLabelValueIgnored {
 			return true
-		} else if namespaceType == NamespaceTypeLabelValueManaged {
+		} else if namespaceType == namespaceTypeLabelValueManaged {
 			return false
 		}
 	}

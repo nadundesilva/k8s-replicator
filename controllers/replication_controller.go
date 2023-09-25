@@ -66,7 +66,7 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	isObjectDeleted = isObjectDeleted || object.GetDeletionTimestamp() != nil
 
 	// Identifying object type
-	objectType, objectTypeOk := object.GetLabels()[ObjectTypeLabelKey]
+	objectType, objectTypeOk := object.GetLabels()[objectTypeLabelKey]
 	if !objectTypeOk {
 		logger := log.FromContext(ctx).WithValues("reason", "object type not present in object")
 		if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
@@ -80,7 +80,7 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Reconciling
 	switch objectType {
-	case ObjectTypeLabelValueReplica:
+	case objectTypeLabelValueReplica:
 		ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("replicaNamespace", object.GetNamespace()))
 
 		sourceStatus, err := getReplicaSourceStatus(ctx, r.Client, object, r.Replicator)
@@ -100,7 +100,7 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			}
 		}
 		return ctrl.Result{}, nil
-	case ObjectTypeLabelValueReplicated:
+	case objectTypeLabelValueReplicated:
 		ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("sourceNamespace", object.GetNamespace()))
 
 		if isObjectDeleted {

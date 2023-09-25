@@ -160,52 +160,54 @@ jobs:
                   TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
 
-    # validate-examples:
-    #     name: Validate Examples
-    #     runs-on: ubuntu-latest
-    #     strategy:
-    #         matrix:
-    #             example:
-    #                 - cert-manager
-    #     steps:
-    #         - name: Checkout repository
-    #           uses: actions/checkout@v3
-    #           with:
-    #               fetch-depth: 0
-    #         - name: Setup GoLang
-    #           uses: actions/setup-go@v3
-    #           with:
-    #               go-version: "^1.21"
-    #         - name: Setup Kind
-    #           run: |
-    #             go get sigs.k8s.io/kind
-    #             echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
-    #         - name: Setup K8s Cluster
-    #           run: |
-    #             kind create cluster --name=example-validation-cluster
-    #             make docker
-    #             kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
-    #             NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
+    validate-examples:
+        name: Validate Examples
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                example:
+                    - cert-manager
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Setup GoLang
+              uses: actions/setup-go@v3
+              with:
+                  go-version: "^1.21"
+            - name: Setup Kind
+              run: |
+                go get sigs.k8s.io/kind
+                echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
+            - name: Setup K8s Cluster
+              run: |
+                kind create cluster --name=example-validation-cluster
+                docker build -t nadunrds/k8s-replicator:${{ github.sha }} .
+                kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
+                NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
-    #             kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-    #             kubectl label node "${NODE_NAME}" ingress-ready=true
-    #             kubectl wait --namespace ingress-nginx \
-    #               --for=condition=ready pod \
-    #               --selector=app.kubernetes.io/component=controller \
-    #               --timeout=90s
+                kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+                kubectl label node "${NODE_NAME}" ingress-ready=true
+                kubectl wait --namespace ingress-nginx \
+                  --for=condition=ready pod \
+                  --selector=app.kubernetes.io/component=controller \
+                  --timeout=90s
 
-    #             K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
-    #             echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
-    #           env:
-    #               CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
-    #         - name: Validate Example
-    #           run: |
-    #             source .github/scripts/utils.sh
-    #             update_controller_image ${{ github.workspace }}/kustomize ${{ github.sha }}
+                K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+                echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
+              env:
+                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+            - name: Validate Example
+              run: |
+                echo "Updating controller image tag to ${{ github.sha }}"
+                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
+                    -v "$(pwd)/config/manager:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
+                    edit set image "controller=nadunrds/k8s-replicator:${{ github.sha }}"
 
-    #             pushd examples/${{ matrix.example }}
-    #             ./validate.sh
-    #             popd
+                pushd examples/${{ matrix.example }}
+                ./validate.sh
+                popd
 
     build-operator:
         name: Build Operator
@@ -218,7 +220,7 @@ jobs:
             - run-unit-tests
             - run-benchmark-tests
             - run-e2e-tests
-            # - validate-examples
+            - validate-examples
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3

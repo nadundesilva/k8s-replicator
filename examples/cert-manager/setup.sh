@@ -76,7 +76,7 @@ setup_cert_manager
 
 echo
 echo "🌟 Installing Kubernetes Replicator"
-kubectl apply -k ../../kustomize
+kubectl apply -k ../../config/default
 echo "✅ Installing Kubernetes Replicator Complete"
 
 echo

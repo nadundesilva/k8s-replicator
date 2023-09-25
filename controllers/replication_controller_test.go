@@ -51,7 +51,7 @@ var _ = Describe("Object Replication", func() {
 
 				sourceObject = resource.SourceObject()
 				sourceObject.SetNamespace(sourceNamespace.GetName())
-				sourceObject.GetLabels()[ObjectTypeLabelKey] = ObjectTypeLabelValueReplicated
+				sourceObject.GetLabels()[objectTypeLabelKey] = objectTypeLabelValueReplicated
 			})
 
 			AfterEach(func(ctx SpecContext) {
@@ -114,7 +114,7 @@ var _ = Describe("Object Replication", func() {
 					normalNamespaces := createNamespaces(ctx, "test-ns", 3, nil)
 
 					labels := map[string]string{
-						NamespaceTypeLabelKey: NamespaceTypeLabelValueIgnored,
+						namespaceTypeLabelKey: namespaceTypeLabelValueIgnored,
 					}
 					ignoredNamespaces := createNamespaces(ctx, "test-ns", 2, labels)
 					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
@@ -129,7 +129,7 @@ var _ = Describe("Object Replication", func() {
 					normalNamespaces := createNamespaces(ctx, "test-ns", 3, nil)
 
 					labels := map[string]string{
-						NamespaceTypeLabelKey: NamespaceTypeLabelValueManaged,
+						namespaceTypeLabelKey: namespaceTypeLabelValueManaged,
 					}
 					kubeNamespaces := createNamespaces(ctx, "kube", 2, labels)
 					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
@@ -142,7 +142,7 @@ var _ = Describe("Object Replication", func() {
 					normalNamespaces := createNamespaces(ctx, "test-ns", 3, nil)
 
 					labels := map[string]string{
-						NamespaceTypeLabelKey: NamespaceTypeLabelValueManaged,
+						namespaceTypeLabelKey: namespaceTypeLabelValueManaged,
 					}
 					operatorNamespace = createNamespaces(ctx, "operator-ns", 1, labels)[0]
 					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
@@ -198,11 +198,11 @@ func validateReplication(ctx context.Context, sourceObject client.Object, resour
 				return false
 			}
 
-			objectType, objectTypeOk := replicatedObject.GetLabels()[ObjectTypeLabelKey]
+			objectType, objectTypeOk := replicatedObject.GetLabels()[objectTypeLabelKey]
 			Expect(objectTypeOk).To(BeTrue())
-			Expect(objectType).To(Equal(ObjectTypeLabelValueReplica))
+			Expect(objectType).To(Equal(objectTypeLabelValueReplica))
 
-			sourceNamespace, sourceNamespaceOk := replicatedObject.GetAnnotations()[SourceNamespaceAnnotationKey]
+			sourceNamespace, sourceNamespaceOk := replicatedObject.GetAnnotations()[sourceNamespaceAnnotationKey]
 			Expect(sourceNamespaceOk).To(BeTrue())
 			Expect(sourceNamespace).To(Equal(sourceObject.GetNamespace()))
 

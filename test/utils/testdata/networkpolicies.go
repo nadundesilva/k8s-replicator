@@ -19,6 +19,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
 )
@@ -49,8 +50,8 @@ func generateNetworkPolicyTestDatum() Resource {
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: toPointer(corev1.ProtocolTCP),
-								Port:     toPointer(intstr.FromString("named-port-1")),
+								Protocol: ptr.To(corev1.ProtocolTCP),
+								Port:     ptr.To(intstr.FromString("named-port-1")),
 							},
 						},
 						From: []networkingv1.NetworkPolicyPeer{
@@ -88,9 +89,9 @@ func generateNetworkPolicyTestDatum() Resource {
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: toPointer(corev1.ProtocolTCP),
-								Port:     toPointer(intstr.FromInt(8000)),
-								EndPort:  toPointer[int32](9000),
+								Protocol: ptr.To(corev1.ProtocolTCP),
+								Port:     ptr.To(intstr.FromInt(8000)),
+								EndPort:  ptr.To[int32](9000),
 							},
 						},
 						From: []networkingv1.NetworkPolicyPeer{
@@ -136,8 +137,8 @@ func generateNetworkPolicyTestDatum() Resource {
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: toPointer(corev1.ProtocolUDP),
-								Port:     toPointer(intstr.FromInt(9090)),
+								Protocol: ptr.To(corev1.ProtocolUDP),
+								Port:     ptr.To(intstr.FromInt(9090)),
 							},
 						},
 						From: []networkingv1.NetworkPolicyPeer{
@@ -155,8 +156,8 @@ func generateNetworkPolicyTestDatum() Resource {
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: toPointer(corev1.ProtocolSCTP),
-								Port:     toPointer(intstr.FromInt(10098)),
+								Protocol: ptr.To(corev1.ProtocolSCTP),
+								Port:     ptr.To(intstr.FromInt(10098)),
 							},
 						},
 						To: []networkingv1.NetworkPolicyPeer{

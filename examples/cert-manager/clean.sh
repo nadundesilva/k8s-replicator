@@ -22,7 +22,7 @@ kubectl delete -k ./cert-issuer
 
 echo
 echo "🧹 Removing Kubernetes Replicator"
-kubectl delete -k ../../kustomize
+kubectl delete -k ../../config/default
 
 echo
 echo "🧹 Removing Cert Manager"
