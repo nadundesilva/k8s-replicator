@@ -17,21 +17,49 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlController "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func replicateObject(ctx context.Context, k8sClient client.Client, ns string, sourceObject client.Object, replicator replication.Replicator) error {
+func newManagerOptions(mgr ctrl.Manager, name string, kind string) ctrlController.Options {
+	logger := mgr.GetLogger().WithValues(
+		"controller", name,
+	)
+	return ctrlController.Options{
+		MaxConcurrentReconciles: 100,
+		RecoverPanic:            ptr.To(true),
+		NeedLeaderElection:      ptr.To(true),
+		LogConstructor: func(req *reconcile.Request) logr.Logger {
+			logger := logger
+			if req != nil {
+				logger = logger.WithValues(
+					"reconcileObject", klog.KRef(req.Namespace, req.Name),
+					"reconcileKind", kind,
+				)
+			}
+			return logger
+		},
+	}
+}
+
+func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder record.EventRecorder,
+	ns string, sourceObject client.Object, replicator replication.Replicator) error {
 	clonedObject := replicator.EmptyObject()
 	clonedObject.SetNamespace(ns)
 	clonedObject.SetName(sourceObject.GetName())
 
-	_, err := ctrl.CreateOrUpdate(ctx, k8sClient, clonedObject, func() error {
+	result, err := ctrl.CreateOrUpdate(ctx, k8sClient, clonedObject, func() error {
 		copyMap := func(sourceMap map[string]string, targetMap map[string]string) {
 			for k, v := range sourceMap {
 				if !strings.HasPrefix(k, groupFqn) {
@@ -60,6 +88,12 @@ func replicateObject(ctx context.Context, k8sClient client.Client, ns string, so
 	})
 	if err != nil {
 		return fmt.Errorf("failed to replicate resource to namespace %v: %+w", ns, err)
+	}
+	switch result {
+	case controllerutil.OperationResultCreated:
+		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectCreate, "replica in namespace %s created", ns)
+	case controllerutil.OperationResultUpdated:
+		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectUpdate, "replica in namespace %s updated", ns)
 	}
 
 	addFinalizer(ctx, k8sClient, clonedObject)

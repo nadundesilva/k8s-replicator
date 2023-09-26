@@ -159,7 +159,7 @@ func ValidateReplication(ctx context.Context, t *testing.T, cfg *envconf.Config,
 		),
 		wait.WithTimeout(opts.timeout),
 		wait.WithImmediate(),
-		wait.WithInterval(time.Second*5),
+		wait.WithInterval(time.Second),
 	)
 	if err != nil {
 		t.Errorf("failed to wait for replicated objects: %v", err)
@@ -207,7 +207,7 @@ func ValidateResourceDeletion(ctx context.Context, t *testing.T, cfg *envconf.Co
 			conditions.New(cfg.Client().Resources(namespace.GetName())).ResourceDeleted(clonedObj),
 			wait.WithTimeout(time.Minute),
 			wait.WithImmediate(),
-			wait.WithInterval(time.Second*5),
+			wait.WithInterval(time.Second),
 		)
 		if err != nil {
 			t.Errorf(

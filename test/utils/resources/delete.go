@@ -44,7 +44,7 @@ func DeleteObjectWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config
 		conditions.New(cfg.Client().Resources(namespace)).ResourceDeleted(clonedObj),
 		wait.WithTimeout(time.Minute),
 		wait.WithImmediate(),
-		wait.WithInterval(time.Second*5),
+		wait.WithInterval(time.Second),
 	)
 	if err != nil {
 		t.Fatalf("failed to wait for object to delete: %v", err)

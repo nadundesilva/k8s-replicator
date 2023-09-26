@@ -20,19 +20,22 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // ReplicationReconciler reconciles a replicated object
 type ReplicationReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	recorder record.EventRecorder
 
-	replication.Replicator
+	Replicator replication.Replicator
 }
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
@@ -138,7 +141,12 @@ func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object 
 
 		log.FromContext(ctx).V(1).Info("Deleting replica", "replicaNamespace", ns.GetName(),
 			"reason", "source object deleted")
-		return deleteObject(ctx, r.Client, replica)
+		err = deleteObject(ctx, r.Client, replica)
+		if err != nil {
+			return err
+		}
+		r.recorder.Eventf(object, "Normal", SourceObjectDelete, "replica in namespace %s deleted", ns.GetName())
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to finalize source object: %+w", err)
@@ -159,7 +167,7 @@ func (r *ReplicationReconciler) handleSourceUpdate(ctx context.Context, object c
 		}
 
 		log.FromContext(ctx).V(1).Info("Creating/Updating replica", "replicaNamespace", ns.GetName())
-		return replicateObject(ctx, r.Client, ns.GetName(), object, r.Replicator)
+		return replicateObject(ctx, r.Client, r.recorder, ns.GetName(), object, r.Replicator)
 	})
 	return err
 }
@@ -175,7 +183,7 @@ func (r *ReplicationReconciler) iterateNamespaces(ctx context.Context, handler f
 
 	errs := []error{}
 	for _, ns := range namespaceList.Items {
-		if isNamespaceIgnored(&ns) {
+		if isNamespaceIgnored(&ns) || ns.GetDeletionTimestamp() != nil {
 			continue
 		}
 
@@ -193,7 +201,25 @@ func (r *ReplicationReconciler) iterateNamespaces(ctx context.Context, handler f
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ReplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	predicate := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		objectType, objectTypeOk := object.GetLabels()[objectTypeLabelKey]
+		if objectTypeOk && (objectType == objectTypeLabelValueReplicated || objectType == objectTypeLabelValueReplica) {
+			return true
+		}
+		return controllerutil.ContainsFinalizer(object, resourceFinalizer)
+	})
+
+	name := "replicator-namespaced-resource-controller"
+	r.recorder = mgr.GetEventRecorderFor(name)
+	if r.Client == nil {
+		r.Client = mgr.GetClient()
+	}
+	if r.Scheme == nil {
+		r.Scheme = mgr.GetScheme()
+	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(r.Replicator.EmptyObject(), builder.WithPredicates(managedResourcesPredicate)).
+		Named(name).
+		For(r.Replicator.EmptyObject(), builder.WithPredicates(predicate)).
+		WithOptions(newManagerOptions(mgr, name, r.Replicator.GetKind())).
 		Complete(r)
 }

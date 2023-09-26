@@ -3,6 +3,7 @@ module github.com/nadundesilva/k8s-replicator
 go 1.21
 
 require (
+	github.com/go-logr/logr v1.2.4
 	github.com/google/uuid v1.3.1
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.10
@@ -26,7 +27,6 @@ require (
 	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
-	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect

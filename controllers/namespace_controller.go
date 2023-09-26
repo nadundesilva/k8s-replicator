@@ -20,15 +20,20 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	recorder record.EventRecorder
 
 	Replicators []replication.Replicator
 }
@@ -129,7 +134,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					}
 
 					log.FromContext(ctx).V(1).Info("Creating/Updating replica")
-					err := replicateObject(ctx, r.Client, namespaceName, object, replicator)
+					err := replicateObject(ctx, r.Client, r.recorder, namespaceName, object, replicator)
 					if err != nil {
 						errs = append(errs, err)
 					}
@@ -145,7 +150,35 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	isReconciled := func(object client.Object) bool {
+		return !isNamespaceIgnored(object.(*corev1.Namespace))
+	}
+	predicate := predicate.Funcs{
+		CreateFunc: func(ce event.CreateEvent) bool {
+			return isReconciled(ce.Object)
+		},
+		UpdateFunc: func(ue event.UpdateEvent) bool {
+			return isReconciled(ue.ObjectOld) || isReconciled(ue.ObjectNew)
+		},
+		DeleteFunc: func(de event.DeleteEvent) bool {
+			return isReconciled(de.Object)
+		},
+		GenericFunc: func(ge event.GenericEvent) bool {
+			return isReconciled(ge.Object)
+		},
+	}
+
+	name := "replicator-namespace-controller"
+	r.recorder = mgr.GetEventRecorderFor(name)
+	if r.Client == nil {
+		r.Client = mgr.GetClient()
+	}
+	if r.Scheme == nil {
+		r.Scheme = mgr.GetScheme()
+	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}).
+		Named(name).
+		For(&corev1.Namespace{}, builder.WithPredicates(predicate)).
+		WithOptions(newManagerOptions(mgr, name, "Namespace")).
 		Complete(r)
 }
