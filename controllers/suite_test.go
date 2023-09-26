@@ -26,15 +26,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
 )
-
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
 	cfg       *rest.Config
@@ -52,22 +50,22 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
+	replicators := replication.NewReplicators()
+	scheme := runtime.NewScheme()
+	for _, replicator := range replicators {
+		Expect(replicator.AddToScheme(scheme)).NotTo(HaveOccurred())
+	}
+
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
+		Scheme:                scheme,
 		ErrorIfCRDPathMissing: false,
 	}
 
 	var err error
-	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-
-	scheme := runtime.NewScheme()
-	replicators := replication.NewReplicators()
-	for _, replicator := range replicators {
-		Expect(replicator.AddToScheme(scheme)).NotTo(HaveOccurred())
-	}
 
 	//+kubebuilder:scaffold:scheme
 
@@ -77,20 +75,20 @@ var _ = BeforeSuite(func() {
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
+		Cache: cache.Options{
+			Scheme:                      scheme,
+			ReaderFailOnMissingInformer: true,
+		},
 	})
 	Expect(err).ToNot(HaveOccurred())
 
 	for _, replicator := range replicators {
 		err = (&ReplicationReconciler{
-			Client:     mgr.GetClient(),
-			Scheme:     mgr.GetScheme(),
 			Replicator: replicator,
 		}).SetupWithManager(mgr)
 		Expect(err).ToNot(HaveOccurred())
 	}
 	err = (&NamespaceReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
 		Replicators: replicators,
 	}).SetupWithManager(mgr)
 	Expect(err).ToNot(HaveOccurred())

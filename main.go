@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -66,6 +67,10 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
+		Cache: cache.Options{
+			Scheme:                      scheme,
+			ReaderFailOnMissingInformer: true,
+		},
 		Metrics: server.Options{
 			BindAddress: metricsAddr,
 		},
@@ -91,8 +96,6 @@ func main() {
 
 	for _, replicator := range replicators {
 		if err = (&controllers.ReplicationReconciler{
-			Client:     mgr.GetClient(),
-			Scheme:     mgr.GetScheme(),
 			Replicator: replicator,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "kind", replicator.GetKind())
@@ -100,8 +103,6 @@ func main() {
 		}
 	}
 	if err = (&controllers.NamespaceReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
 		Replicators: replicators,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "kind", "Namepsace")

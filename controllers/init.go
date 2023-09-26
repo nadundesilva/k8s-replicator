@@ -19,9 +19,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
@@ -38,13 +35,15 @@ const (
 	resourceFinalizer = groupFqn + "/finalizer"
 
 	sourceNamespaceAnnotationKey = groupFqn + "/source-namespace"
+
+	SourceObjectCreate = "SourceObjectCreate"
+	SourceObjectUpdate = "SourceObjectUpdate"
+	SourceObjectDelete = "SourceObjectDelete"
 )
 
 var (
-	namespaceSelector           labels.Selector
-	replicatedResourcesSelector labels.Selector
-	replicaResourcesSelector    labels.Selector
-	managedResourcesPredicate   predicate.Predicate
+	namespaceSelector        labels.Selector
+	replicaResourcesSelector labels.Selector
 
 	operatorNamespace = os.Getenv("OPERATOR_NAMESPACE")
 )
@@ -60,16 +59,6 @@ func init() {
 	}
 	namespaceSelector = labels.NewSelector().Add(*namespaceSelectorReq)
 
-	replicatedResourcesSelectorReq, err := labels.NewRequirement(
-		objectTypeLabelKey,
-		selection.Equals,
-		[]string{objectTypeLabelValueReplicated},
-	)
-	if err != nil {
-		panic(fmt.Errorf("failed to initialize replicated resources selector %+w", err))
-	}
-	replicatedResourcesSelector = labels.NewSelector().Add(*replicatedResourcesSelectorReq)
-
 	replicaResourcesSelectorReq, err := labels.NewRequirement(
 		objectTypeLabelKey,
 		selection.Equals,
@@ -79,12 +68,4 @@ func init() {
 		panic(fmt.Errorf("failed to initialize replica resources selector %+w", err))
 	}
 	replicaResourcesSelector = labels.NewSelector().Add(*replicaResourcesSelectorReq)
-
-	managedResourcesPredicate = predicate.NewPredicateFuncs(func(object client.Object) bool {
-		objectType, objectTypeOk := object.GetLabels()[objectTypeLabelKey]
-		if objectTypeOk && (objectType == objectTypeLabelValueReplicated || objectType == objectTypeLabelValueReplica) {
-			return true
-		}
-		return controllerutil.ContainsFinalizer(object, resourceFinalizer)
-	})
 }

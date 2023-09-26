@@ -39,7 +39,8 @@ import (
 const (
 	defaulControllerNamespace  = "k8s-replicator-system"
 	defaultTestNamespacePrefix = "replicator-e2e"
-	logLevelArgKey             = "--zap-log-level"
+	logLevelArgKey             = "-zap-log-level"
+	logDevelopmentModeFlag     = "-zap-devel"
 )
 
 var (
@@ -112,15 +113,22 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 			container.ImagePullPolicy = corev1.PullNever
 
 			foundLogLevelArg := false
+			foundLogDevelopmentModeFlag := false
 			logLevelArg := fmt.Sprintf("%s=%d", logLevelArgKey, opts.logVerbosity)
 			for i, arg := range container.Args {
 				if strings.HasPrefix(arg, logLevelArgKey) {
 					container.Args[i] = logLevelArg
 					foundLogLevelArg = true
 				}
+				if arg == logDevelopmentModeFlag {
+					foundLogDevelopmentModeFlag = true
+				}
 			}
 			if !foundLogLevelArg {
 				container.Args = append(container.Args, logLevelArg)
+			}
+			if !foundLogDevelopmentModeFlag {
+				container.Args = append(container.Args, logDevelopmentModeFlag)
 			}
 
 			deployment.Spec.Template.Spec.Containers[containerIndex] = container
@@ -183,7 +191,7 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 		}),
 		wait.WithTimeout(time.Minute),
 		wait.WithImmediate(),
-		wait.WithInterval(time.Second*5),
+		wait.WithInterval(time.Second),
 	)
 	if err != nil {
 		t.Fatalf("failed to wait for controller deployment to be ready: %v", err)

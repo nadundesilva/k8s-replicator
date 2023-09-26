@@ -45,7 +45,7 @@ func DeleteWithWait(ctx context.Context, t *testing.T, cfg *envconf.Config, name
 		conditions.New(cfg.Client().Resources()).ResourceDeleted(clonedNamespace),
 		wait.WithTimeout(time.Minute),
 		wait.WithImmediate(),
-		wait.WithInterval(time.Second*5),
+		wait.WithInterval(time.Second),
 	)
 	if err != nil {
 		t.Fatalf("failed to wait for namespace to delete: %v", err)

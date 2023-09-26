@@ -68,7 +68,7 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 				conditions.New(cfg.Client().Resources()).ResourcesDeleted(clonedObjList),
 				wait.WithTimeout(opts.timeout),
 				wait.WithImmediate(),
-				wait.WithInterval(time.Second*5),
+				wait.WithInterval(time.Second),
 			)
 			if err != nil {
 				t.Fatalf("failed to wait for objects to delete: %v", err)
@@ -87,7 +87,7 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 				conditions.New(cfg.Client().Resources(clonedObj.GetNamespace())).ResourceDeleted(clonedObj),
 				wait.WithTimeout(opts.timeout),
 				wait.WithImmediate(),
-				wait.WithInterval(time.Second*5),
+				wait.WithInterval(time.Second),
 			)
 			if err != nil {
 				t.Fatalf(
