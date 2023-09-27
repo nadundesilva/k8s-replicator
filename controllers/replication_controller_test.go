@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	. "github.com/nadundesilva/k8s-replicator/test/utils/gomega"
 	"github.com/nadundesilva/k8s-replicator/test/utils/testdata"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -76,18 +77,34 @@ var _ = Describe("Object Replication", func() {
 				It("Should not change source object", func(ctx SpecContext) {
 					normalNamespaces := nc.CreateNamespaces(ctx, "test-ns", 3, nil)
 					Expect(k8sClient.Create(ctx, sourceObject)).To(Succeed())
-
 					validateReplication(ctx, sourceObject, resource, normalNamespaces...)
-					Consistently(func() bool {
+
+					Consistently(func() map[string]string {
 						finalSourceObject := resource.EmptyObject()
 						err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sourceObject), finalSourceObject)
 						if err != nil {
-							return errors.IsNotFound(err)
+							return sourceObject.GetLabels()
 						}
-						return reflect.DeepEqual(sourceObject.GetLabels(), finalSourceObject.GetLabels()) &&
-							reflect.DeepEqual(sourceObject.GetAnnotations(), finalSourceObject.GetAnnotations()) &&
-							resource.IsEqual(sourceObject, finalSourceObject)
-					}, assertionTimeout, assertionPollInterval, ctx).Should(BeTrue())
+						return finalSourceObject.GetLabels()
+					}, assertionTimeout, assertionPollInterval, ctx).Should(BeEquivalentTo(sourceObject.GetLabels()))
+
+					Consistently(func() map[string]string {
+						finalSourceObject := resource.EmptyObject()
+						err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sourceObject), finalSourceObject)
+						if err != nil {
+							return sourceObject.GetAnnotations()
+						}
+						return finalSourceObject.GetAnnotations()
+					}, assertionTimeout, assertionPollInterval, ctx).Should(BeEquivalentTo(sourceObject.GetAnnotations()))
+
+					Consistently(func() client.Object {
+						finalSourceObject := resource.EmptyObject()
+						err := k8sClient.Get(ctx, client.ObjectKeyFromObject(sourceObject), finalSourceObject)
+						if err != nil {
+							return sourceObject
+						}
+						return finalSourceObject
+					}, assertionTimeout, assertionPollInterval, ctx).Should(BeEquivalentToResource(sourceObject, resource.IsEqual))
 				}, testTimeout)
 
 				It("Should not replicate to kube prefixed namespaces", func(ctx SpecContext) {
