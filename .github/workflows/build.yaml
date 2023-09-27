@@ -73,9 +73,9 @@ jobs:
                   DEFAULT_BRANCH: main
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
+                  KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
                   VALIDATE_GO: "false"
                   VALIDATE_KUBERNETES_KUBEVAL: "false"
-                  KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
     run-codeql-analysis:
         name: Run CodeQL Analysis
@@ -239,7 +239,7 @@ jobs:
                   IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
                   BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
             - name: Building Controller
-              run: make docker-build
+              run: make docker-buildx
               env:
                   IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
             - name: Run Trivy vulnerability scanner on Controller
