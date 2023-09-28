@@ -88,8 +88,15 @@ jobs:
               env:
                   IMG: "nadunrds/k8s-replicator:${{ env.RELEASE_PATCH_VERSION }}"
                   BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.RELEASE_PATCH_VERSION }}"
+            - name: Set up Docker Buildx
+              id: buildx
+              uses: docker/setup-buildx-action@v2
+              with:
+                  install: true
+            - name: Buildx available platforms
+              run: echo ${{ steps.buildx.outputs.platforms }}
             - name: Building Controller
-              run: make docker-build
+              run: make docker-buildx
               env:
                   IMG: "nadunrds/k8s-replicator:${{ env.RELEASE_PATCH_VERSION }}"
             - name: Run Trivy vulnerability scanner on Controller
@@ -190,14 +197,4 @@ jobs:
 
                 git add .github/RELEASE_NOTE
                 git commit -m "[Automated] Preparing for next development iteration"
-
-                git checkout -b "release-${RELEASE_PATCH_VERSION}"
-                git push origin "release-${RELEASE_PATCH_VERSION}"
-            - name: Create Release Sync Pull Request
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                gh pr create --assignee "${{ github.actor }}" \
-                  --base main --head "release-${RELEASE_PATCH_VERSION}" \
-                  --title "[Automated] Release Sync after v${{ github.event.inputs.release-version }}" \
-                  --body "Sync changes with master after release v${{ github.event.inputs.release-version }}"
+                git push origin main

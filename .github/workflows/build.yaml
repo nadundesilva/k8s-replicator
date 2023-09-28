@@ -3,6 +3,10 @@ name: Build
 on:
     workflow_call:
         inputs:
+            docker-image-tag:
+                description: The docker image tag to use
+                required: true
+                type: string
             publish-snapshots:
                 description: Whether the snapshots should be published (true/false)
                 required: true
@@ -183,7 +187,7 @@ jobs:
             - name: Setup K8s Cluster
               run: |
                 kind create cluster --name=example-validation-cluster
-                docker build -t nadunrds/k8s-replicator:${{ github.sha }} .
+                make docker-build
                 kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
                 NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
@@ -197,6 +201,7 @@ jobs:
                 K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
                 echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
               env:
+                  IMG: nadunrds/k8s-replicator:${{ github.sha }}
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Validate Example
               run: |
@@ -236,27 +241,34 @@ jobs:
             - name: Generate code
               run: make generate manifests bundle
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
+            - name: Set up Docker Buildx
+              id: buildx
+              uses: docker/setup-buildx-action@v2
+              with:
+                  install: true
+            - name: Buildx available platforms
+              run: echo ${{ steps.buildx.outputs.platforms }}
             - name: Building Controller
               run: make docker-buildx
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
             - name: Run Trivy vulnerability scanner on Controller
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ github.ref_name }}
+                  image-ref: nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
             - name: Building Controller Bundle
               run: make bundle-build
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
             - name: Run Trivy vulnerability scanner on Controller Bundle
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator-bundle:${{ github.ref_name }}
+                  image-ref: nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -271,9 +283,9 @@ jobs:
               if: ${{ inputs.publish-snapshots == true }}
               run: make docker-push
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
             - name: Pushing Controller Bundle
               if: ${{ inputs.publish-snapshots == true }}
               run: make bundle-push
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"

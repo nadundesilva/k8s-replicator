@@ -4,13 +4,13 @@ on:
     push:
         branches:
             - main
-            - operator-framework-migration
 
 jobs:
     build:
         name: Build Branch
         uses: ./.github/workflows/build.yaml
         with:
+            docker-image-tag: ${{ github.ref_name }}
             publish-snapshots: true
         secrets:
             docker_hub_token: ${{ secrets.DOCKER_HUB_TOKEN }}

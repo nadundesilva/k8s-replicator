@@ -10,4 +10,5 @@ jobs:
         name: Check Pull Request
         uses: ./.github/workflows/build.yaml
         with:
+            docker-image-tag: ${{ github.sha }}
             publish-snapshots: false
