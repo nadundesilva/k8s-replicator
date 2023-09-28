@@ -3,6 +3,10 @@ name: Build
 on:
     workflow_call:
         inputs:
+            docker-image-tag:
+                description: The docker image tag to use
+                required: true
+                type: string
             publish-snapshots:
                 description: Whether the snapshots should be published (true/false)
                 required: true
@@ -18,11 +22,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Setup Operator SDK
@@ -42,11 +46,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Vet Code
@@ -64,11 +68,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Lint Code Base
-              uses: github/super-linter@v4
+              uses: github/super-linter@v5
               env:
                   DEFAULT_BRANCH: main
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -86,7 +90,7 @@ jobs:
             security-events: write
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
             - name: Initialize CodeQL
               uses: github/codeql-action/init@v2
               with:
@@ -101,11 +105,11 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Run Unit Tests
@@ -118,11 +122,11 @@ jobs:
           checks: write
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Run Benchmark Tests
@@ -147,11 +151,11 @@ jobs:
                     - NetworkPolicy
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Run E2E Tests
@@ -169,11 +173,11 @@ jobs:
                     - cert-manager
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Setup Kind
@@ -183,7 +187,7 @@ jobs:
             - name: Setup K8s Cluster
               run: |
                 kind create cluster --name=example-validation-cluster
-                docker build -t nadunrds/k8s-replicator:${{ github.sha }} .
+                make docker-build
                 kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
                 NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
@@ -197,6 +201,7 @@ jobs:
                 K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
                 echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
               env:
+                  IMG: nadunrds/k8s-replicator:${{ github.sha }}
                   CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Validate Example
               run: |
@@ -223,11 +228,11 @@ jobs:
             - validate-examples
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v3
+              uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
             - name: Setup Operator SDK
@@ -236,34 +241,41 @@ jobs:
             - name: Generate code
               run: make generate manifests bundle
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
+            - name: Set up Docker Buildx
+              id: buildx
+              uses: docker/setup-buildx-action@v3
+              with:
+                  install: true
+            - name: Buildx available platforms
+              run: echo ${{ steps.buildx.outputs.platforms }}
             - name: Building Controller
               run: make docker-buildx
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
             - name: Run Trivy vulnerability scanner on Controller
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ github.ref_name }}
+                  image-ref: nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
             - name: Building Controller Bundle
               run: make bundle-build
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
             - name: Run Trivy vulnerability scanner on Controller Bundle
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator-bundle:${{ github.ref_name }}
+                  image-ref: nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
                   trivyignores: .trivyignore
             - name: Login to the Container registry
               if: ${{ inputs.publish-snapshots == true }}
-              uses: docker/login-action@v2
+              uses: docker/login-action@v3
               with:
                   username: nadunrds
                   password: ${{ secrets.docker_hub_token }}
@@ -271,9 +283,9 @@ jobs:
               if: ${{ inputs.publish-snapshots == true }}
               run: make docker-push
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
             - name: Pushing Controller Bundle
               if: ${{ inputs.publish-snapshots == true }}
               run: make bundle-push
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
