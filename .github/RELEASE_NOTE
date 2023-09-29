@@ -16,3 +16,8 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
   replicator.nadundesilva.github.io/object-type=replicated
   ```
 - Add support to record kubernetes events against the source object.
+- Fix vulnerabilities
+  - CVE-2022-41717
+  - CVE-2022-41721
+  - CVE-2022-41723
+  - GHSA-vvpx-j8f3-3w6h

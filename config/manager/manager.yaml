@@ -45,17 +45,15 @@ spec:
                   operator: In
                   values:
                     - amd64
-                    - arm64
-                    - ppc64le
-                    - s390x
+      #               - arm64
+      #               - ppc64le
+      #               - s390x
                 - key: kubernetes.io/os
                   operator: In
                   values:
                     - linux
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65532
-        runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -73,8 +71,6 @@ spec:
               fieldPath: metadata.namespace
         securityContext:
           allowPrivilegeEscalation: false
-          privileged: false
-          readOnlyRootFilesystem: true
           capabilities:
             drop:
               - "ALL"

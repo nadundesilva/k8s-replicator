@@ -73,5 +73,6 @@ fi
 
 operator-sdk run bundle --index-image=quay.io/operator-framework/opm:v1.26.0 \
     --namespace "${K8S_REPLICATOR_NAMESPACE}" \
+    --timeout "5m" \
     "docker.io/nadunrds/k8s-replicator-bundle:${VERSION}"
 echo "🏄 Completed! K8s Replicator is ready in the cluster (context: $(kubectl config current-context))"

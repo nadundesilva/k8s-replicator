@@ -37,7 +37,7 @@ jobs:
             - name: Check for changes
               run: |
                   if [ -n "$(git status --porcelain)" ]; then
-                    echo "There are new changes after the code generation. Please run 'make generate manifests bundle' and commit the changes"
+                    echo "There are new changes after the code generation. Please run 'make generate manifests' and commit the changes"
                     exit 1
                   fi
 
@@ -72,7 +72,7 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Lint Code Base
-              uses: github/super-linter@v5
+              uses: github/super-linter@v4
               env:
                   DEFAULT_BRANCH: main
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -243,15 +243,17 @@ jobs:
               env:
                   IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
                   BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
-            - name: Set up Docker Buildx
-              id: buildx
-              uses: docker/setup-buildx-action@v3
-              with:
-                  install: true
-            - name: Buildx available platforms
-              run: echo ${{ steps.buildx.outputs.platforms }}
+            # - name: Set up QEMU
+            #   uses: docker/setup-qemu-action@v3
+            # - name: Set up Docker Buildx
+            #   id: buildx
+            #   uses: docker/setup-buildx-action@v3
+            #   with:
+            #       install: true
+            # - name: Buildx available platforms
+            #   run: echo ${{ steps.buildx.outputs.platforms }}
             - name: Building Controller
-              run: make docker-buildx
+              run: make docker-build
               env:
                   IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
             - name: Run Trivy vulnerability scanner on Controller
