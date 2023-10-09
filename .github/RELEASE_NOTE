@@ -4,20 +4,4 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
 
 #### Changelog:
 
-- Migrate to the Operator Framework
-  - Improvements to reconciliation
-  - Improvements to test cases
-  - Remove the usage of source object version annotation from replicas, since the Operator framework properly reduces the overhead on the API Server and retries.
-    ```
-    replicator.nadundesilva.github.io/source-resource-version
-    ```
-- Rename source object label value from `source` to `replicated`.
-  ```
-  replicator.nadundesilva.github.io/object-type=replicated
-  ```
-- Add support to record kubernetes events against the source object.
-- Fix vulnerabilities
-  - CVE-2022-41717
-  - CVE-2022-41721
-  - CVE-2022-41723
-  - GHSA-vvpx-j8f3-3w6h
+- 
