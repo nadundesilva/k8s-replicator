@@ -49,7 +49,7 @@ func TestMain(m *testing.M) {
 	var err error
 	testenv, err = env.NewFromFlags()
 	if err != nil {
-		klog.Infof("failed to generate benchmark test environment from flags: %+w", err)
+		klog.Infof("failed to generate benchmark test environment from flags: %+v", err)
 	}
 	kindClusterName := envconf.RandomName("replicator-benchmark-tests-cluster", 32)
 
