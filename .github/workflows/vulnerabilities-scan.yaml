@@ -22,9 +22,11 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                image:
-                    - k8s-replicator
-                    - k8s-replicator-bundle
+                scan:
+                    - image: k8s-replicator
+                      trivyignores: .trivyignore.controller
+                    - image: k8s-replicator-bundle
+                      trivyignores: .trivyignore.bundle
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -33,11 +35,11 @@ jobs:
             - name: Run Trivy vulnerability scanner
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/${{ matrix.image }}:${{ github.event.inputs.image-tag || 'latest' }}
+                  image-ref: nadunrds/${{ matrix.scan.image }}:${{ github.event.inputs.image-tag || 'latest' }}
                   format: 'sarif'
                   exit-code: '1'
                   ignore-unfixed: true
-                  trivyignores: ./.trivyignore
+                  trivyignores: ${{ matrix.scan.trivyignores }}
                   output: trivy-results.sarif
             - name: Upload sarif file
               uses: github/codeql-action/upload-sarif@v2

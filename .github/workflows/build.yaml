@@ -29,15 +29,13 @@ jobs:
               uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
-            - name: Setup Operator SDK
-              run: |
-                  .github/scripts/setup-operator-sdk.sh
             - name: Generate code
               run: make generate manifests
             - name: Check for changes
               run: |
                   if [ -n "$(git status --porcelain)" ]; then
                     echo "There are new changes after the code generation. Please run 'make generate manifests' and commit the changes"
+                    git diff -p
                     exit 1
                   fi
 
@@ -63,6 +61,21 @@ jobs:
                     exit 1
                   fi
 
+    validate-bundle:
+        name: Run Operator Bundle Validator
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Validate Bundle
+              run: |
+                make bundle
+                ./bin/operator-sdk bundle validate ./bundle \
+                  --image-builder none \
+                  --select-optional name=community
+
     run-super-linter:
         name: Run GitHub Super Linter
         runs-on: ubuntu-latest
@@ -77,9 +90,9 @@ jobs:
                   DEFAULT_BRANCH: main
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
-                  KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
                   VALIDATE_GO: "false"
                   VALIDATE_KUBERNETES_KUBEVAL: "false"
+                  KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
     run-codeql-analysis:
         name: Run CodeQL Analysis
@@ -88,6 +101,8 @@ jobs:
             actions: read
             contents: read
             security-events: write
+        strategy:
+            fail-fast: false
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -220,6 +235,7 @@ jobs:
         needs:
             - check-code-gen
             - check-code
+            - validate-bundle
             - run-super-linter
             - run-codeql-analysis
             - run-unit-tests
@@ -235,23 +251,23 @@ jobs:
               uses: actions/setup-go@v4
               with:
                   go-version: "^1.21"
-            - name: Setup Operator SDK
-              run: |
-                  .github/scripts/setup-operator-sdk.sh
             - name: Generate code
               run: make generate manifests bundle
               env:
                   IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
                   BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
-            # - name: Set up QEMU
-            #   uses: docker/setup-qemu-action@v3
-            # - name: Set up Docker Buildx
-            #   id: buildx
-            #   uses: docker/setup-buildx-action@v3
-            #   with:
-            #       install: true
-            # - name: Buildx available platforms
-            #   run: echo ${{ steps.buildx.outputs.platforms }}
+            - name: Setup QEMU
+              uses: docker/setup-qemu-action@v3
+            - name: Setup Docker Buildx
+              id: buildx
+              uses: docker/setup-buildx-action@v3
+            - name: Available platforms
+              run: echo ${{ steps.buildx.outputs.platforms }}
+            - name: Generate code
+              run: make generate manifests bundle
+              env:
+                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
             - name: Building Controller
               run: make docker-build
               env:
@@ -263,6 +279,7 @@ jobs:
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
+                  trivyignores: .trivyignore.controller
             - name: Building Controller Bundle
               run: make bundle-build
               env:
@@ -274,7 +291,7 @@ jobs:
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
-                  trivyignores: .trivyignore
+                  trivyignores: .trivyignore.bundle
             - name: Login to the Container registry
               if: ${{ inputs.publish-snapshots == true }}
               uses: docker/login-action@v3
@@ -283,7 +300,7 @@ jobs:
                   password: ${{ secrets.docker_hub_token }}
             - name: Pushing Controller
               if: ${{ inputs.publish-snapshots == true }}
-              run: make docker-push
+              run: make docker-buildx
               env:
                   IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
             - name: Pushing Controller Bundle
@@ -291,3 +308,21 @@ jobs:
               run: make bundle-push
               env:
                   BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
+
+    validate-multi-architecture-bundle:
+        name: Validate Bundle Multi Architecture Support
+        runs-on: ubuntu-latest
+        if: ${{ inputs.publish-snapshots == true }}
+        needs:
+            - build-operator
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 0
+            - name: Validate Bundle
+              run: |
+                make bundle
+                ./bin/operator-sdk bundle validate docker.io/nadunrds/k8s-replicator-bundle:${{ github.ref_name }} \
+                  --image-builder none \
+                  --select-optional name=multiarch
