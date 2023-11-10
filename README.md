@@ -111,6 +111,27 @@ Remove the controller from your cluster by running the following command.
 operator-sdk cleanup k8s-replicator
 ```
 
+## How to Extend
+
+This Operator is created with extensibility in mind. To support this, a common interface `Replicator` was introduced.
+
+```go
+type Replicator interface {
+ GetKind() string
+ AddToScheme(scheme *runtime.Scheme) error
+
+ EmptyObject() client.Object
+ EmptyObjectList() client.ObjectList
+ ObjectListToArray(client.ObjectList) []client.Object
+
+ Replicate(sourceObject client.Object, targetObject client.Object)
+}
+```
+
+The K8s Replicator core uses the methods defined in this interface to get, list, and replicate resources to namespaces. The methods are carefully chosen to ensure that the minimum set of functionalities are defined for each resource separately keeping most of the logic reusable in the Operator core.
+
+You can check the [existing implementations](./controllers/replication/) of `Replicator` to get an idea of what needs to be done. However, you need to build the Operator from the source to get the new `Replicator` up and running. That being said, if you wish to contribute new resource replicators, you are most welcome.
+
 ## Support
 
 :grey_question: If you need support or have a question about the K8s Replicator, reach out through [Discussions](https://github.com/nadundesilva/k8s-replicator/discussions).
