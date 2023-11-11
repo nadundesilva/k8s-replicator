@@ -25,6 +25,11 @@ func newSecretReplicator() *secretReplicator {
 
 type secretReplicator struct{}
 
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=secrets/finalizers,verbs=update
+//+kubebuilder:webhook:path=/validate-replicated-secret,mutating=false,sideEffects=none,failurePolicy=fail,groups="",resources=secrets,verbs=create;update,versions=v1,admissionReviewVersions=v1,name=k8s-replicator.nadundesilva.github.io
+
 func (r *secretReplicator) GetKind() string {
 	return "Secret"
 }

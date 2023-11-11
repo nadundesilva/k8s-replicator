@@ -16,7 +16,10 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -29,6 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"github.com/nadundesilva/k8s-replicator/internal/controller"
 	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
@@ -39,6 +45,12 @@ var (
 	replicators = replication.NewReplicators()
 	scheme      = runtime.NewScheme()
 	setupLog    = ctrl.Log.WithName("setup")
+
+	disableValidations = func() bool {
+		envVal := os.Getenv("DISABLE_VALIDATIONS")
+		isDisabled, err := strconv.ParseBool(envVal)
+		return err == nil && isDisabled
+	}()
 )
 
 func init() {
@@ -125,6 +137,18 @@ func main() {
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "kind", replicator.GetKind())
 			os.Exit(1)
+		}
+
+		if !disableValidations {
+			validator := controllers.NewValidator(
+				replicator,
+				mgr.GetClient(),
+				admission.NewDecoder(mgr.GetScheme()),
+			)
+			mgr.GetWebhookServer().Register(
+				fmt.Sprintf("/validate-replicated-%s", strings.ToLower(replicator.GetKind())),
+				&webhook.Admission{Handler: validator},
+			)
 		}
 	}
 	if err = (&controller.NamespaceReconciler{

@@ -20,7 +20,7 @@ spec:
   - '*.vscode.local'
   subject:
     organizations:
-      - replicator.nadundesilva.github.io
+      - k8s-replicator.nadundesilva.github.io
   usages:
   - server auth
   duration: 720h
@@ -28,7 +28,7 @@ spec:
   secretName: vscode-wildcard-tls
   secretTemplate:
     labels:
-      replicator.nadundesilva.github.io/object-type: replicated
+      k8s-replicator.nadundesilva.github.io/object-type: replicated
   privateKey:
     algorithm: ECDSA
     size: 256

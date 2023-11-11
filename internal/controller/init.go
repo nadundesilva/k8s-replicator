@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	groupFqn = "replicator.nadundesilva.github.io"
+	groupFqn = "k8s-replicator.nadundesilva.github.io"
 
 	namespaceTypeLabelKey          = groupFqn + "/namespace-type"
 	namespaceTypeLabelValueManaged = "managed"

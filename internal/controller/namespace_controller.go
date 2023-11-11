@@ -168,7 +168,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 
-	name := "replicator-namespace-controller"
+	name := "k8s-replicator-namespace-controller"
 	r.recorder = mgr.GetEventRecorderFor(name)
 	if r.Client == nil {
 		r.Client = mgr.GetClient()

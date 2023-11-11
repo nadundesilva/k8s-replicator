@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	groupFqn = "replicator.nadundesilva.github.io"
+	groupFqn = "k8s-replicator.nadundesilva.github.io"
 
 	NamespaceTypeLabelKey          = groupFqn + "/namespace-type"
 	NamespaceTypeLabelValueIgnored = "ignored"

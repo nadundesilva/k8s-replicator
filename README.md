@@ -56,7 +56,7 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 Use the following label to mark the object to be replicated.
 
 ```properties
-replicator.nadundesilva.github.io/object-type=replicated
+k8s-replicator.nadundesilva.github.io/object-type=replicated
 ```
 
 All objects with the above label will replicated into all namespaces.
@@ -69,13 +69,13 @@ The following namespaces are ignored by default.
 - Namespaces with the name starting with `kube-` prefix
 - Namespaces with the label
   ```properties
-  replicator.nadundesilva.github.io/namespace-type=ignored
+  k8s-replicator.nadundesilva.github.io/namespace-type=ignored
   ```
 
 If you want to override this behavior and specifically replicate to a namespace, add the following label
 
 ```properties
-replicator.nadundesilva.github.io/namespace-type=managed
+k8s-replicator.nadundesilva.github.io/namespace-type=managed
 ```
 
 ### Examples
@@ -88,11 +88,11 @@ The folloing labels are used by the controller to track the replication of resou
 
 - The following label with the value `replica` is used to mark the replicated objects.
   ```properties
-  replicator.nadundesilva.github.io/object-type=replica
+  k8s-replicator.nadundesilva.github.io/object-type=replica
   ```
 - The following annotation is used to store a replicated resource's source namespace.
   ```properties
-  replicator.nadundesilva.github.io/source-namespace=<namespace>
+  k8s-replicator.nadundesilva.github.io/source-namespace=<namespace>
   ```
 
 ### How to Cleanup Operator

@@ -30,10 +30,10 @@ func generateSecretTestDatum() Resource {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("test-secret-%s", uuid.New().String()),
 				Labels: map[string]string{
-					"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					"e2e-tests.k8s-replicator.io/test-label-key": "test-label-value",
 				},
 				Annotations: map[string]string{
-					"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					"e2e-tests.k8s-replicator.io/test-annotation-key": "test-annotation-value",
 				},
 			},
 			Type: corev1.SecretTypeOpaque,
@@ -44,10 +44,10 @@ func generateSecretTestDatum() Resource {
 		SourceObjectUpdate: &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					"e2e-tests.k8s-replicator.io/test-label-key": "test-label-value",
 				},
 				Annotations: map[string]string{
-					"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					"e2e-tests.k8s-replicator.io/test-annotation-key": "test-annotation-value",
 				},
 			},
 			Type: corev1.SecretTypeOpaque,

@@ -4,4 +4,4 @@ Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSIO
 
 #### Changelog:
 
-- 
+- Change group name from `replicator.nadundesilva.github.io` to `k8s-replicator.nadundesilva.github.io`

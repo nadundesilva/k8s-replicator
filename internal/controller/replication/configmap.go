@@ -25,6 +25,11 @@ func newConfigMapReplicator() *configMapReplicator {
 
 type configMapReplicator struct{}
 
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=configmaps/finalizers,verbs=update
+//+kubebuilder:webhook:path=/validate-replicated-configmap,mutating=false,sideEffects=none,failurePolicy=fail,groups="",resources=configmaps,verbs=create;update,versions=v1,admissionReviewVersions=v1,name=k8s-replicator.nadundesilva.github.io
+
 func (r *configMapReplicator) GetKind() string {
 	return "ConfigMap"
 }

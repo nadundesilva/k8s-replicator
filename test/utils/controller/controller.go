@@ -38,9 +38,10 @@ import (
 
 const (
 	defaulControllerNamespace  = "k8s-replicator-system"
-	defaultTestNamespacePrefix = "replicator-e2e"
+	defaultTestNamespacePrefix = "k8s-replicator-e2e"
 	logLevelArgKey             = "-zap-log-level"
 	logDevelopmentModeFlag     = "-zap-devel"
+	disableValidationsEnvVar   = "DISABLE_VALIDATIONS"
 )
 
 var (
@@ -111,6 +112,21 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 
 			container.Image = common.GetControllerImage()
 			container.ImagePullPolicy = corev1.PullNever
+
+			foundDisableWebhookEnvVar := false
+			for _, env := range container.Env {
+				if env.Name == disableValidationsEnvVar {
+					env.Value = "true"
+					foundDisableWebhookEnvVar = true
+					break
+				}
+			}
+			if !foundDisableWebhookEnvVar {
+				container.Env = append(container.Env, corev1.EnvVar{
+					Name:  disableValidationsEnvVar,
+					Value: "true",
+				})
+			}
 
 			foundLogLevelArg := false
 			foundLogDevelopmentModeFlag := false
@@ -230,7 +246,7 @@ func startStreamingLogs(ctx context.Context, t *testing.T, cfg *envconf.Config, 
 			})
 			logReader, err := req.Stream(ctx)
 			if err != nil {
-				logsT.Logf("failed to stream logs from replicator (previous: %t, container: %s): %v", previous, container, err)
+				logsT.Logf("failed to stream logs from k8s replicator (previous: %t, container: %s): %v", previous, container, err)
 				return
 			}
 

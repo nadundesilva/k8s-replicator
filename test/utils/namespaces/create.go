@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	namespacePrefix = "replicator-e2e-ns"
+	namespacePrefix = "k8s-replicator-e2e-ns"
 )
 
 func CreateRandom(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CreateOption) (*corev1.Namespace, context.Context) {

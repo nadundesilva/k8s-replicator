@@ -42,7 +42,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		klog.Infof("failed to generate e2e test environment from flags: %+v", err)
 	}
-	kindClusterName := envconf.RandomName("replicator-e2e-tests-cluster", 32)
+	kindClusterName := envconf.RandomName("k8s-replicator-e2e-tests-cluster", 32)
 
 	cleanUpLogs := func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		err := os.RemoveAll(clusterLogsDir)

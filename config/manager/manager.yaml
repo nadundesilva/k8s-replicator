@@ -62,6 +62,8 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         securityContext:
+          runAsUser: 65532
+          runAsGroup: 65532
           allowPrivilegeEscalation: false
           capabilities:
             drop:

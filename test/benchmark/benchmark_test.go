@@ -51,7 +51,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		klog.Infof("failed to generate benchmark test environment from flags: %+v", err)
 	}
-	kindClusterName := envconf.RandomName("replicator-benchmark-tests-cluster", 32)
+	kindClusterName := envconf.RandomName("k8s-replicator-benchmark-tests-cluster", 32)
 
 	cleanUpLogs := func(ctx context.Context, c *envconf.Config) (context.Context, error) {
 		err := os.RemoveAll(clusterLogsDir)

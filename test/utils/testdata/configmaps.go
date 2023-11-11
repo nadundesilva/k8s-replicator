@@ -29,10 +29,10 @@ func generateConfigMapTestDatum() Resource {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: envconf.RandomName("test-config-map", 32),
 				Labels: map[string]string{
-					"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					"e2e-tests.k8s-replicator.io/test-label-key": "test-label-value",
 				},
 				Annotations: map[string]string{
-					"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					"e2e-tests.k8s-replicator.io/test-annotation-key": "test-annotation-value",
 				},
 			},
 			BinaryData: map[string][]byte{
@@ -42,10 +42,10 @@ func generateConfigMapTestDatum() Resource {
 		SourceObjectUpdate: &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: map[string]string{
-					"e2e-tests.replicator.io/test-label-key": "test-label-value",
+					"e2e-tests.k8s-replicator.io/test-label-key": "test-label-value",
 				},
 				Annotations: map[string]string{
-					"e2e-tests.replicator.io/test-annotation-key": "test-annotation-value",
+					"e2e-tests.k8s-replicator.io/test-annotation-key": "test-annotation-value",
 				},
 			},
 			BinaryData: map[string][]byte{
