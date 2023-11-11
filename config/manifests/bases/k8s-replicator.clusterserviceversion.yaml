@@ -41,5 +41,5 @@ spec:
   maturity: alpha
   provider:
     name: Nadun De Silva
-    url: https://nadundesilva.github.io/
+    url: https://nadundesilva.github.io
   version: 0.0.0

@@ -15,6 +15,7 @@ package controller
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -24,6 +25,7 @@ import (
 
 	"github.com/nadundesilva/k8s-replicator/test/utils/cleanup"
 	"github.com/nadundesilva/k8s-replicator/test/utils/common"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -31,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/e2e-framework/klient/k8s"
+	k8sResources "sigs.k8s.io/e2e-framework/klient/k8s/resources"
 	"sigs.k8s.io/e2e-framework/klient/wait"
 	"sigs.k8s.io/e2e-framework/klient/wait/conditions"
 	"sigs.k8s.io/e2e-framework/pkg/envconf"
@@ -41,7 +44,7 @@ const (
 	defaultTestNamespacePrefix = "k8s-replicator-e2e"
 	logLevelArgKey             = "-zap-log-level"
 	logDevelopmentModeFlag     = "-zap-devel"
-	disableValidationsEnvVar   = "DISABLE_VALIDATIONS"
+	enableWebhooksEnvVar       = "ENABLE_WEBHOOKS"
 )
 
 var (
@@ -113,18 +116,18 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 			container.Image = common.GetControllerImage()
 			container.ImagePullPolicy = corev1.PullNever
 
-			foundDisableWebhookEnvVar := false
+			foundEnableWebhooksEnvVar := false
 			for _, env := range container.Env {
-				if env.Name == disableValidationsEnvVar {
-					env.Value = "true"
-					foundDisableWebhookEnvVar = true
+				if env.Name == enableWebhooksEnvVar {
+					env.Value = "false"
+					foundEnableWebhooksEnvVar = true
 					break
 				}
 			}
-			if !foundDisableWebhookEnvVar {
+			if !foundEnableWebhooksEnvVar {
 				container.Env = append(container.Env, corev1.EnvVar{
-					Name:  disableValidationsEnvVar,
-					Value: "true",
+					Name:  enableWebhooksEnvVar,
+					Value: "false",
 				})
 			}
 
@@ -182,6 +185,10 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 			clusterrolebinding.Subjects = updateRoleBindingSubjects(clusterrolebinding.Subjects)
 			ctx = cleanup.AddControllerObjectToContext(ctx, t, resource)
 			t.Logf("creating controller cluster role binding %s", clusterrolebinding.GetName())
+		} else if mwc, ok := resource.(*admissionregistrationv1.MutatingWebhookConfiguration); ok {
+			// TODO: Properly setup webhook server for tests
+			t.Logf("ignoring mutating webhook configuration %s", mwc.GetName())
+			continue
 		} else {
 			t.Fatalf("unknown resource type found in controller kustomization files: %s", r.kind)
 		}
@@ -210,8 +217,38 @@ func SetupReplicator(ctx context.Context, t *testing.T, cfg *envconf.Config, opt
 		wait.WithInterval(time.Second),
 	)
 	if err != nil {
-		t.Fatalf("failed to wait for controller deployment to be ready: %v", err)
-		startStreamingLogs(ctx, t, cfg, controllerDeployment, "manager")
+		t.Errorf("failed to wait for controller deployment to be ready: %v", err)
+		client := cfg.Client().Resources(controllerDeployment.GetNamespace())
+
+		deploymentRuntimeObj := &appsv1.Deployment{}
+		err := client.Get(ctx, controllerDeployment.GetName(), controllerDeployment.GetNamespace(),
+			deploymentRuntimeObj)
+		if err == nil {
+			runtimePodList := &corev1.PodList{}
+			podSelector := k8sResources.WithLabelSelector(labels.FormatLabels(deploymentRuntimeObj.GetLabels()))
+			err = client.List(ctx, runtimePodList, podSelector)
+			if err == nil {
+				jsonBytes, err := json.MarshalIndent(runtimePodList, "", "\t")
+				if err == nil {
+					t.Logf("Pod Object List: %s", string(jsonBytes))
+				} else {
+					t.Errorf("failed to marshall the pod object list: %v", err)
+				}
+			} else {
+				t.Errorf("failed to get the controller pod objects: %v", err)
+
+				jsonBytes, err := json.MarshalIndent(deploymentRuntimeObj, "", "\t")
+				if err == nil {
+					t.Logf("Deployment Object: %s", string(jsonBytes))
+				} else {
+					t.Errorf("failed to marshall the deployment object: %v", err)
+				}
+			}
+		} else {
+			t.Errorf("failed to get the controller deployment object: %v", err)
+		}
+
+		startStreamingLogs(ctx, t, cfg, controllerDeployment, "manager").Wait()
 		t.FailNow()
 	}
 	t.Log("waiting for controller to startup complete")

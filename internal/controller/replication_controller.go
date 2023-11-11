@@ -112,14 +112,10 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	}
 }
 
-func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object client.Object) error {
-	err := r.iterateNamespaces(ctx, func(ns corev1.Namespace) error {
-		if ns.GetName() == object.GetNamespace() {
-			return nil
-		}
-
+func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, source client.Object) error {
+	err := r.iterateNamespaces(ctx, source, func(ns corev1.Namespace) error {
 		replica := r.Replicator.EmptyObject()
-		err := r.Get(ctx, client.ObjectKey{Namespace: ns.GetName(), Name: object.GetName()}, replica)
+		err := r.Get(ctx, client.ObjectKey{Namespace: ns.GetName(), Name: source.GetName()}, replica)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return nil
@@ -134,7 +130,7 @@ func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object 
 		if err != nil {
 			return err
 		}
-		r.recorder.Eventf(object, "Normal", SourceObjectDelete, "replica in namespace %s deleted", ns.GetName())
+		r.recorder.Eventf(source, "Normal", SourceObjectDelete, "replica in namespace %s deleted", ns.GetName())
 		return nil
 	})
 	if err != nil {
@@ -145,23 +141,21 @@ func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object 
 }
 
 func (r *ReplicationReconciler) handleSourceUpdate(ctx context.Context, source client.Object) error {
-	err := addFinalizer(ctx, r.Client, source, r.Replicator)Z
+	err := addFinalizer(ctx, r.Client, source, r.Replicator)
 	if err != nil {
 		return err
 	}
 
-	err = r.iterateNamespaces(ctx, func(ns corev1.Namespace) error {
-		if ns.GetName() == object.GetNamespace() {
-			return nil
-		}
-
+	err = r.iterateNamespaces(ctx, source, func(ns corev1.Namespace) error {
 		log.FromContext(ctx).V(1).Info("Creating/Updating replica", "replicaNamespace", ns.GetName())
-		return replicateObject(ctx, r.Client, r.recorder, ns.GetName(), object, r.Replicator)
+		return replicateObject(ctx, r.Client, r.recorder, ns.GetName(), source, r.Replicator)
 	})
 	return err
 }
 
-func (r *ReplicationReconciler) iterateNamespaces(ctx context.Context, handler func(ns corev1.Namespace) error) error {
+func (r *ReplicationReconciler) iterateNamespaces(ctx context.Context, source client.Object, handler func(ns corev1.Namespace) error) error {
+	// TODO: Limit target namespaces based on the annotations
+
 	namespaceList := &corev1.NamespaceList{}
 	err := r.List(ctx, namespaceList, &client.ListOptions{
 		LabelSelector: namespaceSelector,
@@ -172,7 +166,7 @@ func (r *ReplicationReconciler) iterateNamespaces(ctx context.Context, handler f
 
 	errs := []error{}
 	for _, ns := range namespaceList.Items {
-		if isNamespaceIgnored(&ns) || ns.GetDeletionTimestamp() != nil {
+		if isNamespaceIgnored(&ns) || ns.GetDeletionTimestamp() != nil || ns.GetName() == source.GetNamespace() {
 			continue
 		}
 

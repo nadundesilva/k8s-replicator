@@ -8,7 +8,7 @@
 [![Docker Image](https://img.shields.io/docker/image-size/nadunrds/k8s-replicator/latest?style=flat-square)](https://hub.docker.com/r/nadunrds/k8s-replicator)
 [![Docker Pulls](https://img.shields.io/docker/pulls/nadunrds/k8s-replicator?style=flat-square)](https://hub.docker.com/r/nadunrds/k8s-replicator)
 
-Replicator supports copying kubernetes resources across namespaces. This controller was written keeping extensibility and [performance](./BENCHMARK.md) in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
+Replicator supports copying kubernetes objects across namespaces. This controller was written keeping extensibility and [performance](./BENCHMARK.md) in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the K8s replicator.
 
 - Secrets
 - Config Maps
@@ -59,15 +59,48 @@ Use the following label to mark the object to be replicated.
 k8s-replicator.nadundesilva.github.io/object-type=replicated
 ```
 
-All objects with the above label will replicated into all namespaces.
+All objects with the above label will be replicated into all namespaces. You can configure the replication behavior using the below annotations (You still need to add the above label to mark them as objects that should be replicated).
+
+* `k8s-replicator.nadundesilva.github.io/replicated-to`
+
+  By default, if this annotation is not present, the replicated objects will be replicated to all namespaces that are
+  not ignored. By using this annotation, you can specify a list of comma-separated namespaces to which the object will
+  be replicated. If the value is an empty string (`""`), the object will not be replicated at all.
+
+* `k8s-replicator.nadundesilva.github.io/replicated-to-matching`
+
+  This has the same behavior as the `k8s-replicator.nadundesilva.github.io/replicated-to` annotation. However, the value
+  of this annotation should be a valid labels selector
+  (either [equality-based](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#equality-based-requirement)
+  or [set-based](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#set-based-requirement)).
+
+* `k8s-replicator.nadundesilva.github.io/strip-labels`
+
+  This annotation can be used to strip any labels that you wish to not be present in the replicas. By specifying a
+  comma-separated list of label keys, you can remove those labels from the replicas. If the label that you specified
+  is not present in the source object, it will not have any impact.  The values in this annotation cannot include
+  any of the labels owned by this operator as they will be added and removed properly as deemed fit by the Operator.
+
+* `k8s-replicator.nadundesilva.github.io/strip-annotations`
+
+  Similar to the `k8s-replicator.nadundesilva.github.io/strip-labels` annotation, this can be used to remove any
+  unwanted annotations. A comma-separated list of annotation keys should be specified as the value and if they are
+  not present in the source object, it will not take any action for the missing annotations. The values in this
+  annotation cannot include any of the annotations owned by this operator as they will be added and removed properly
+  as deemed fit by the Operator.
+
+* `k8s-replicator.nadundesilva.github.io/preserve-owner-reference`
+
+  By default, the Operator will not copy any owner references in the source object. By using this annotation,
+  you can copy the owner references as well into the replicas.
 
 #### Ignored namespaces
 
 The following namespaces are ignored by default.
 
-- The namespace in which controller resides
-- Namespaces with the name starting with `kube-` prefix
-- Namespaces with the label
+* The namespace in which controller resides
+* Namespaces with the name starting with `kube-` prefix
+* Namespaces with the ignored label
   ```properties
   k8s-replicator.nadundesilva.github.io/namespace-type=ignored
   ```
@@ -78,19 +111,21 @@ If you want to override this behavior and specifically replicate to a namespace,
 k8s-replicator.nadundesilva.github.io/namespace-type=managed
 ```
 
+`k8s-replicator.nadundesilva.github.io/namespace-type` label has higher priority over all other labels. If a namespace is ignored, any objects of type replicated in the namespace will not be replicated, and no replicas will be created in them.
+
 ### Examples
 
 Examples for the CRDs used by the Operator can be found in the [samples](./config/samples) directory.
 
 ### Additional labels/annotations used by the controller
 
-The folloing labels are used by the controller to track the replication of resources.
+The folloing labels are used by the controller to track the replication of objects.
 
-- The following label with the value `replica` is used to mark the replicated objects.
+* The following label with the value `replica` is used to mark the replicated objects.
   ```properties
   k8s-replicator.nadundesilva.github.io/object-type=replica
   ```
-- The following annotation is used to store a replicated resource's source namespace.
+* The following annotation is used to store a replica's source namespace.
   ```properties
   k8s-replicator.nadundesilva.github.io/source-namespace=<namespace>
   ```

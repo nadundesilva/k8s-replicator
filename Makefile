@@ -117,7 +117,7 @@ test: test.unit test.e2e test.benchmark
 
 .PHONY: test.unit
 test.unit: manifests generate envtest
-	DISABLE_VALIDATIONS=true KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./internal/controllers/... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./internal/controllers/... -coverprofile cover.out
 
 .PHONY: test.e2e
 test.e2e:
@@ -145,7 +145,10 @@ build: manifests generate fmt vet ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	DISABLE_VALIDATIONS=true go run ./cmd/main.go -zap-devel -zap-log-level=100
+	rm -rf $(OPERATOR_KEY_DIR)
+	mkdir -p $(OPERATOR_KEY_DIR)
+	openssl req -x509 -newkey rsa:4096 -keyout $(OPERATOR_KEY_DIR)/tls.key -out $(OPERATOR_KEY_DIR)/tls.crt -sha256 -days 30 -nodes -subj "/O=nadundesilva/OU=kubernetes/CN=k8s-replicator"
+	go run ./main.go -zap-devel -zap-log-level=100
 
 # If you wish to build the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.

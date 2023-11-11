@@ -23,8 +23,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
@@ -45,8 +43,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
@@ -125,8 +121,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
@@ -142,8 +136,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
@@ -171,8 +163,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
@@ -193,8 +183,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
@@ -249,8 +237,6 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:

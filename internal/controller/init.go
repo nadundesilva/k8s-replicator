@@ -32,8 +32,13 @@ const (
 	objectTypeLabelValueReplicated = "replicated"
 	objectTypeLabelValueReplica    = "replica"
 
-	resourceFinalizer = groupFqn + "/finalizer"
+	replicatedToAnnotationKey           = groupFqn + "/replicated-to"
+	replicatedToMatchingAnnotationKey   = groupFqn + "/replicated-to-matching"
+	stripLabelsAnnotationKey            = groupFqn + "/strip-labels"
+	stripAnnotationsAnnotationKey       = groupFqn + "/strip-annotations"
+	preserveOwnerReferenceAnnotationKey = groupFqn + "/preserve-owner-reference"
 
+	resourceFinalizer            = groupFqn + "/finalizer"
 	sourceNamespaceAnnotationKey = groupFqn + "/source-namespace"
 
 	SourceObjectCreate = "SourceObjectCreate"

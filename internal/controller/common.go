@@ -56,9 +56,9 @@ func newManagerOptions(mgr ctrl.Manager, name string, kind string) ctrlControlle
 }
 
 func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder record.EventRecorder,
-	ns string, sourceObject client.Object, replicator replication.Replicator) error {
+	replicaNamespace string, sourceObject client.Object, replicator replication.Replicator) error {
 	clonedObject := replicator.EmptyObject()
-	clonedObject.SetNamespace(ns)
+	clonedObject.SetNamespace(replicaNamespace)
 	clonedObject.SetName(sourceObject.GetName())
 
 	result, err := ctrl.CreateOrUpdate(ctx, k8sClient, clonedObject, func() error {
@@ -89,13 +89,14 @@ func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to replicate resource to namespace %v: %+w", ns, err)
+		return fmt.Errorf("failed to replicate resource %s/%s to namespace %s: %+w", sourceObject.GetNamespace(),
+			sourceObject.GetName(), replicaNamespace, err)
 	}
 	switch result {
 	case controllerutil.OperationResultCreated:
-		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectCreate, "replica in namespace %s created", ns)
+		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectCreate, "replica in namespace %s created", replicaNamespace)
 	case controllerutil.OperationResultUpdated:
-		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectUpdate, "replica in namespace %s updated", ns)
+		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectUpdate, "replica in namespace %s updated", replicaNamespace)
 	}
 
 	err = addFinalizer(ctx, k8sClient, clonedObject, replicator)

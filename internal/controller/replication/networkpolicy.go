@@ -28,7 +28,7 @@ type networkPolicyReplicator struct{}
 //+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies/finalizers,verbs=update
-//+kubebuilder:webhook:path=/validate-replicated-networkpolicy,mutating=false,sideEffects=none,failurePolicy=fail,groups="networking.k8s.io",resources=networkpolicies,verbs=create;update,versions=v1,admissionReviewVersions=v1,name=k8s-replicator.nadundesilva.github.io
+//+kubebuilder:webhook:path=/mutate-replicated-networking-k8s-io-v1-networkpolicy,mutating=true,sideEffects=none,failurePolicy=fail,groups="networking.k8s.io",resources=networkpolicies,verbs=create;update,versions=v1,admissionReviewVersions=v1,name=k8s-replicator.nadundesilva.github.io
 
 func (r *networkPolicyReplicator) GetKind() string {
 	return "NetworkPolicy"

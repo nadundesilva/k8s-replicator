@@ -1,9 +1,9 @@
 ---
 apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
+kind: MutatingWebhookConfiguration
 metadata:
   creationTimestamp: null
-  name: validating-webhook-configuration
+  name: mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
@@ -11,7 +11,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-replicated-configmap
+      path: /mutate-replicated-core-v1-configmap
   failurePolicy: Fail
   name: k8s-replicator.nadundesilva.github.io
   rules:
@@ -31,7 +31,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-replicated-networkpolicy
+      path: /mutate-replicated-networking-k8s-io-v1-networkpolicy
   failurePolicy: Fail
   name: k8s-replicator.nadundesilva.github.io
   rules:
@@ -51,7 +51,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-replicated-secret
+      path: /mutate-replicated-core-v1-secret
   failurePolicy: Fail
   name: k8s-replicator.nadundesilva.github.io
   rules:
