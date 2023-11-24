@@ -22,7 +22,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apitypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -96,15 +98,15 @@ func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder
 		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectUpdate, "replica in namespace %s updated", ns)
 	}
 
-	err = addFinalizer(ctx, k8sClient, clonedObject)
+	err = addFinalizer(ctx, k8sClient, clonedObject, replicator)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func deleteObject(ctx context.Context, k8sClient client.Client, object client.Object) error {
-	err := removeFinalizer(ctx, k8sClient, object)
+func deleteObject(ctx context.Context, k8sClient client.Client, object client.Object, replicator replication.Replicator) error {
+	err := removeFinalizer(ctx, k8sClient, object, replicator)
 	if err != nil {
 		return err
 	}
@@ -123,23 +125,57 @@ func deleteObject(ctx context.Context, k8sClient client.Client, object client.Ob
 	return nil
 }
 
-func addFinalizer(ctx context.Context, k8sClient client.Client, object client.Object) error {
-	if !controllerutil.ContainsFinalizer(object, resourceFinalizer) {
-		controllerutil.AddFinalizer(object, resourceFinalizer)
-		err := k8sClient.Update(ctx, object)
-		if err != nil {
-			return fmt.Errorf("failed to add finalizer: %+w", err)
+func addFinalizer(ctx context.Context, k8sClient client.Client, object client.Object, r replication.Replicator) error {
+	name := apitypes.NamespacedName{
+		Namespace: object.GetNamespace(),
+		Name:      object.GetName(),
+	}
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		obj := r.EmptyObject()
+		if err := k8sClient.Get(ctx, name, obj); err != nil {
+			return err
 		}
+
+		if !controllerutil.ContainsFinalizer(obj, resourceFinalizer) {
+			controllerutil.AddFinalizer(obj, resourceFinalizer)
+			err := k8sClient.Update(ctx, obj)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to add finalizer: %+w", err)
 	}
 	return nil
 }
 
-func removeFinalizer(ctx context.Context, k8sClient client.Client, object client.Object) error {
-	if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
-		controllerutil.RemoveFinalizer(object, resourceFinalizer)
-		err := k8sClient.Update(ctx, object)
-		if err != nil {
+func removeFinalizer(ctx context.Context, k8sClient client.Client, object client.Object, r replication.Replicator) error {
+	name := apitypes.NamespacedName{
+		Namespace: object.GetNamespace(),
+		Name:      object.GetName(),
+	}
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		obj := r.EmptyObject()
+		if err := k8sClient.Get(ctx, name, obj); err != nil {
 			return err
+		}
+
+		if controllerutil.ContainsFinalizer(obj, resourceFinalizer) {
+			controllerutil.RemoveFinalizer(obj, resourceFinalizer)
+			err := k8sClient.Update(ctx, obj)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		} else {
+			return fmt.Errorf("failed to remove finalizer: %+w", err)
 		}
 	}
 	return nil

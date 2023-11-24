@@ -85,10 +85,10 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				"sourceStatus", sourceStatus)
 			if isObjectDeleted {
 				logger.V(1).Info("Removing finalizer from replica")
-				return ctrl.Result{}, removeFinalizer(ctx, r.Client, object)
+				return ctrl.Result{}, removeFinalizer(ctx, r.Client, object, r.Replicator)
 			} else {
 				logger.V(1).Info("Deleting replica")
-				return ctrl.Result{}, deleteObject(ctx, r.Client, object)
+				return ctrl.Result{}, deleteObject(ctx, r.Client, object, r.Replicator)
 			}
 		}
 		return ctrl.Result{}, nil
@@ -130,7 +130,7 @@ func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object 
 
 		log.FromContext(ctx).V(1).Info("Deleting replica", "replicaNamespace", ns.GetName(),
 			"reason", "source object deleted")
-		err = deleteObject(ctx, r.Client, replica)
+		err = deleteObject(ctx, r.Client, replica, r.Replicator)
 		if err != nil {
 			return err
 		}
@@ -141,11 +141,11 @@ func (r *ReplicationReconciler) handleSourceRemoval(ctx context.Context, object 
 		return fmt.Errorf("failed to finalize source object: %+w", err)
 	}
 
-	return removeFinalizer(ctx, r.Client, object)
+	return removeFinalizer(ctx, r.Client, source, r.Replicator)
 }
 
-func (r *ReplicationReconciler) handleSourceUpdate(ctx context.Context, object client.Object) error {
-	err := addFinalizer(ctx, r.Client, object)
+func (r *ReplicationReconciler) handleSourceUpdate(ctx context.Context, source client.Object) error {
+	err := addFinalizer(ctx, r.Client, source, r.Replicator)Z
 	if err != nil {
 		return err
 	}
