@@ -54,7 +54,10 @@ func TestMain(m *testing.M) {
 	kindClusterName := envconf.RandomName("replicator-benchmark-tests-cluster", 32)
 
 	cleanUpLogs := func(ctx context.Context, c *envconf.Config) (context.Context, error) {
-		os.RemoveAll(clusterLogsDir)
+		err := os.RemoveAll(clusterLogsDir)
+		if err != nil {
+			return nil, err
+		}
 		return ctx, nil
 	}
 

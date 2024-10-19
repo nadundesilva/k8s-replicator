@@ -64,7 +64,8 @@ func addObjectToContext(ctx context.Context, t *testing.T, object k8s.Object, co
 		objects.clusterRoleBindings.Items = append(objects.clusterRoleBindings.Items, *clusterrolebinding)
 		objectType = "cluster role binding"
 	} else {
-		objectType, objectTypeOk := object.GetLabels()[common.ObjectTypeLabelKey]
+		var objectTypeOk bool
+		objectType, objectTypeOk = object.GetLabels()[common.ObjectTypeLabelKey]
 		if objectTypeOk && objectType == common.ObjectTypeLabelValueReplicated {
 			objects.managedObjects = append(objects.managedObjects, object)
 			version := object.GetObjectKind().GroupVersionKind()

@@ -132,7 +132,7 @@ type Replicator interface {
 
 The K8s Replicator core uses the methods defined in this interface to get, list, and replicate resources to namespaces. The methods are carefully chosen to ensure that the minimum set of functionalities are defined for each resource separately keeping most of the logic reusable in the Operator core.
 
-You can check the [existing implementations](./controllers/replication/) of `Replicator` to get an idea of what needs to be done. However, you need to build the Operator from the source to get the new `Replicator` up and running. That being said, if you wish to contribute new resource replicators, you are most welcome.
+You can check the [existing implementations](./internal/controller/replication/) of `Replicator` to get an idea of what needs to be done. However, you need to build the Operator from the source to get the new `Replicator` up and running. That being said, if you wish to contribute new resource replicators, you are most welcome.
 
 ## Support
 

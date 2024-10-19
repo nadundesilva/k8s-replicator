@@ -25,7 +25,7 @@ type beEquivalentToResourceMatcher struct {
 }
 
 func (m *beEquivalentToResourceMatcher) Match(actual interface{}) (success bool, err error) {
-	return m.matcher(actual.(client.Object), m.BeEquivalentToMatcher.Expected.(client.Object)), nil
+	return m.matcher(actual.(client.Object), m.Expected.(client.Object)), nil
 }
 
 func BeEquivalentToResource(expected interface{}, matcher validation.ObjectMatcher) types.GomegaMatcher {

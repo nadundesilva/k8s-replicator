@@ -16,7 +16,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nadundesilva/k8s-replicator/controllers/replication"
+	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -63,7 +63,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, fmt.Errorf("failed to get namespace being reconciled: %+w", err)
 		}
 	}
-	namespaceName := req.NamespacedName.Name
+	namespaceName := req.Name
 
 	isNamespaceDeleted = isNamespaceDeleted || namespace.GetDeletionTimestamp() != nil
 	isNamespaceIgnored := isNamespaceIgnored(namespace)

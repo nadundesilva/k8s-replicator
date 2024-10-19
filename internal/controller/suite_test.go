@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nadundesilva/k8s-replicator/controllers/replication"
+	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -111,7 +111,7 @@ var _ = AfterSuite(func() {
 
 	var err error
 	stopAttemptStartTime := time.Now()
-	for true {
+	for {
 		err = testEnv.Stop()
 		if err != nil && time.Since(stopAttemptStartTime) < time.Minute {
 			time.Sleep(5 * time.Second)
