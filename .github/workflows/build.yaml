@@ -26,9 +26,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Generate code
               run: make generate manifests
             - name: Check for changes
@@ -48,11 +48,13 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Vet Code
               run: make vet
+            - name: Lint Code
+              run: make lint
             - name: Check Code Format
               run: |
                   make fmt
@@ -66,7 +68,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Validate Bundle
@@ -85,13 +87,17 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Lint Code Base
-              uses: github/super-linter@v4
+              uses: super-linter/super-linter@v7
               env:
                   DEFAULT_BRANCH: main
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
+                  VALIDATE_CHECKOV: "false"
                   VALIDATE_GO: "false"
+                  VALIDATE_GO_MODULES: "false"
+                  VALIDATE_YAML_PRETTIER: "false"
                   VALIDATE_KUBERNETES_KUBEVAL: "false"
+                  VALIDATE_KUBERNETES_KUBECONFORM: "false"
                   KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
     run-codeql-analysis:
@@ -107,13 +113,13 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
             - name: Initialize CodeQL
-              uses: github/codeql-action/init@v2
+              uses: github/codeql-action/init@v3
               with:
                   languages: go
             - name: Autobuild
-              uses: github/codeql-action/autobuild@v2
+              uses: github/codeql-action/autobuild@v3
             - name: Perform CodeQL Analysis
-              uses: github/codeql-action/analyze@v2
+              uses: github/codeql-action/analyze@v3
 
     run-unit-tests:
         name: Run Unit Tests
@@ -124,9 +130,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Run Unit Tests
               run: make test.unit
 
@@ -141,9 +147,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Run Benchmark Tests
               run: make test.benchmark
               env:
@@ -170,9 +176,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Run E2E Tests
               run: make test.e2e
               env:
@@ -192,9 +198,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Setup Kind
               run: |
                 go get sigs.k8s.io/kind
@@ -248,14 +254,19 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
+            - name: Sanitize Docker Image Tag
+              env:
+                  BRANCH_NAME: ${{ inputs.docker-image-tag }}
+              run: |
+                  echo "DOCKER_IMAGE_TAG=${BRANCH_NAME/\//-}" >> "${GITHUB_ENV}"
             - name: Generate code
               run: make generate manifests bundle
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
+                  IMG: "nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}"
             - name: Setup QEMU
               uses: docker/setup-qemu-action@v3
             - name: Setup Docker Buildx
@@ -271,11 +282,11 @@ jobs:
             - name: Building Controller
               run: make docker-build
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
+                  IMG: "nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}"
             - name: Run Trivy vulnerability scanner on Controller
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}
+                  image-ref: nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -283,11 +294,11 @@ jobs:
             - name: Building Controller Bundle
               run: make bundle-build
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}"
             - name: Run Trivy vulnerability scanner on Controller Bundle
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}
+                  image-ref: nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -302,12 +313,12 @@ jobs:
               if: ${{ inputs.publish-snapshots == true }}
               run: make docker-buildx
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ inputs.docker-image-tag }}"
+                  IMG: "nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}"
             - name: Pushing Controller Bundle
               if: ${{ inputs.publish-snapshots == true }}
               run: make bundle-push
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ inputs.docker-image-tag }}"
+                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}"
 
     validate-multi-architecture-bundle:
         name: Validate Bundle Multi Architecture Support
@@ -317,12 +328,12 @@ jobs:
             - build-operator
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 0
             - name: Validate Bundle
               run: |
                 make bundle
-                ./bin/operator-sdk bundle validate docker.io/nadunrds/k8s-replicator-bundle:${{ github.ref_name }} \
+                ./bin/operator-sdk bundle validate docker.io/nadunrds/k8s-replicator-bundle:${{ github.sha }} \
                   --image-builder none \
                   --select-optional name=multiarch

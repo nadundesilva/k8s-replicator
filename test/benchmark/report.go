@@ -59,11 +59,11 @@ func (r Report) export() error {
 	sort.Sort(r.namespace)
 	sort.Sort(r.resource)
 
-	formattedJson, err := json.MarshalIndent(r, "", "\t")
+	formattedJSON, err := json.MarshalIndent(r, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to format test report into json: %w", err)
 	}
-	fmt.Printf("Benchmark Results: %s", formattedJson)
+	fmt.Printf("Benchmark Results: %s", formattedJSON)
 
 	return r.generateMarkdownReport()
 }

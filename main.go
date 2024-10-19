@@ -95,14 +95,14 @@ func main() {
 	}
 
 	for _, replicator := range replicators {
-		if err = (&controllers.ReplicationReconciler{
+		if err = (&controller.ReplicationReconciler{
 			Replicator: replicator,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "kind", replicator.GetKind())
 			os.Exit(1)
 		}
 	}
-	if err = (&controllers.NamespaceReconciler{
+	if err = (&controller.NamespaceReconciler{
 		Replicators: replicators,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "kind", "Namepsace")

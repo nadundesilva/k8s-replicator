@@ -17,14 +17,14 @@ import (
 	"time"
 )
 
-type CleanupOptions struct {
+type cleanupOptions struct {
 	timeout time.Duration
 }
 
-type CleanupOption func(*CleanupOptions)
+type cleanupOption func(*cleanupOptions)
 
-func WithTimeout(timeout time.Duration) CleanupOption {
-	return func(options *CleanupOptions) {
+func WithTimeout(timeout time.Duration) cleanupOption {
+	return func(options *cleanupOptions) {
 		options.timeout = timeout
 	}
 }

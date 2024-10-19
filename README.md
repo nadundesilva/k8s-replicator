@@ -10,19 +10,21 @@
 
 Replicator supports copying kubernetes resources across namespaces. This controller was written keeping extensibility and [performance](./BENCHMARK.md) in mind. Therefore, it can be extended to any other resource as needed. The following resources are supported by the Kubernetes replicator.
 
-* Secrets
-* Config Maps
-* Network Policies
+- Secrets
+- Config Maps
+- Network Policies
 
 ## How to Use
 
 ### Prerequisites
 
 The following tools are expected to be installed and ready.
+
 - Kubectl
 - Operator SDK
 
 The following tools can be either installed on your own or let the installation scripts handle it.
+
 - OLM to be installed in the cluster
   OLM can be installed using the [operator-sdk](https://sdk.operatorframework.io/docs/installation/)
   ```bash
@@ -42,8 +44,8 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 
 #### Manual Installation
 
-* Make sure all the pre-requisites are installed (including the dependencies which are normally installed by the installation scripts)
-* Install the Operator Bundle using the Operator SDK. The `<VERSION>` should be replaced with the release version
+- Make sure all the pre-requisites are installed (including the dependencies which are normally installed by the installation scripts)
+- Install the Operator Bundle using the Operator SDK. The `<VERSION>` should be replaced with the release version
   to be used (eg:- `0.1.0`) and kubectl CLI should be configured pointing to the cluster in which the controller needs to be started.
   ```bash
   operator-sdk run bundle docker.io/nadunrds/k8s-replicator-bundle:<VERSION>
@@ -63,9 +65,9 @@ All objects with the above label will replicated into all namespaces.
 
 The following namespaces are ignored by default.
 
-* The namespace in which controller resides
-* Namespaces with the name starting with `kube-` prefix
-* Namespaces with the label
+- The namespace in which controller resides
+- Namespaces with the name starting with `kube-` prefix
+- Namespaces with the label
   ```properties
   replicator.nadundesilva.github.io/namespace-type=ignored
   ```
@@ -84,11 +86,11 @@ Examples for the CRDs used by the Operator can be found in the [samples](./confi
 
 The folloing labels are used by the controller to track the replication of resources.
 
-* The following label with the value `replica` is used to mark the replicated objects.
+- The following label with the value `replica` is used to mark the replicated objects.
   ```properties
   replicator.nadundesilva.github.io/object-type=replica
   ```
-* The following annotation is used to store a replicated resource's source namespace.
+- The following annotation is used to store a replicated resource's source namespace.
   ```properties
   replicator.nadundesilva.github.io/source-namespace=<namespace>
   ```

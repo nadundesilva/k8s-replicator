@@ -24,9 +24,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Run E2E Tests
               run: make test.e2e
               env:
@@ -75,9 +75,9 @@ jobs:
               with:
                   fetch-depth: 0
             - name: Setup GoLang
-              uses: actions/setup-go@v4
+              uses: actions/setup-go@v5
               with:
-                  go-version: "^1.21"
+                  go-version: "1.24.6"
             - name: Run Unit Tests
               run: make test.unit
             - name: Generate code

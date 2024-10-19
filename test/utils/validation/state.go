@@ -76,17 +76,17 @@ func printState(ctx context.Context, t *testing.T, cfg *envconf.Config, sourceOb
 		}
 	}
 
-	formattedJson, err := json.MarshalIndent(namespaceData, "", "\t")
+	formattedJSON, err := json.MarshalIndent(namespaceData, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to format namespace data into json: %w", err)
 	}
-	t.Logf("namespaces: %s", formattedJson)
+	t.Logf("namespaces: %s", formattedJSON)
 
-	formattedJson, err = json.MarshalIndent(objectData, "", "\t")
+	formattedJSON, err = json.MarshalIndent(objectData, "", "\t")
 	if err != nil {
 		return fmt.Errorf("failed to format object data into json: %w", err)
 	}
-	t.Logf("objects: %s", formattedJson)
+	t.Logf("objects: %s", formattedJSON)
 
 	return nil
 }
