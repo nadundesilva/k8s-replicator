@@ -92,8 +92,12 @@ jobs:
                   DEFAULT_BRANCH: main
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   VALIDATE_ALL_CODEBASE: "true"
+                  VALIDATE_CHECKOV: "false"
                   VALIDATE_GO: "false"
+                  VALIDATE_GO_MODULES: "false"
+                  VALIDATE_YAML_PRETTIER: "false"
                   VALIDATE_KUBERNETES_KUBEVAL: "false"
+                  VALIDATE_KUBERNETES_KUBECONFORM: "false"
                   KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
     run-codeql-analysis:

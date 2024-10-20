@@ -31,17 +31,17 @@ func CleanTestObjects(ctx context.Context, t *testing.T, cfg *envconf.Config) co
 	return CleanTestObjectsWithOptions(ctx, t, cfg)
 }
 
-func CleanTestObjectsWithOptions(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...CleanupOption) context.Context {
+func CleanTestObjectsWithOptions(ctx context.Context, t *testing.T, cfg *envconf.Config, options ...cleanupOption) context.Context {
 	ctx = cleanObjects(ctx, t, cfg, testObjectsContextKey{}, options...)
 	ctx = cleanObjects(ctx, t, cfg, testControllerObjectsContextKey{}, options...)
 	common.GetControllerLogsWaitGroup(ctx).Wait()
 	return ctx
 }
 
-func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey any, options ...CleanupOption) context.Context {
+func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contextKey any, options ...cleanupOption) context.Context {
 	ctxValue := ctx.Value(contextKey)
 	if ctxValue != nil {
-		opts := &CleanupOptions{
+		opts := &cleanupOptions{
 			timeout: time.Minute,
 		}
 		for _, option := range options {
@@ -105,16 +105,16 @@ func cleanObjects(ctx context.Context, t *testing.T, cfg *envconf.Config, contex
 			t.Logf("waiting for replicas of managed test object %s/%s to delete complete", clonedObj.GetNamespace(), clonedObj.GetName())
 		}
 
-		for _, obj := range objects.namespaces.Items {
-			deleteObjs(&obj, "namespace")
+		for i := range objects.namespaces.Items {
+			deleteObjs(&objects.namespaces.Items[i], "namespace")
 		}
 		waitForDeleteObjs(&objects.namespaces, "namespace")
 
-		for _, obj := range objects.clusterRoles.Items {
-			deleteObjs(&obj, "cluster role")
+		for i := range objects.clusterRoles.Items {
+			deleteObjs(&objects.clusterRoles.Items[i], "cluster role")
 		}
-		for _, obj := range objects.clusterRoleBindings.Items {
-			deleteObjs(&obj, "cluster role binding")
+		for i := range objects.clusterRoleBindings.Items {
+			deleteObjs(&objects.clusterRoleBindings.Items[i], "cluster role binding")
 		}
 		waitForDeleteObjs(&objects.clusterRoles, "cluster role")
 		waitForDeleteObjs(&objects.clusterRoleBindings, "cluster role binding")

@@ -25,7 +25,7 @@ import (
 
 func generateSecretTestDatum() Resource {
 	return process(resourceData{
-		Name:       "Secret",
+		Name: "Secret",
 		SourceObject: &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("test-secret-%s", uuid.New().String()),
@@ -55,7 +55,7 @@ func generateSecretTestDatum() Resource {
 				"secret-data-item-two-key": []byte(base64.StdEncoding.EncodeToString([]byte("secret-data-item-two-value"))),
 			},
 		},
-		EmptyObject: &corev1.Secret{},
+		EmptyObject:     &corev1.Secret{},
 		EmptyObjectList: &corev1.SecretList{},
 		IsEqual: func(sourceObject client.Object, replicaObject client.Object) bool {
 			sourceSecret := sourceObject.(*corev1.Secret)

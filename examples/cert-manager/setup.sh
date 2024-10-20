@@ -12,61 +12,61 @@
 set -e
 
 ensure_dependencies() {
-    missingRequirements=()
-    declare -A requirements=(
-        [helm]="sudo snap install helm --classic"
-    )
+	missingRequirements=()
+	declare -A requirements=(
+		[helm]="sudo snap install helm --classic"
+	)
 
-    echo "🔎 Making sure all dependencies are installed"
-    set +e
-    for executable in "${!requirements[@]}"; do
-        installation=$(which "${executable}")
-        if [ -z "${installation}" ]; then
-            echo "❓ ${executable} not found"
-            missingRequirements+=("${executable}")
-        else
-            echo "✅ ${executable} installation detected: ${installation}"
-        fi
-    done
-    set -e
+	echo "🔎 Making sure all dependencies are installed"
+	set +e
+	for executable in "${!requirements[@]}"; do
+		installation=$(which "${executable}")
+		if [ -z "${installation}" ]; then
+			echo "❓ ${executable} not found"
+			missingRequirements+=("${executable}")
+		else
+			echo "✅ ${executable} installation detected: ${installation}"
+		fi
+	done
+	set -e
 
-    if [ "${#missingRequirements[@]}" != "0" ]; then
-        echo
-        echo -n "🤔 Missing dependencies found. Would you like to install them automatically ? (Y/n): "
-        read -r shouldInstallRequirements
-        shouldInstallRequirements=${shouldInstallRequirements:-"y"}
-        shouldInstallRequirements="$(tr "[:upper:]" "[:lower:]" <<< "${shouldInstallRequirements}")"
+	if [ "${#missingRequirements[@]}" != "0" ]; then
+		echo
+		echo -n "🤔 Missing dependencies found. Would you like to install them automatically ? (Y/n): "
+		read -r shouldInstallRequirements
+		shouldInstallRequirements=${shouldInstallRequirements:-"y"}
+		shouldInstallRequirements="$(tr "[:upper:]" "[:lower:]" <<<"${shouldInstallRequirements}")"
 
-        if [ "${shouldInstallRequirements}" = "y" ]; then
-            echo
-            echo "🚜 Installing dependencies"
-            for requirement in "${missingRequirements[@]}"; do
-                echo "🔨 Installing dependency \"${requirement}\""
-                bash -c "${requirements[${requirement}]}"
-            done
-        elif [ "${shouldInstallRequirements}" == "n" ]; then
-            echo "🛑 Exiting since there are missing dependencies. Please install them and retry again"
-            exit 1
-        else
-            echo "💥 Unknown input (${shouldInstallRequirements}). Expected one of \"y\" or \"n\""
-        fi
-    else
-        echo "✅ All dependencies are already available"
-    fi
+		if [ "${shouldInstallRequirements}" = "y" ]; then
+			echo
+			echo "🚜 Installing dependencies"
+			for requirement in "${missingRequirements[@]}"; do
+				echo "🔨 Installing dependency \"${requirement}\""
+				bash -c "${requirements[${requirement}]}"
+			done
+		elif [ "${shouldInstallRequirements}" == "n" ]; then
+			echo "🛑 Exiting since there are missing dependencies. Please install them and retry again"
+			exit 1
+		else
+			echo "💥 Unknown input (${shouldInstallRequirements}). Expected one of \"y\" or \"n\""
+		fi
+	else
+		echo "✅ All dependencies are already available"
+	fi
 }
 
 setup_cert_manager() {
-    echo "🌟 Installing Cert Manager"
-    helm repo add jetstack https://charts.jetstack.io
-    helm repo update
-    helm upgrade \
-        kr-cert-manager jetstack/cert-manager \
-        --install \
-        --namespace kr-cert-manager \
-        --create-namespace \
-        --version v1.8.0 \
-        --set installCRDs=true
-    echo "✅ Installing Cert Manager Complete"
+	echo "🌟 Installing Cert Manager"
+	helm repo add jetstack https://charts.jetstack.io
+	helm repo update
+	helm upgrade \
+		kr-cert-manager jetstack/cert-manager \
+		--install \
+		--namespace kr-cert-manager \
+		--create-namespace \
+		--version v1.8.0 \
+		--set installCRDs=true
+	echo "✅ Installing Cert Manager Complete"
 }
 
 ensure_dependencies
