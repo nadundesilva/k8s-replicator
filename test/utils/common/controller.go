@@ -35,7 +35,7 @@ const (
 	defaultControllerImage = "nadunrds/k8s-replicator:test"
 )
 
-var controllerImage = os.Getenv("CONTROLLER_IMAGE")
+var controllerImage = os.Getenv("CONTROLLER_IMG")
 
 func GetControllerImage() string {
 	if controllerImage == "" {

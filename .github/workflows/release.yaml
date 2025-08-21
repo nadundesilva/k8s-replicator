@@ -31,7 +31,7 @@ jobs:
               run: make test.e2e
               env:
                   TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
 
     publish-release:
         name: Publish Release
@@ -126,12 +126,12 @@ jobs:
               run: make test.e2e
               env:
                   TEST_RESOURCES_FILTER_REGEX: Secret
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
                   DISABLE_IMAGE_BUILD: true
             - name: Run Benchmark Tests
               run: make test.benchmark
               env:
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
                   DISABLE_IMAGE_BUILD: true
             - name: Commit Release Files
               run: |

@@ -151,7 +151,7 @@ jobs:
             - name: Run Benchmark Tests
               run: make test.benchmark
               env:
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Upload Benchmark Report
               run: |
                 curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
@@ -181,7 +181,7 @@ jobs:
               run: make test.e2e
               env:
                   TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
 
     validate-examples:
         name: Validate Examples
@@ -207,7 +207,7 @@ jobs:
               run: |
                 kind create cluster --name=example-validation-cluster
                 make docker-build
-                kind load docker-image nadunrds/k8s-replicator:${{ github.sha }} --name=example-validation-cluster
+                kind load docker-image "${CONTROLLER_IMG}" --name=example-validation-cluster
                 NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
                 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -220,18 +220,20 @@ jobs:
                 K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
                 echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
               env:
-                  IMG: nadunrds/k8s-replicator:${{ github.sha }}
-                  CONTROLLER_IMAGE: nadunrds/k8s-replicator:${{ github.sha }}
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
             - name: Validate Example
               run: |
                 echo "Updating controller image tag to ${{ github.sha }}"
                 docker run --workdir=/artifacts --entrypoint=/app/kustomize \
                     -v "$(pwd)/config/manager:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                    edit set image "controller=nadunrds/k8s-replicator:${{ github.sha }}"
+                    edit set image "controller=${CONTROLLER_IMG}"
 
                 pushd examples/${{ matrix.example }}
                 ./validate.sh
                 popd
+              env:
+                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
 
     build-operator:
         name: Build Operator
@@ -255,16 +257,16 @@ jobs:
               uses: actions/setup-go@v5
               with:
                   go-version: "1.24.6"
-            - name: Sanitize Docker Image Tag
+            - id: generate-bundle-version
+              name: Generate Bundle Version
               env:
                   BRANCH_NAME: ${{ inputs.docker-image-tag }}
               run: |
-                  echo "DOCKER_IMAGE_TAG=${BRANCH_NAME/\//-}" >> "${GITHUB_ENV}"
+                  echo "bundle-version=${BRANCH_NAME/\//-}" >> "${GITHUB_OUTPUT}"
             - name: Generate code
               run: make generate manifests bundle
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}"
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}"
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Setup QEMU
               uses: docker/setup-qemu-action@v3
             - name: Setup Docker Buildx
@@ -275,16 +277,15 @@ jobs:
             - name: Generate code
               run: make generate manifests bundle
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ github.ref_name }}"
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ github.ref_name }}"
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Building Controller
               run: make docker-build
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}"
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Run Trivy vulnerability scanner on Controller
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}
+                  image-ref: nadunrds/k8s-replicator:${{ steps.generate-bundle-version.outputs.bundle-version }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -292,11 +293,11 @@ jobs:
             - name: Building Controller Bundle
               run: make bundle-build
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}"
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Run Trivy vulnerability scanner on Controller Bundle
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}
+                  image-ref: nadunrds/k8s-replicator-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
@@ -311,12 +312,14 @@ jobs:
               if: ${{ inputs.publish-snapshots == true }}
               run: make docker-buildx
               env:
-                  IMG: "nadunrds/k8s-replicator:${{ env.DOCKER_IMAGE_TAG }}"
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Pushing Controller Bundle
               if: ${{ inputs.publish-snapshots == true }}
               run: make bundle-push
               env:
-                  BUNDLE_IMG: "nadunrds/k8s-replicator-bundle:${{ env.DOCKER_IMAGE_TAG }}"
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+        outputs:
+          bundle-version: ${{ steps.generate-bundle-version.outputs.bundle-version }}
 
     validate-multi-architecture-bundle:
         name: Validate Bundle Multi Architecture Support
@@ -331,7 +334,8 @@ jobs:
                   fetch-depth: 0
             - name: Validate Bundle
               run: |
-                make bundle
-                ./bin/operator-sdk bundle validate docker.io/nadunrds/k8s-replicator-bundle:${{ github.sha }} \
-                  --image-builder none \
+                make operator-sdk
+                ./bin/operator-sdk bundle validate "${BUNDLE_IMG}" \
                   --select-optional name=multiarch
+              env:
+                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"

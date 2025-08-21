@@ -33,7 +33,7 @@ IMAGE_TAG_BASE ?= nadunrds/k8s-replicator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
 
 # BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
 BUNDLE_GEN_FLAGS ?= -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
@@ -50,7 +50,7 @@ endif
 # This is useful for CI or a project to utilize a specific version of the operator-sdk toolkit.
 OPERATOR_SDK_VERSION ?= v1.37.0
 # Image URL to use all building/pushing image targets
-IMG ?= $(IMAGE_TAG_BASE):latest
+IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.29.0
 
@@ -122,12 +122,12 @@ test.unit: manifests generate vet envtest
 .PHONY: test.e2e
 test.e2e:
 	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build
-	KUBERNETES_VERSION="1.26.3" CONTROLLER_IMAGE=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
+	KUBERNETES_VERSION="1.26.3" CONTROLLER_IMG=${IMG} go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
 
 .PHONY: test.benchmark
 test.benchmark:
 	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build
-	CONTROLLER_IMAGE=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
+	CONTROLLER_IMG=${IMG} go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint
@@ -312,7 +312,7 @@ endif
 BUNDLE_IMGS ?= $(BUNDLE_IMG)
 
 # The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=nadundesilva.github.io/operator-catalog:v0.2.0).
-CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION)
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.
 ifneq ($(origin CATALOG_BASE_IMG), undefined)
