@@ -15,6 +15,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
 	corev1 "k8s.io/api/core/v1"
@@ -209,7 +210,7 @@ func (r *ReplicationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return controllerutil.ContainsFinalizer(object, resourceFinalizer)
 	})
 
-	name := "replicator-namespaced-resource-controller"
+	name := fmt.Sprintf("replicator-%s-controller", strings.ToLower(r.Replicator.GetKind()))
 	r.recorder = mgr.GetEventRecorderFor(name)
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
