@@ -31,7 +31,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - name: Generate code
               run: make generate manifests
             - name: Check for changes
@@ -53,7 +53,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - name: Vet Code
               run: make vet
             - name: Lint Code
@@ -130,7 +130,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - name: Run Unit Tests
               run: make test.unit
 
@@ -151,7 +151,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - name: Build Operator
               run: make bundle docker-build bundle-build
               env:
@@ -175,7 +175,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - name: Build Operator
               run: make bundle docker-build bundle-build
               env:
@@ -206,7 +206,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - name: Build Operator
               run: make bundle docker-build bundle-build
               env:
@@ -267,7 +267,7 @@ jobs:
             - name: Setup GoLang
               uses: actions/setup-go@v5
               with:
-                  go-version: "1.24.6"
+                  go-version: "1.25.0"
             - id: generate-bundle-version
               name: Generate Bundle Version
               env:
