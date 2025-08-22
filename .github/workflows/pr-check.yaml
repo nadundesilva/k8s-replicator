@@ -1,14 +1,19 @@
 name: Pull Request Check
 
 on:
-    pull_request:
-        branches:
-            - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+  checks: write
 
 jobs:
-    build:
-        name: Check Pull Request
-        uses: ./.github/workflows/build.yaml
-        with:
-            docker-image-tag: ${{ github.sha }}
-            publish-snapshots: false
+  build:
+    name: Check Pull Request
+    uses: ./.github/workflows/build.yaml
+    with:
+      version: 0.0.0-${{ github.sha }}

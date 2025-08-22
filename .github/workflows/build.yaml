@@ -1,341 +1,387 @@
 name: Build
 
 on:
-    workflow_call:
-        inputs:
-            docker-image-tag:
-                description: The docker image tag to use
-                required: true
-                type: string
-            publish-snapshots:
-                description: Whether the snapshots should be published (true/false)
-                required: true
-                type: boolean
-        secrets:
-            docker_hub_token:
-                required: false
-                description: Docker Hub token
+  workflow_call:
+    inputs:
+      version:
+        description: The version of the artifacts to be built
+        required: true
+        type: string
+      publish-artifacts:
+        description: Whether the artifacts should be published (true/false)
+        type: boolean
+        default: false
+      update-latest-tag:
+        description: Whether the latest tag should be updated to the current build (true/false)
+        type: boolean
+        default: false
+    secrets:
+      docker-hub-token:
+        required: false
+        description: Docker Hub token
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write
+  checks: write
+
+env:
+  IMAGE_TAG_BASE: nadunrds/k8s-replicator
 
 jobs:
-    check-code-gen:
-        name: Check Code Generation
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Generate code
-              run: make generate manifests
-            - name: Check for changes
-              run: |
-                  if [ -n "$(git status --porcelain)" ]; then
-                    echo "There are new changes after the code generation. Please run 'make generate manifests' and commit the changes"
-                    git diff -p
-                    exit 1
-                  fi
+  check-code-gen:
+    name: Check Code Generation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - name: Generate code
+        run: make generate manifests
+      - name: Check for changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "There are new changes after the code generation. Please run 'make generate manifests' and commit the changes"
+            git diff -p
+            exit 1
+          fi
 
-    check-code:
-        name: Check Code
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Vet Code
-              run: make vet
-            - name: Lint Code
-              run: make lint
-            - name: Check Code Format
-              run: |
-                  make fmt
-                  if [ -n "$(git status --porcelain)" ]; then
-                    echo "There are new changes after the code format. Please run 'make fmt' and commit the changes"
-                    exit 1
-                  fi
+  check-code:
+    name: Check Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - name: Vet Code
+        run: make vet
+      - name: Lint Code
+        run: make lint
+      - name: Check Code Format
+        run: |
+          make fmt
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "There are new changes after the code format. Please run 'make fmt' and commit the changes"
+            exit 1
+          fi
 
-    validate-bundle:
-        name: Run Operator Bundle Validator
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Validate Bundle
-              run: |
-                make bundle
-                ./bin/operator-sdk bundle validate ./bundle \
-                  --image-builder none \
-                  --select-optional name=community
+  run-super-linter:
+    name: Run GitHub Super Linter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Lint Code Base
+        uses: super-linter/super-linter@v7
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: "true"
+          VALIDATE_CHECKOV: "false"
+          VALIDATE_GO: "false"
+          VALIDATE_GO_MODULES: "false"
+          VALIDATE_YAML_PRETTIER: "false"
+          VALIDATE_KUBERNETES_KUBEVAL: "false"
+          VALIDATE_KUBERNETES_KUBECONFORM: "false"
+          KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
-    run-super-linter:
-        name: Run GitHub Super Linter
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Lint Code Base
-              uses: super-linter/super-linter@v7
-              env:
-                  DEFAULT_BRANCH: main
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  VALIDATE_ALL_CODEBASE: "true"
-                  VALIDATE_CHECKOV: "false"
-                  VALIDATE_GO: "false"
-                  VALIDATE_GO_MODULES: "false"
-                  VALIDATE_YAML_PRETTIER: "false"
-                  VALIDATE_KUBERNETES_KUBEVAL: "false"
-                  VALIDATE_KUBERNETES_KUBECONFORM: "false"
-                  KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
+  run-codeql-analysis:
+    name: Run CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
 
-    run-codeql-analysis:
-        name: Run CodeQL Analysis
-        runs-on: ubuntu-latest
-        permissions:
-            actions: read
-            contents: read
-            security-events: write
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-            - name: Initialize CodeQL
-              uses: github/codeql-action/init@v3
-              with:
-                  languages: go
-            - name: Autobuild
-              uses: github/codeql-action/autobuild@v3
-            - name: Perform CodeQL Analysis
-              uses: github/codeql-action/analyze@v3
+  validate-bundle:
+    name: Run Operator Bundle Validator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate Bundle
+        run: |
+          make bundle
 
-    run-unit-tests:
-        name: Run Unit Tests
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Run Unit Tests
-              run: make test.unit
+  run-unit-tests:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - name: Run Unit Tests
+        run: make test.unit
 
-    run-benchmark-tests:
-        name: Run Benchmark Tests
-        runs-on: ubuntu-latest
-        permissions:
-          checks: write
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Run Benchmark Tests
-              run: make test.benchmark
-              env:
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
-            - name: Upload Benchmark Report
-              run: |
-                curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
-                  -H "Accept: application/vnd.github.antiope-preview+json" \
-                  -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
+  run-e2e-tests:
+    name: Run E2E Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        resource:
+          - Secret
+          - ConfigMap
+          - NetworkPolicy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - name: Build Operator
+        run: make bundle docker-build bundle-build
+        env:
+          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+      - name: Run E2E Tests
+        run: make test.e2e
+        env:
+          TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
+          VERSION: ${{ github.sha }}
 
-    run-e2e-tests:
-        name: Run E2E Tests
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                resource:
-                    - Secret
-                    - ConfigMap
-                    - NetworkPolicy
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Run E2E Tests
-              run: make test.e2e
-              env:
-                  TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
+  run-benchmark-tests:
+    name: Run Benchmark Tests
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - name: Build Operator
+        run: make bundle docker-build bundle-build
+        env:
+          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+      - name: Run Benchmark Tests
+        run: make test.benchmark
+        env:
+          VERSION: ${{ github.sha }}
+      - name: Upload Benchmark Report
+        run: |
+          curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
+            -H "Accept: application/vnd.github.antiope-preview+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
 
-    validate-examples:
-        name: Validate Examples
-        runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                example:
-                    - cert-manager
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Setup Kind
-              run: |
-                go get sigs.k8s.io/kind
-                echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
-            - name: Setup K8s Cluster
-              run: |
-                kind create cluster --name=example-validation-cluster
-                make docker-build
-                kind load docker-image "${CONTROLLER_IMG}" --name=example-validation-cluster
-                NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
+  validate-examples:
+    name: Validate Examples
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example:
+          - cert-manager
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - name: Build Operator
+        run: make bundle docker-build bundle-build
+        env:
+          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+      - name: Setup Kind
+        run: |
+          go get sigs.k8s.io/kind
+          echo "PATH=${PATH}:$(go env GOPATH)/bin" >> "${GITHUB_ENV}"
+      - name: Setup K8s Cluster
+        run: |
+          kind create cluster --name=example-validation-cluster
+          make docker-build
+          kind load docker-image "${IMG}" --name=example-validation-cluster
+          NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
-                kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-                kubectl label node "${NODE_NAME}" ingress-ready=true
-                kubectl wait --namespace ingress-nginx \
-                  --for=condition=ready pod \
-                  --selector=app.kubernetes.io/component=controller \
-                  --timeout=90s
+          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+          kubectl label node "${NODE_NAME}" ingress-ready=true
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=90s
 
-                K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
-                echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
-            - name: Validate Example
-              run: |
-                echo "Updating controller image tag to ${{ github.sha }}"
-                docker run --workdir=/artifacts --entrypoint=/app/kustomize \
-                    -v "$(pwd)/config/manager:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                    edit set image "controller=${CONTROLLER_IMG}"
+          K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
+          echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
+        env:
+          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+      - name: Validate Example
+        run: |
+          echo "Updating controller image tag to ${{ github.sha }}"
+          docker run --workdir=/artifacts --entrypoint=/app/kustomize \
+              -v "$(pwd)/config/manager:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
+              edit set image "controller=${IMG}"
 
-                pushd examples/${{ matrix.example }}
-                ./validate.sh
-                popd
-              env:
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
+          pushd examples/${{ matrix.example }}
+          ./validate.sh
+          popd
+        env:
+          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
 
-    build-operator:
-        name: Build Operator
-        runs-on: ubuntu-latest
-        needs:
-            - check-code-gen
-            - check-code
-            - validate-bundle
-            - run-super-linter
-            - run-codeql-analysis
-            - run-unit-tests
-            - run-benchmark-tests
-            - run-e2e-tests
-            - validate-examples
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - id: generate-bundle-version
-              name: Generate Bundle Version
-              env:
-                  BRANCH_NAME: ${{ inputs.docker-image-tag }}
-              run: |
-                  echo "bundle-version=${BRANCH_NAME/\//-}" >> "${GITHUB_OUTPUT}"
-            - name: Generate code
-              run: make generate manifests bundle
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-            - name: Setup QEMU
-              uses: docker/setup-qemu-action@v3
-            - name: Setup Docker Buildx
-              id: buildx
-              uses: docker/setup-buildx-action@v3
-            - name: Available platforms
-              run: echo ${{ steps.buildx.outputs.platforms }}
-            - name: Generate code
-              run: make generate manifests bundle
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-            - name: Building Controller
-              run: make docker-build
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-            - name: Run Trivy vulnerability scanner on Controller
-              uses: aquasecurity/trivy-action@master
-              with:
-                  image-ref: nadunrds/k8s-replicator:${{ steps.generate-bundle-version.outputs.bundle-version }}
-                  format: 'table'
-                  exit-code: '1'
-                  ignore-unfixed: true
-                  trivyignores: .trivyignore.controller
-            - name: Building Controller Bundle
-              run: make bundle-build
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-            - name: Run Trivy vulnerability scanner on Controller Bundle
-              uses: aquasecurity/trivy-action@master
-              with:
-                  image-ref: nadunrds/k8s-replicator-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
-                  format: 'table'
-                  exit-code: '1'
-                  ignore-unfixed: true
-                  trivyignores: .trivyignore.bundle
-            - name: Login to the Container registry
-              if: ${{ inputs.publish-snapshots == true }}
-              uses: docker/login-action@v3
-              with:
-                  username: nadunrds
-                  password: ${{ secrets.docker_hub_token }}
-            - name: Pushing Controller
-              if: ${{ inputs.publish-snapshots == true }}
-              run: make docker-buildx
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-            - name: Pushing Controller Bundle
-              if: ${{ inputs.publish-snapshots == true }}
-              run: make bundle-push
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-        outputs:
-          bundle-version: ${{ steps.generate-bundle-version.outputs.bundle-version }}
+  build-operator:
+    name: Build Operator
+    runs-on: ubuntu-latest
+    needs:
+      - check-code-gen
+      - check-code
+      - validate-bundle
+      - run-super-linter
+      - run-codeql-analysis
+      - run-unit-tests
+      - run-benchmark-tests
+      - run-e2e-tests
+      - validate-examples
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.6"
+      - id: generate-bundle-version
+        name: Generate Bundle Version
+        env:
+          ARTIFACTS_VERSION: ${{ inputs.version }}
+        run: |
+          echo "bundle-version=${ARTIFACTS_VERSION/\//-}" >> "${GITHUB_OUTPUT}"
+      - name: Generate code
+        run: make generate manifests bundle
+        env:
+          VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
 
-    validate-multi-architecture-bundle:
-        name: Validate Bundle Multi Architecture Support
-        runs-on: ubuntu-latest
-        if: ${{ inputs.publish-snapshots == true }}
-        needs:
-            - build-operator
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Validate Bundle
-              run: |
-                make operator-sdk
-                ./bin/operator-sdk bundle validate "${BUNDLE_IMG}" \
-                  --select-optional name=multiarch
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Setup Docker Buildx
+        id: setup-buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Print Available Buildx Platforms
+        run: echo "${SUPPORTED_PLATFORMS}"
+        env:
+          SUPPORTED_PLATFORMS: ${{ steps.setup-buildx.outputs.platforms }}
+      - name: Build Controller
+        run: make docker-build
+        env:
+          VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+      - name: Run Trivy vulnerability scanner on Controller
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_TAG_BASE }}:${{ steps.generate-bundle-version.outputs.bundle-version }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          trivyignores: .trivyignore.controller
+
+      - name: Building Controller Bundle
+        run: make bundle-build
+        env:
+          VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+      - name: Run Trivy vulnerability scanner on Controller Bundle
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_TAG_BASE }}-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          trivyignores: .trivyignore.bundle
+
+      - name: Login to the Container registry
+        if: ${{ inputs.publish-artifacts == true }}
+        uses: docker/login-action@v3
+        with:
+          username: nadunrds
+          password: ${{ secrets.docker-hub-token }}
+      - name: Pushing Controller
+        if: ${{ inputs.publish-artifacts == true }}
+        run: make docker-buildx
+        env:
+          VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+      - name: Pushing Controller Bundle
+        if: ${{ inputs.publish-artifacts == true }}
+        run: make bundle-push
+        env:
+          VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+
+      - name: Pushing Controller with latest Tag
+        if: ${{ inputs.publish-artifacts == true && inputs.update-latest-tag == true }}
+        run: make docker-buildx
+        env:
+          VERSION: "latest"
+      - name: Pushing Controller Bundle with latest Tag
+        if: ${{ inputs.publish-artifacts == true && inputs.update-latest-tag == true }}
+        run: make bundle-push
+        env:
+          VERSION: "latest"
+
+    outputs:
+      bundle-version: ${{ steps.generate-bundle-version.outputs.bundle-version }}
+
+  validate-multi-architecture-bundle:
+    name: Validate Bundle Multi Architecture Support
+    runs-on: ubuntu-latest
+    if: ${{ inputs.publish-artifacts == true }}
+    needs:
+      - build-operator
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate Bundle
+        run: |
+          make operator-sdk
+          ./bin/operator-sdk bundle validate "${IMAGE_TAG_BASE}-bundle:${VERSION}" \
+            --select-optional name=multiarch
+        env:
+          VERSION: "${{ needs.build-operator.outputs.bundle-version }}"
