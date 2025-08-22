@@ -25,7 +25,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -47,7 +47,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -71,7 +71,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Lint Code Base
@@ -97,7 +97,7 @@ jobs:
             security-events: write
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
             - name: Initialize CodeQL
               uses: github/codeql-action/init@v3
               with:
@@ -112,7 +112,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Validate Bundle
@@ -124,7 +124,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -145,7 +145,7 @@ jobs:
                     - NetworkPolicy
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -169,7 +169,7 @@ jobs:
           checks: write
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -200,7 +200,7 @@ jobs:
                     - cert-manager
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -261,7 +261,7 @@ jobs:
             - validate-examples
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Setup GoLang
@@ -339,7 +339,7 @@ jobs:
             - build-operator
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
               with:
                   fetch-depth: 0
             - name: Validate Bundle
