@@ -3,18 +3,21 @@ name: Build
 on:
     workflow_call:
         inputs:
-            docker-image-tag:
-                description: The docker image tag to use
+            version:
+                description: The version of the artifacts to be built
                 required: true
                 type: string
-            publish-snapshots:
-                description: Whether the snapshots should be published (true/false)
+            publish-artifacts:
+                description: Whether the artifacts should be published (true/false)
                 required: true
                 type: boolean
         secrets:
-            docker_hub_token:
+            docker-hub-token:
                 required: false
                 description: Docker Hub token
+
+env:
+  IMAGE_TAG_BASE: nadunrds/k8s-replicator
 
 jobs:
     check-code-gen:
@@ -63,21 +66,6 @@ jobs:
                     exit 1
                   fi
 
-    validate-bundle:
-        name: Run Operator Bundle Validator
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Validate Bundle
-              run: |
-                make bundle
-                ./bin/operator-sdk bundle validate ./bundle \
-                  --image-builder none \
-                  --select-optional name=community
-
     run-super-linter:
         name: Run GitHub Super Linter
         runs-on: ubuntu-latest
@@ -119,6 +107,18 @@ jobs:
             - name: Perform CodeQL Analysis
               uses: github/codeql-action/analyze@v3
 
+    validate-bundle:
+        name: Run Operator Bundle Validator
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Validate Bundle
+              run: |
+                make bundle
+
     run-unit-tests:
         name: Run Unit Tests
         runs-on: ubuntu-latest
@@ -133,31 +133,6 @@ jobs:
                   go-version: "1.24.6"
             - name: Run Unit Tests
               run: make test.unit
-
-    run-benchmark-tests:
-        name: Run Benchmark Tests
-        runs-on: ubuntu-latest
-        permissions:
-          checks: write
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0
-            - name: Setup GoLang
-              uses: actions/setup-go@v5
-              with:
-                  go-version: "1.24.6"
-            - name: Run Benchmark Tests
-              run: make test.benchmark
-              env:
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
-            - name: Upload Benchmark Report
-              run: |
-                curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
-                  -H "Accept: application/vnd.github.antiope-preview+json" \
-                  -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                  -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
 
     run-e2e-tests:
         name: Run E2E Tests
@@ -177,11 +152,44 @@ jobs:
               uses: actions/setup-go@v5
               with:
                   go-version: "1.24.6"
+            - name: Build Operator
+              run: make bundle docker-build bundle-build
+              env:
+                  IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
             - name: Run E2E Tests
               run: make test.e2e
               env:
                   TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
+                  VERSION: ${{ github.sha }}
+
+    run-benchmark-tests:
+        name: Run Benchmark Tests
+        runs-on: ubuntu-latest
+        permissions:
+          checks: write
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+            - name: Setup GoLang
+              uses: actions/setup-go@v5
+              with:
+                  go-version: "1.24.6"
+            - name: Build Operator
+              run: make bundle docker-build bundle-build
+              env:
+                  IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+            - name: Run Benchmark Tests
+              run: make test.benchmark
+              env:
+                  VERSION: ${{ github.sha }}
+            - name: Upload Benchmark Report
+              run: |
+                curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
+                  -H "Accept: application/vnd.github.antiope-preview+json" \
+                  -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                  -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
 
     validate-examples:
         name: Validate Examples
@@ -199,6 +207,10 @@ jobs:
               uses: actions/setup-go@v5
               with:
                   go-version: "1.24.6"
+            - name: Build Operator
+              run: make bundle docker-build bundle-build
+              env:
+                  IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
             - name: Setup Kind
               run: |
                 go get sigs.k8s.io/kind
@@ -207,7 +219,7 @@ jobs:
               run: |
                 kind create cluster --name=example-validation-cluster
                 make docker-build
-                kind load docker-image "${CONTROLLER_IMG}" --name=example-validation-cluster
+                kind load docker-image "${IMG}" --name=example-validation-cluster
                 NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
                 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -220,20 +232,19 @@ jobs:
                 K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
                 echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
               env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
+                  IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
             - name: Validate Example
               run: |
                 echo "Updating controller image tag to ${{ github.sha }}"
                 docker run --workdir=/artifacts --entrypoint=/app/kustomize \
                     -v "$(pwd)/config/manager:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-                    edit set image "controller=${CONTROLLER_IMG}"
+                    edit set image "controller=${IMG}"
 
                 pushd examples/${{ matrix.example }}
                 ./validate.sh
                 popd
               env:
-                  CONTROLLER_IMG: nadunrds/k8s-replicator:${{ github.sha }}
+                  IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
 
     build-operator:
         name: Build Operator
@@ -260,36 +271,34 @@ jobs:
             - id: generate-bundle-version
               name: Generate Bundle Version
               env:
-                  BRANCH_NAME: ${{ inputs.docker-image-tag }}
+                  BRANCH_NAME: ${{ inputs.version }}
               run: |
                   echo "bundle-version=${BRANCH_NAME/\//-}" >> "${GITHUB_OUTPUT}"
             - name: Generate code
               run: make generate manifests bundle
               env:
                   VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+
             - name: Setup QEMU
               uses: docker/setup-qemu-action@v3
             - name: Setup Docker Buildx
-              id: buildx
+              id: setup-buildx
               uses: docker/setup-buildx-action@v3
-            - name: Available platforms
-              run: echo ${{ steps.buildx.outputs.platforms }}
-            - name: Generate code
-              run: make generate manifests bundle
-              env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
-            - name: Building Controller
+            - name: Print Available Buildx Platforms
+              run: echo ${{ steps.setup-buildx.outputs.platforms }}
+            - name: Build Controller
               run: make docker-build
               env:
                   VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Run Trivy vulnerability scanner on Controller
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator:${{ steps.generate-bundle-version.outputs.bundle-version }}
+                  image-ref: ${{ env.IMAGE_TAG_BASE }}:${{ steps.generate-bundle-version.outputs.bundle-version }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
                   trivyignores: .trivyignore.controller
+
             - name: Building Controller Bundle
               run: make bundle-build
               env:
@@ -297,24 +306,25 @@ jobs:
             - name: Run Trivy vulnerability scanner on Controller Bundle
               uses: aquasecurity/trivy-action@master
               with:
-                  image-ref: nadunrds/k8s-replicator-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
+                  image-ref: ${{ env.IMAGE_TAG_BASE }}-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
                   format: 'table'
                   exit-code: '1'
                   ignore-unfixed: true
                   trivyignores: .trivyignore.bundle
+
             - name: Login to the Container registry
-              if: ${{ inputs.publish-snapshots == true }}
+              if: ${{ inputs.publish-artifacts == true }}
               uses: docker/login-action@v3
               with:
                   username: nadunrds
-                  password: ${{ secrets.docker_hub_token }}
+                  password: ${{ secrets.docker-hub-token }}
             - name: Pushing Controller
-              if: ${{ inputs.publish-snapshots == true }}
+              if: ${{ inputs.publish-artifacts == true }}
               run: make docker-buildx
               env:
                   VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
             - name: Pushing Controller Bundle
-              if: ${{ inputs.publish-snapshots == true }}
+              if: ${{ inputs.publish-artifacts == true }}
               run: make bundle-push
               env:
                   VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
@@ -324,7 +334,7 @@ jobs:
     validate-multi-architecture-bundle:
         name: Validate Bundle Multi Architecture Support
         runs-on: ubuntu-latest
-        if: ${{ inputs.publish-snapshots == true }}
+        if: ${{ inputs.publish-artifacts == true }}
         needs:
             - build-operator
         steps:
@@ -335,7 +345,7 @@ jobs:
             - name: Validate Bundle
               run: |
                 make operator-sdk
-                ./bin/operator-sdk bundle validate "${BUNDLE_IMG}" \
+                ./bin/operator-sdk bundle validate "${IMAGE_TAG_BASE}-bundle:${VERSION}" \
                   --select-optional name=multiarch
               env:
-                  VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
+                  VERSION: "${{ needs.build-operator.outputs.bundle-version }}"
