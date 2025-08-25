@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: nadunrds/k8s-replicator
-  newTag: 0.6.2
+  newTag: 0.6.2@sha256:6a2c210268cd2693ee16913eb3de386ab215fe596f656e234810f64a39f367f7
