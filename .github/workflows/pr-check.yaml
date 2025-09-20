@@ -8,8 +8,6 @@ on:
 permissions:
   contents: read
   actions: read
-  security-events: write
-  checks: write
 
 jobs:
   build:
@@ -17,3 +15,8 @@ jobs:
     uses: ./.github/workflows/build.yaml
     with:
       version: 0.0.0-${{ github.sha }}
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      checks: write

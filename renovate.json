@@ -1,4 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>nadundesilva/renovate-config"]
+  "extends": ["local>nadundesilva/renovate-config"],
+  "packageRules": [
+    {
+      "matchDepNames": ["nadunrds/k8s-replicator"],
+      "pinDigests": false
+    }
+  ]
 }

@@ -29,4 +29,7 @@ WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
 
+#trivy:ignore:AVD-DS-0026 # This is only run as a K8s pod, and the Pod always defines both readiness and liveness probes
+HEALTHCHECK NONE
+
 ENTRYPOINT ["/manager"]

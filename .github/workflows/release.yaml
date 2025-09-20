@@ -11,8 +11,6 @@ on:
 permissions:
   contents: read
   actions: read
-  security-events: write
-  checks: write
 
 jobs:
   build:
@@ -22,6 +20,11 @@ jobs:
       version: ${{ github.event.inputs.release-version }}
       publish-artifacts: true
       update-latest-tag: true
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      checks: write
     secrets:
       docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
 

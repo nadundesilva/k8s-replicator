@@ -1,0 +1,7 @@
+ignorefile: ".github/linters/.trivyignore.yaml"
+
+scan:
+  skip-dirs:
+    - config
+  skip-files:
+    - bundle.Dockerfile

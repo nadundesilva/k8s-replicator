@@ -1,0 +1,34 @@
+misconfigurations:
+  # Cert Manager Example
+  - id: AVD-KSV-0022
+    statement: The code-server example requires the capabilities to be added
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0106
+    statement: The code-server example requires the capabilities to be added
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0110
+    statement: The kustomize build will change the namespace accordingly
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0125
+    statement: This is released in DockerHub by default
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0020
+    statement: S6-supervisor handles permissions
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0021
+    statement: The s6-supervisor handles permissions
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0012
+    statement: The s6-supervisor requires root permissions to update permissions properly
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"
+  - id: AVD-KSV-0014
+    statement: The editor would require write permissioss, and S6-supervisor handles permissions such that users cannot edit other files
+    paths:
+      - "examples/cert-manager/editors/vscode/deployment.yaml"

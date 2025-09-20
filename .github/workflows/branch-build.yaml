@@ -9,8 +9,6 @@ on:
 permissions:
   contents: read
   actions: read
-  security-events: write
-  checks: write
 
 jobs:
   build:
@@ -18,5 +16,10 @@ jobs:
     uses: ./.github/workflows/build.yaml
     with:
       version: 0.0.0-${{ github.ref_name }}
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+      checks: write
     secrets:
       docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}

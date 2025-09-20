@@ -28,7 +28,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# nadundesilva.github.io/k8s-replicator-bundle:$VERSION and nadundesilva.github.io/k8s-replicator-catalog:$VERSION.
+# nadunrds/k8s-replicator-bundle:$VERSION and nadunrds/k8s-replicator-catalog:$VERSION.
 IMAGE_TAG_BASE ?= nadunrds/k8s-replicator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
@@ -307,11 +307,11 @@ OPM = $(shell which opm)
 endif
 endif
 
-# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=nadundesilva.github.io/operator-bundle:v0.1.0,nadundesilva.github.io/operator-bundle:v0.2.0).
+# A comma-separated list of bundle images (e.g. make catalog-build BUNDLE_IMGS=nadunrds/k8s-replicator-bundle:v0.1.0,nadunrds/k8s-replicator-bundle:v0.2.0).
 # These images MUST exist in a registry and be pull-able.
 BUNDLE_IMGS = $(BUNDLE_IMG)
 
-# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=nadundesilva.github.io/operator-catalog:v0.2.0).
+# The image tag given to the resulting catalog image (e.g. make catalog-build CATALOG_IMG=nadunrds/k8s-replicator-catalog:v0.2.0).
 CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:$(VERSION)
 
 # Set CATALOG_BASE_IMG to an existing catalog image tag to add $BUNDLE_IMGS to that image.

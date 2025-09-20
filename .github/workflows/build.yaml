@@ -44,11 +44,13 @@ jobs:
         with:
           go-version: "1.25.1"
       - name: Generate code
-        run: make generate manifests
+        run: make bundle
+        env:
+          ARTIFACTS_VERSION: ${{ inputs.version }}
       - name: Check for changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
-            echo "There are new changes after the code generation. Please run 'make generate manifests' and commit the changes"
+            echo "There are new changes after the code generation. Please run 'make bundle' and commit the changes"
             git diff -p
             exit 1
           fi
@@ -87,6 +89,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Build Kustomize manifests
+        run: make manifests
+        env:
+          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
       - name: Lint Code Base
         uses: super-linter/super-linter@12150456a73e248bdc94d0794898f94e23127c88 # v7
         env:
@@ -314,7 +320,7 @@ jobs:
         env:
           VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
       - name: Run Trivy vulnerability scanner on Controller
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.IMAGE_TAG_BASE }}:${{ steps.generate-bundle-version.outputs.bundle-version }}
           format: "table"
@@ -327,7 +333,7 @@ jobs:
         env:
           VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
       - name: Run Trivy vulnerability scanner on Controller Bundle
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.IMAGE_TAG_BASE }}-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
           format: "table"
