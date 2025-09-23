@@ -305,10 +305,10 @@ jobs:
           VERSION: "${{ steps.generate-bundle-version.outputs.bundle-version }}"
 
       - name: Setup QEMU
-        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
       - name: Setup Docker Buildx
         id: setup-buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       - name: Print Available Buildx Platforms
         run: echo "${SUPPORTED_PLATFORMS}"
         env:
@@ -341,7 +341,7 @@ jobs:
 
       - name: Login to the Container registry
         if: ${{ inputs.publish-artifacts == true }}
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
         with:
           username: nadunrds
           password: ${{ secrets.docker-hub-token }}
