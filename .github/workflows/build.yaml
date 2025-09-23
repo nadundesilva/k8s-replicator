@@ -82,6 +82,8 @@ jobs:
     name: Run GitHub Super Linter
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      packages: read
       statuses: write
     steps:
       - name: Checkout repository
@@ -107,24 +109,31 @@ jobs:
           VALIDATE_KUBERNETES_KUBECONFORM: "false"
           KUBERNETES_KUBEVAL_OPTIONS: --ignore-missing-schemas
 
-  run-codeql-analysis:
-    name: Run CodeQL Analysis
+  run-vulnerability-analysis:
+    name: Run Vulnerability Analysis
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      packages: read
       security-events: write
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           persist-credentials: false
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@192325c86100d080feab897ff886c34abd4c83a3 # v3
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
-          languages: go
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@192325c86100d080feab897ff886c34abd4c83a3 # v3
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@192325c86100d080feab897ff886c34abd4c83a3 # v3
+          scan-type: fs
+          vuln-type: library
+          exit-code: 1
+          format: sarif
+          output: trivy-results.sarif
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@192325c86100d080feab897ff886c34abd4c83a3 # v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
 
   validate-bundle:
     name: Run Operator Bundle Validator
@@ -188,6 +197,8 @@ jobs:
     name: Run Benchmark Tests
     runs-on: ubuntu-latest
     permissions:
+      contents: read
+      packages: read
       checks: write
     steps:
       - name: Checkout repository
@@ -278,7 +289,7 @@ jobs:
       - check-code
       - validate-bundle
       - run-super-linter
-      - run-codeql-analysis
+      - run-vulnerability-analysis
       - run-unit-tests
       - run-benchmark-tests
       - run-e2e-tests
