@@ -130,7 +130,7 @@ func main() {
 	if err = (&controller.NamespaceReconciler{
 		Replicators: replicators,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "kind", "Namepsace")
+		setupLog.Error(err, "unable to create controller", "kind", "Namespace")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

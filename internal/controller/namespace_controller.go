@@ -65,7 +65,9 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	namespaceName := req.Name
 
-	isNamespaceDeleted = isNamespaceDeleted || namespace.GetDeletionTimestamp() != nil
+	if !isNamespaceDeleted {
+		isNamespaceDeleted = namespace.GetDeletionTimestamp() != nil
+	}
 	isNamespaceIgnored := isNamespaceIgnored(namespace)
 
 	// Reconciling

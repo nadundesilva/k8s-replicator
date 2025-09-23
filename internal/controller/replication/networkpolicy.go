@@ -45,8 +45,7 @@ func (r *networkPolicyReplicator) ObjectListToArray(list client.ObjectList) []cl
 	array := []client.Object{}
 	networkPolicies := list.(*networkingv1.NetworkPolicyList).Items
 	for i := range networkPolicies {
-		networkPolicy := networkPolicies[i]
-		array = append(array, &networkPolicy)
+		array = append(array, &networkPolicies[i])
 	}
 	return array
 }

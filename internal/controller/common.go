@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
@@ -29,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlController "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -61,6 +63,9 @@ func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder
 
 	result, err := ctrl.CreateOrUpdate(ctx, k8sClient, clonedObject, func() error {
 		copyMap := func(sourceMap map[string]string, targetMap map[string]string) {
+			if sourceMap == nil {
+				return
+			}
 			for k, v := range sourceMap {
 				if !strings.HasPrefix(k, groupFqn) {
 					targetMap[k] = v
@@ -92,8 +97,12 @@ func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder
 	switch result {
 	case controllerutil.OperationResultCreated:
 		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectCreate, "replica in namespace %s created", ns)
+		log.FromContext(ctx).V(1).Info("Created replica", "namespace", ns, "objectName", sourceObject.GetName())
 	case controllerutil.OperationResultUpdated:
 		eventRecorder.Eventf(sourceObject, "Normal", SourceObjectUpdate, "replica in namespace %s updated", ns)
+		log.FromContext(ctx).V(1).Info("Updated replica", "namespace", ns, "objectName", sourceObject.GetName())
+	case controllerutil.OperationResultNone:
+		log.FromContext(ctx).V(2).Info("No changes needed for replica", "namespace", ns, "objectName", sourceObject.GetName())
 	}
 
 	err = addFinalizer(ctx, k8sClient, clonedObject)
@@ -106,7 +115,7 @@ func replicateObject(ctx context.Context, k8sClient client.Client, eventRecorder
 func deleteObject(ctx context.Context, k8sClient client.Client, object client.Object) error {
 	err := removeFinalizer(ctx, k8sClient, object)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to remove finalizer before deletion: %w", err)
 	}
 
 	propagationStrategy := metav1.DeletePropagationBackground
@@ -115,9 +124,10 @@ func deleteObject(ctx context.Context, k8sClient client.Client, object client.Ob
 	})
 	if err != nil {
 		if errors.IsNotFound(err) {
+			// Object already deleted, this is not an error
 			return nil
 		} else {
-			return err
+			return fmt.Errorf("failed to delete object %s/%s: %w", object.GetNamespace(), object.GetName(), err)
 		}
 	}
 	return nil
@@ -126,7 +136,9 @@ func deleteObject(ctx context.Context, k8sClient client.Client, object client.Ob
 func addFinalizer(ctx context.Context, k8sClient client.Client, object client.Object) error {
 	if !controllerutil.ContainsFinalizer(object, resourceFinalizer) {
 		controllerutil.AddFinalizer(object, resourceFinalizer)
-		err := k8sClient.Update(ctx, object)
+		err := retryOperation(ctx, func() error {
+			return k8sClient.Update(ctx, object)
+		})
 		if err != nil {
 			return fmt.Errorf("failed to add finalizer: %+w", err)
 		}
@@ -137,12 +149,48 @@ func addFinalizer(ctx context.Context, k8sClient client.Client, object client.Ob
 func removeFinalizer(ctx context.Context, k8sClient client.Client, object client.Object) error {
 	if controllerutil.ContainsFinalizer(object, resourceFinalizer) {
 		controllerutil.RemoveFinalizer(object, resourceFinalizer)
-		err := k8sClient.Update(ctx, object)
+		err := retryOperation(ctx, func() error {
+			return k8sClient.Update(ctx, object)
+		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to remove finalizer: %+w", err)
 		}
 	}
 	return nil
+}
+
+// retryOperation retries an operation with exponential backoff
+func retryOperation(ctx context.Context, operation func() error) error {
+	const maxRetries = 3
+	const baseDelay = 100 * time.Millisecond
+
+	for i := range maxRetries {
+		err := operation()
+		if err == nil {
+			return nil
+		}
+
+		// Don't retry on certain errors
+		if errors.IsNotFound(err) || errors.IsConflict(err) {
+			return err
+		}
+
+		// If this is the last attempt, return the error
+		if i == maxRetries-1 {
+			return err
+		}
+
+		// Wait before retrying with exponential backoff
+		delay := baseDelay * time.Duration(1<<uint(i))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+			// Continue to next retry
+		}
+	}
+
+	return fmt.Errorf("operation failed after %d retries", maxRetries)
 }
 
 type sourceStatus string
@@ -158,12 +206,13 @@ func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replic
 	replicator replication.Replicator) (sourceStatus, error) {
 	sourceNamespace, sourceNamespaceOk := replica.GetAnnotations()[sourceNamespaceAnnotationKey]
 	if !sourceNamespaceOk {
-		return "", fmt.Errorf("replica does not contain %s annotation", sourceNamespaceAnnotationKey)
+		return "", fmt.Errorf("replica %s/%s does not contain %s annotation",
+			replica.GetNamespace(), replica.GetName(), sourceNamespaceAnnotationKey)
 	}
 
 	sourceObject := replicator.EmptyObject()
-	sourceSeretKey := client.ObjectKey{Namespace: sourceNamespace, Name: replica.GetName()}
-	if err := k8sClient.Get(ctx, sourceSeretKey, sourceObject); err != nil {
+	sourceObjectKey := client.ObjectKey{Namespace: sourceNamespace, Name: replica.GetName()}
+	if err := k8sClient.Get(ctx, sourceObjectKey, sourceObject); err != nil {
 		if errors.IsNotFound(err) {
 			return sourceStatusNotFound, nil
 		} else {
@@ -178,7 +227,8 @@ func getReplicaSourceStatus(ctx context.Context, k8sClient client.Client, replic
 	sourceObjectType, sourceObjectTypeOk := sourceObject.GetLabels()[objectTypeLabelKey]
 	if sourceObjectTypeOk {
 		if sourceObjectType != objectTypeLabelValueReplicated {
-			return "", fmt.Errorf("unexpected object type %s in source", sourceObjectType)
+			return "", fmt.Errorf("unexpected object type %s in source %s/%s",
+				sourceObjectType, sourceObject.GetNamespace(), sourceObject.GetName())
 		}
 	} else {
 		return sourceStatusUnmarked, nil

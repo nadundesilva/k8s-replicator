@@ -67,7 +67,9 @@ func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			return ctrl.Result{}, fmt.Errorf("failed to get object being reconciled: %+w", err)
 		}
 	}
-	isObjectDeleted = isObjectDeleted || object.GetDeletionTimestamp() != nil
+	if !isObjectDeleted {
+		isObjectDeleted = object.GetDeletionTimestamp() != nil
+	}
 
 	// Identifying object type
 	objectType, objectTypeOk := object.GetLabels()[objectTypeLabelKey]

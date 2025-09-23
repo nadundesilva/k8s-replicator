@@ -45,8 +45,7 @@ func (r *secretReplicator) ObjectListToArray(list client.ObjectList) []client.Ob
 	array := []client.Object{}
 	secrets := list.(*corev1.SecretList).Items
 	for i := range secrets {
-		secret := secrets[i]
-		array = append(array, &secret)
+		array = append(array, &secrets[i])
 	}
 	return array
 }

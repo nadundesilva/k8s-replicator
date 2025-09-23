@@ -45,8 +45,7 @@ func (r *configMapReplicator) ObjectListToArray(list client.ObjectList) []client
 	array := []client.Object{}
 	configMaps := list.(*corev1.ConfigMapList).Items
 	for i := range configMaps {
-		configMap := configMaps[i]
-		array = append(array, &configMap)
+		array = append(array, &configMaps[i])
 	}
 	return array
 }

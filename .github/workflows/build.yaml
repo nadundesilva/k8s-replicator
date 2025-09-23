@@ -126,6 +126,7 @@ jobs:
         with:
           scan-type: fs
           vuln-type: library
+          trivy-config: .github/linters/trivy.yaml
           exit-code: 1
           format: sarif
           output: trivy-results.sarif
@@ -332,10 +333,10 @@ jobs:
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           image-ref: ${{ env.IMAGE_TAG_BASE }}:${{ steps.generate-bundle-version.outputs.bundle-version }}
+          trivy-config: .github/linters/trivy.yaml
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
-          trivyignores: .trivyignore.controller
 
       - name: Building Controller Bundle
         run: make bundle-build
@@ -345,10 +346,10 @@ jobs:
         uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # 0.33.1
         with:
           image-ref: ${{ env.IMAGE_TAG_BASE }}-bundle:${{ steps.generate-bundle-version.outputs.bundle-version }}
+          trivy-config: .github/linters/trivy.yaml
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
-          trivyignores: .trivyignore.bundle
 
       - name: Login to the Container registry
         if: ${{ inputs.publish-artifacts == true }}
