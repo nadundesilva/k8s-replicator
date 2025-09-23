@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  actions: read
+  packages: read
 
 jobs:
   build:
@@ -18,8 +18,9 @@ jobs:
       version: 0.0.0-${{ github.ref_name }}
     permissions:
       contents: read
-      actions: read
+      packages: read
       security-events: write
       checks: write
+      statuses: write
     secrets:
       docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}

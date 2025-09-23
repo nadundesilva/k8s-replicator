@@ -10,7 +10,7 @@ on:
 
 permissions:
   contents: read
-  actions: read
+  packages: read
 
 jobs:
   build:
@@ -22,9 +22,10 @@ jobs:
       update-latest-tag: true
     permissions:
       contents: read
-      actions: read
+      packages: read
       security-events: write
       checks: write
+      statuses: write
     secrets:
       docker-hub-token: ${{ secrets.DOCKER_HUB_TOKEN }}
 
