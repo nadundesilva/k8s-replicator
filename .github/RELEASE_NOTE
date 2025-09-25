@@ -1,7 +1,55 @@
-#### How to use
+# 🚀 K8s Replicator v{{VERSION_TAG}}
 
-Check the [Read Me](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#how-to-use) for instructions on how to use the Operator.
+Welcome to K8s Replicator v{{VERSION_TAG}}! 🎉 This release brings exciting new features, improvements, and bugfixes.
 
-#### Changelog:
+## 📖 How to Use
 
+Check the [README](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#quick-start-) for quick start instructions and the [Documentation](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#documentation-) for comprehensive guides.
+
+## 🔧 Installation
+
+```bash
+curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/installers/install.sh | bash -s {{VERSION_TAG}}
+```
+
+## 📝 Changelog
+
+### ✨ New Features
 - 
+
+### 🐛 Bugfixes
+- 
+
+### 🔧 Improvements
+- 
+
+### 📚 Documentation
+- 
+
+### 🔒 Security
+- 
+
+## 🏗️ Architecture
+
+K8s Replicator is built with an extensible architecture. See the [Supported Resources](https://github.com/nadundesilva/k8s-replicator/blob/{{VERSION_TAG}}/API.md#supported-resources) section in our API documentation for currently supported resource types.
+
+Need support for a different resource type? Check out our [Contributing Guide](https://github.com/nadundesilva/k8s-replicator/blob/{{VERSION_TAG}}/CONTRIBUTING.md#extending-the-operator) for implementation instructions! 🚀
+
+## 🤝 Contributing
+
+We welcome contributions! See our [Contributing Guide](https://github.com/nadundesilva/k8s-replicator/blob/{{VERSION_TAG}}/CONTRIBUTING.md) for development setup and workflow.
+
+## 📊 Performance
+
+Benchmark results are available in [BENCHMARK.md](https://github.com/nadundesilva/k8s-replicator/blob/{{VERSION_TAG}}/BENCHMARK.md).
+
+## 🔗 Links
+
+- **Documentation**: [README](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}#documentation-)
+- **API Reference**: [API.md](https://github.com/nadundesilva/k8s-replicator/blob/{{VERSION_TAG}}/API.md)
+- **Troubleshooting**: [TROUBLESHOOTING.md](https://github.com/nadundesilva/k8s-replicator/blob/{{VERSION_TAG}}/TROUBLESHOOTING.md)
+- **Examples**: [examples/](https://github.com/nadundesilva/k8s-replicator/tree/{{VERSION_TAG}}/examples/)
+
+---
+
+**Thanks for using K8s Replicator! 🎉✨**
