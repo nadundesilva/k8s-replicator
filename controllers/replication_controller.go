@@ -10,14 +10,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package controller
+package controllers
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -105,9 +105,9 @@ type Replicator interface {
 
 The extensible architecture makes it easy to add support for any Kubernetes resource:
 
-1. **Create Implementation**: Add new replicator in `internal/controller/replication/`
+1. **Create Implementation**: Add new replicator in `controllers/replication/`
 2. **Implement Interface**: Implement the `Replicator` interface for your resource type
-3. **Register**: Add to `NewReplicators()` function in `internal/controller/replication/replicator.go`
+3. **Register**: Add to `NewReplicators()` function in `controllers/replication/replicator.go`
 4. **Test & Document**: Add tests and update documentation
 5. **Update API Documentation**: Add the new resource type to the [Supported Resources](API.md#supported-resources) section in `API.md`
 

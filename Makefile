@@ -117,7 +117,7 @@ test: test.unit test.e2e test.benchmark
 
 .PHONY: test.unit
 test.unit: manifests generate vet envtest
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./internal/controller/... -coverprofile cover.out
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./controllers/... -coverprofile cover.out
 
 .PHONY: test.e2e
 test.e2e:

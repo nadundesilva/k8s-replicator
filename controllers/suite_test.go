@@ -11,14 +11,14 @@
  * limitations under the License.
  */
 
-package controller
+package controllers
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"

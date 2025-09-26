@@ -30,8 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/nadundesilva/k8s-replicator/internal/controller"
-	"github.com/nadundesilva/k8s-replicator/internal/controller/replication"
+	"github.com/nadundesilva/k8s-replicator/controllers"
+	"github.com/nadundesilva/k8s-replicator/controllers/replication"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -120,14 +120,14 @@ func main() {
 	}
 
 	for _, replicator := range replicators {
-		if err = (&controller.ReplicationReconciler{
+		if err = (&controllers.ReplicationReconciler{
 			Replicator: replicator,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create controller", "kind", replicator.GetKind())
 			os.Exit(1)
 		}
 	}
-	if err = (&controller.NamespaceReconciler{
+	if err = (&controllers.NamespaceReconciler{
 		Replicators: replicators,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "kind", "Namespace")
