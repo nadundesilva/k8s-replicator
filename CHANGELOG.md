@@ -67,11 +67,7 @@ Follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html):
 
 ## 📞 Support
 
-**Getting Help:**
-
-- [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions)
-- [GitHub Issues](https://github.com/nadundesilva/k8s-replicator/issues)
-- [Security Issues](SECURITY.md)
+See the main [Support section](README.md#support-) for all support options.
 
 **Release Support:**
 

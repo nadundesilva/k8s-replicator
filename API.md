@@ -7,13 +7,15 @@ Welcome! 👋 This document provides a comprehensive API reference for K8s Repli
 The core of K8s Replicator's extensible architecture is the `Replicator` interface, which defines how different Kubernetes resource types are replicated across namespaces.
 
 **📖 Interface Definition & Documentation:**
+
 - **Source Code**: [`controllers/replication/replicator.go`](controllers/replication/replicator.go)
 - **Go Documentation**: See the source file for comprehensive method documentation and usage examples
 
 **🔧 Key Features:**
+
 - **Extensible Design**: Easy to add new resource types without core changes
 - **Clean Architecture**: Pure data transformation separate from API operations
-- **Type Safety**: Strongly typed interface for reliable operations  
+- **Type Safety**: Strongly typed interface for reliable operations
 - **Resource Agnostic**: Works with any Kubernetes resource
 - **Performance Optimized**: In-memory operations with efficient API usage
 
@@ -91,9 +93,9 @@ metadata:
 
 **Common Errors:**
 
-- `ResourceNotFound`: Source resource not found - Verify resource exists and has correct labels
-- `NamespaceNotFound`: Target namespace not found - Create namespace or check filtering
-- `PermissionDenied`: Insufficient RBAC permissions - Check and update RBAC configuration
+- `ResourceNotFound`: Source resource not found - Double-check the resource exists and has correct labels
+- `NamespaceNotFound`: Target namespace not found - Create the namespace or check your filtering
+- `PermissionDenied`: Insufficient RBAC permissions - Review and update your RBAC configuration
 - `ResourceConflict`: Resource already exists - Delete conflicting resource or update logic
 
 ---

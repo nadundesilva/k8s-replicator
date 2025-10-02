@@ -121,8 +121,8 @@ kubectl patch deployment k8s-replicator-controller-manager -n k8s-replicator-sys
 
 - **"secrets is forbidden"**: Check RBAC permissions for K8s Replicator service account
 - **"resource already exists"**: Delete conflicting resource or check replication labels
-- **Replication not working**: Verify `replicator.nadundesilva.github.io/object-type=replicated` label
-- **Wrong namespace replication**: Check namespace labels for `ignored` or `managed` types
+- **Replication not working**: Double-check the `replicator.nadundesilva.github.io/object-type=replicated` label
+- **Wrong namespace replication**: Double-check namespace labels for `ignored` or `managed` types
 
 ## Debugging K8s Replicator 🐛
 
@@ -140,8 +140,6 @@ kubectl logs -n k8s-replicator-system deployment/k8s-replicator-controller-manag
 
 ## Support 💬
 
-- [GitHub Issues](https://github.com/nadundesilva/k8s-replicator/issues/new)
-- [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions)
-- [Security Issues](SECURITY.md)
+See the main [Support section](README.md#support-) for all support options.
 
 Still having issues? Don't hesitate to reach out! We're here to help! 🤝💙

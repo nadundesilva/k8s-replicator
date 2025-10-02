@@ -42,7 +42,7 @@ We pledge to act and interact in ways that contribute to an open, welcoming, div
 ## Contact Information 📞
 
 - **Project Maintainer**: [@nadundesilva](https://github.com/nadundesilva)
-- **Community Discussions**: [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions)
+- **Community Support**: See [Support section](README.md#support-) for all communication channels
 
 ## Attribution 📝
 

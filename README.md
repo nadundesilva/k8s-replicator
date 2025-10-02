@@ -48,6 +48,7 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 - **[Security](SECURITY.md)** 🔒
 - **[Adopters](ADOPTERS.md)** 🏢
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** 🤝
+- **[AI Agents Guide](AGENTS.md)** 🤖
 
 > 💡 **Found an issue with our documentation?** We'd love your help! Please feel free to raise a pull request to improve it. Every contribution makes our docs better for everyone! 🤝✨
 

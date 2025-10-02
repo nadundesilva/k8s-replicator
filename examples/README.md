@@ -57,9 +57,10 @@ See the main [Installation Guide](../README.md#quick-start-) for K8s Replicator 
 For comprehensive troubleshooting guidance, see the [Troubleshooting Guide](../TROUBLESHOOTING.md).
 
 **Example-Specific Issues:**
-- Check that K8s Replicator is properly installed and running
-- Verify example-specific resource configurations
-- Ensure proper permissions for example resources
+
+- Make sure K8s Replicator is properly installed and running
+- Double-check example-specific resource configurations
+- Confirm you have proper permissions for example resources
 
 ## Contributing Examples 🤝
 
@@ -92,7 +93,7 @@ your-example/
 
 ## Support 💬
 
-For support options, see the main [Support section](../README.md#support-) in the project documentation.
+See the main [Support section](../README.md#support-) for all support options.
 
 ---
 

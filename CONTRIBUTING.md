@@ -6,7 +6,7 @@ Thank you for your interest in contributing to K8s Replicator! 🎉 This guide w
 
 ### Prerequisites
 
-Before you begin, ensure you have the following tools installed:
+Before you start, you'll need these tools:
 
 - **Go** 🐹 (latest stable version)
 - **Docker** 🐳 or **Podman** for container builds
@@ -139,6 +139,30 @@ git push origin feature/your-feature-name
 - Update documentation 📚
 - Update release notes 📝
 - Follow code style 🎨
+- **Update [AGENTS.md](AGENTS.md) if needed** 🤖 - Review and update the AI agents navigation guide when:
+  - Adding new documentation files
+  - Changing file locations or architecture
+  - Modifying development workflows
+
+## AI Agent Usage Policy 🤖
+
+**AI agents are welcome and acceptable** for contributing to this project! However, we encourage responsible usage:
+
+### ✅ **Encouraged Practices:**
+
+- **Read the documentation first**: Understand the project through [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [API.md](API.md)
+- **Use [AGENTS.md](AGENTS.md)**: Follow the AI agent navigation guide for efficient project understanding
+- **Verify outputs**: Review and test AI-generated code before submitting
+- **Follow project patterns**: Make sure AI contributions match our existing code style and architecture
+
+### ⚠️ **Important Guidelines:**
+
+- **Understanding is required**: Don't submit contributions without understanding the project's purpose and design
+- **Quality over speed**: Take time to make sure contributions are correct and well-tested
+- **Human oversight**: Always review AI-generated code for correctness and adherence to project standards
+- **Documentation matters**: Update relevant documentation when making changes
+
+**Remember**: AI agents are tools to enhance productivity, but understanding the project and maintaining quality standards remains essential! 🎯
 
 ## Getting Help 💬
 
