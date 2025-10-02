@@ -4,30 +4,18 @@ Welcome! 👋 This document provides a comprehensive API reference for K8s Repli
 
 ## Replicator Interface 🔌
 
-```go
-type Replicator interface {
-    GetKind() string
-    AddToScheme(scheme *runtime.Scheme) error
-    EmptyObject() client.Object
-    EmptyObjectList() client.ObjectList
-    ObjectListToArray(client.ObjectList) []client.Object
-    Replicate(sourceObject client.Object, targetObject client.Object)
-}
-```
+The core of K8s Replicator's extensible architecture is the `Replicator` interface, which defines how different Kubernetes resource types are replicated across namespaces.
 
-### Method Documentation
+**📖 Interface Definition & Documentation:**
+- **Source Code**: [`controllers/replication/replicator.go`](controllers/replication/replicator.go)
+- **Go Documentation**: See the source file for comprehensive method documentation and usage examples
 
-**GetKind()** - Returns the Kubernetes resource kind that this replicator handles (e.g., "Secret", "ConfigMap", "NetworkPolicy", or any Kubernetes resource)
-
-**AddToScheme()** - Registers the resource type with the Kubernetes scheme for proper serialization/deserialization
-
-**EmptyObject()** - Returns an empty instance of the resource type for use in API operations
-
-**EmptyObjectList()** - Returns an empty list of the resource type for use in list operations
-
-**ObjectListToArray()** - Converts a client.ObjectList to a slice of client.Object for easier processing
-
-**Replicate()** - Copies all the data of one K8s object that should be replicated to another K8s object
+**🔧 Key Features:**
+- **Extensible Design**: Easy to add new resource types without core changes
+- **Clean Architecture**: Pure data transformation separate from API operations
+- **Type Safety**: Strongly typed interface for reliable operations  
+- **Resource Agnostic**: Works with any Kubernetes resource
+- **Performance Optimized**: In-memory operations with efficient API usage
 
 ## Configuration ⚙️
 

@@ -88,18 +88,7 @@ make bundle-push        # Push bundle image
 
 ## Extending the Operator 🔧
 
-The operator uses a `Replicator` interface for extensibility:
-
-```go
-type Replicator interface {
-    GetKind() string
-    AddToScheme(scheme *runtime.Scheme) error
-    EmptyObject() client.Object
-    EmptyObjectList() client.ObjectList
-    ObjectListToArray(client.ObjectList) []client.Object
-    Replicate(sourceObject client.Object, targetObject client.Object)
-}
-```
+The operator uses a `Replicator` interface for extensibility. See the complete interface definition and documentation in [`controllers/replication/replicator.go`](controllers/replication/replicator.go) or the [API Documentation](API.md#replicator-interface-).
 
 ### Adding New Resource Types
 
@@ -115,7 +104,8 @@ The extensible architecture makes it easy to add support for any Kubernetes reso
 
 - **No Core Changes**: Adding resources doesn't require modifying core logic
 - **Independent Development**: Each resource type can be developed separately
-- **Easy Testing**: Each replicator can be tested in isolation
+- **Easy Testing**: Each replicator can be tested in isolation (pure data transformation)
+- **Clean Architecture**: Replication logic is separate from API operations
 - **Future-Proof**: Works with any current or future Kubernetes resource
 
 ## Submitting Changes 📤
@@ -152,9 +142,7 @@ git push origin feature/your-feature-name
 
 ## Getting Help 💬
 
-- **Discussions**: [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions)
-- **Bugs**: [Bug Report](https://github.com/nadundesilva/k8s-replicator/issues/new?labels=Type%2FBug&template=bug-report.md)
-- **Features**: [Feature Request](https://github.com/nadundesilva/k8s-replicator/issues/new?labels=Type%2FFeature&template=feature-request.md)
+For support and help options, see the main [Support section](README.md#support-) in the project documentation.
 
 ---
 

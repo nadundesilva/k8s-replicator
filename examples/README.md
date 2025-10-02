@@ -4,41 +4,30 @@ Welcome to our examples! 🎯 This directory contains practical examples demonst
 
 ## Available Examples 🚀
 
+Each example includes complete setup, validation, and cleanup scripts along with detailed documentation.
+
 - [**Cert Manager**](./cert-manager) 🔐 - TLS certificate management across microservices
 
 ## Quick Start ⚡
 
 **Prerequisites:**
 
-- Kubernetes cluster (v1.20+) ☸️
-- kubectl configured and working
-- K8s Replicator installed in your cluster
-- Sufficient permissions to create resources
+See the main [Installation Guide](../README.md#quick-start-) for K8s Replicator setup requirements.
 
-**Running the Example:**
+**Running Any Example:**
 
-```bash
-cd examples/cert-manager
-cat README.md
-bash setup.sh
-bash validate.sh
-bash clean.sh
-```
+1. Navigate to the example directory
+2. Read the README.md for specific instructions
+3. Run the setup, validation, and cleanup scripts
 
 ## Example Categories 📋
 
-**Certificate Management:**
+**Available Categories:**
 
-- TLS Certificate Distribution
-- Wildcard Certificate Usage
-- Certificate Rotation
-
-**Common Use Cases:**
-
-- Multi-Tenant Applications
-- Microservices Architecture
-- Security and Compliance
-- Configuration Management
+- **Certificate Management** - TLS certificate distribution and rotation
+- **Configuration Management** - Sharing configuration across namespaces
+- **Security Policies** - Consistent security policy application
+- **Multi-Tenant Applications** - Resource sharing in multi-tenant environments
 
 ## Best Practices 💡
 
@@ -65,26 +54,12 @@ bash clean.sh
 
 ## Troubleshooting 🔧
 
-**Example Setup Fails:**
+For comprehensive troubleshooting guidance, see the [Troubleshooting Guide](../TROUBLESHOOTING.md).
 
-```bash
-kubectl get pods -n k8s-replicator-system
-kubectl auth can-i create secrets --as=k8s-replicator-system:serviceaccount:k8s-replicator-system:k8s-replicator-controller-manager
-```
-
-**Resources Not Replicating:**
-
-```bash
-kubectl get secret my-secret -o yaml | grep replicator.nadundesilva.github.io
-kubectl get namespace my-namespace -o yaml | grep replicator.nadundesilva.github.io
-```
-
-**Permission Denied Errors:**
-
-```bash
-kubectl get clusterrole k8s-replicator-manager-role -o yaml
-kubectl get clusterrolebinding k8s-replicator-manager-rolebinding -o yaml
-```
+**Example-Specific Issues:**
+- Check that K8s Replicator is properly installed and running
+- Verify example-specific resource configurations
+- Ensure proper permissions for example resources
 
 ## Contributing Examples 🤝
 
@@ -117,9 +92,7 @@ your-example/
 
 ## Support 💬
 
-- [GitHub Issues](https://github.com/nadundesilva/k8s-replicator/issues/new)
-- [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions)
-- [Full Documentation](../README.md)
+For support options, see the main [Support section](../README.md#support-) in the project documentation.
 
 ---
 
