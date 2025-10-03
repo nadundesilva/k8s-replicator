@@ -20,6 +20,6 @@ import (
 )
 
 func newFeatureBuilder(name string, datum testdata.Resource) *features.FeatureBuilder {
-	return features.New(fmt.Sprintf("%s: %s", datum.Name, name)).
+	return features.New(fmt.Sprintf("%s %s", datum.Name, name)).
 		WithLabel("resource", datum.Name)
 }

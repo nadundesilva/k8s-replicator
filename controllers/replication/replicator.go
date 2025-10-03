@@ -20,6 +20,7 @@
 //   - Secrets: Secure credential and configuration replication
 //   - ConfigMaps: Configuration data replication
 //   - NetworkPolicies: Security policy replication
+//   - ServiceAccounts: Service account and RBAC replication
 //
 // To add support for a new resource type, implement the Replicator interface
 // and register it in the NewReplicators() function.
@@ -72,5 +73,6 @@ func NewReplicators() []Replicator {
 		newSecretReplicator(),
 		newConfigMapReplicator(),
 		newNetworkPolicyReplicator(),
+		newServiceAccountReplicator(),
 	}
 }

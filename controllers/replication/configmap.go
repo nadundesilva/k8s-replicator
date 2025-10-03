@@ -54,6 +54,7 @@ func (r *configMapReplicator) Replicate(sourceObject client.Object, targetObject
 	sourceConfigMap := sourceObject.(*corev1.ConfigMap)
 	targetConfigMap := targetObject.(*corev1.ConfigMap)
 
+	// Copy ConfigMap-specific fields
 	targetConfigMap.Immutable = sourceConfigMap.Immutable
 	targetConfigMap.Data = sourceConfigMap.Data
 	targetConfigMap.BinaryData = sourceConfigMap.BinaryData

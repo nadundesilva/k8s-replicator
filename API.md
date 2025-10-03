@@ -55,6 +55,7 @@ The operator uses standard controller-runtime configuration:
 - **Secrets** 🔐
 - **ConfigMaps** 📄
 - **NetworkPolicies** 🛡️
+- **ServiceAccounts** 🔑
 
 The system was designed with an extensible architecture that allows easy addition of new resource types as needed.
 

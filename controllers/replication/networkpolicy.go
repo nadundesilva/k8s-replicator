@@ -54,5 +54,6 @@ func (r *networkPolicyReplicator) Replicate(sourceObject client.Object, targetOb
 	sourceNetworkPolicy := sourceObject.(*networkingv1.NetworkPolicy)
 	targetNetworkPolicy := targetObject.(*networkingv1.NetworkPolicy)
 
+	// Copy NetworkPolicy-specific fields
 	targetNetworkPolicy.Spec = *sourceNetworkPolicy.Spec.DeepCopy()
 }

@@ -54,6 +54,7 @@ func (r *secretReplicator) Replicate(sourceObject client.Object, targetObject cl
 	sourceSecret := sourceObject.(*corev1.Secret)
 	targetSecret := targetObject.(*corev1.Secret)
 
+	// Copy Secret-specific fields
 	targetSecret.Immutable = sourceSecret.Immutable
 	targetSecret.Data = sourceSecret.Data
 	targetSecret.StringData = sourceSecret.StringData

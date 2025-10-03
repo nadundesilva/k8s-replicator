@@ -9,7 +9,7 @@
 
 A Kubernetes operator for replicating resources across namespaces, designed with extensibility and performance in mind.
 
-**Supported Resources:** See [API Documentation](API.md#supported-resources) for currently supported resource types.
+**Supported Resources:** 🔧 See [API Documentation](API.md#supported-resources) for currently supported resource types.
 
 ## Quick Start ⚡
 

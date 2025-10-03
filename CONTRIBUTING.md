@@ -57,9 +57,26 @@ make fmt lint vet
 ```bash
 make test              # All tests
 make test.unit         # Unit tests only
-make test.e2e          # E2E tests only
+make test.e2e          # End-to-end tests only
 make test.benchmark    # Benchmark tests
 ```
+
+#### Running Tests for Specific Resources
+
+To run end-to-end tests for a specific resource type only, use the `TEST_RESOURCES_FILTER_REGEX` environment variable:
+
+```bash
+TEST_RESOURCES_FILTER_REGEX="<ResourceName>" make test.e2e
+```
+
+**Note**: The `<ResourceName>` should match the name returned by the test data generation function (e.g., `ServiceAccount`, `Secret`, `ConfigMap`, `NetworkPolicy`).
+
+This is particularly useful when:
+
+- **Debugging specific resource issues** 🐛
+- **Testing new resource types** during development
+- **Faster iteration** when working on a single resource type
+- **CI/CD optimization** for targeted testing
 
 ## Building & Deployment 🏗️
 
@@ -97,8 +114,27 @@ The extensible architecture makes it easy to add support for any Kubernetes reso
 1. **Create Implementation**: Add new replicator in `controllers/replication/`
 2. **Implement Interface**: Implement the `Replicator` interface for your resource type
 3. **Register**: Add to `NewReplicators()` function in `controllers/replication/replicator.go`
-4. **Test & Document**: Add tests and update documentation
-5. **Update API Documentation**: Add the new resource type to the [Supported Resources](API.md#supported-resources) section in `API.md`
+4. **Update RBAC**: Add kubebuilder RBAC comments in `controllers/replication_controller.go`
+5. **Update GitHub Actions**: Add new resource type to end-to-end test matrix in `.github/workflows/build.yaml`
+6. **Test & Document**: Add tests and update documentation
+7. **Update API Documentation**: Add the new resource type to the [Supported Resources](API.md#supported-resources) section in `API.md`
+
+**GitHub Actions End-to-End Test Matrix Update:**
+
+When adding new resource types, you must update the end-to-end test matrix in `.github/workflows/build.yaml`:
+
+```yaml
+# In the run-e2e-tests job (around line 172-176)
+strategy:
+  matrix:
+    resource:
+      - Secret
+      - ConfigMap
+      - NetworkPolicy
+      - ServiceAccount # Add your new resource type here
+```
+
+This ensures the new resource type is tested in the CI/CD pipeline.
 
 **Benefits of Extensible Design:**
 
