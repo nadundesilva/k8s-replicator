@@ -43,8 +43,6 @@ jobs:
           go-version: "1.25.1"
       - name: Generate code
         run: make bundle
-        env:
-          ARTIFACTS_VERSION: ${{ inputs.version }}
       - name: Check for changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -94,7 +92,7 @@ jobs:
       - name: Build Kustomize manifests
         run: make manifests
         env:
-          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+          VERSION: ${{ inputs.version }}
       - name: Lint Code Base
         uses: super-linter/super-linter@ffde3b2b33b745cb612d787f669ef9442b1339a6 # v8.1.0
         env:
@@ -185,15 +183,11 @@ jobs:
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version: "1.25.1"
-      - name: Build Operator
-        run: make bundle docker-build bundle-build
-        env:
-          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
       - name: Run E2E Tests
         run: make test.e2e
         env:
           TEST_RESOURCES_FILTER_REGEX: ${{ matrix.resource }}
-          VERSION: ${{ github.sha }}
+          VERSION: ${{ inputs.version }}
 
   run-benchmark-tests:
     name: Run Benchmark Tests
@@ -212,14 +206,10 @@ jobs:
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
           go-version: "1.25.1"
-      - name: Build Operator
-        run: make bundle docker-build bundle-build
-        env:
-          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
       - name: Run Benchmark Tests
         run: make test.benchmark
         env:
-          VERSION: ${{ github.sha }}
+          VERSION: ${{ inputs.version }}
       - name: Upload Benchmark Report
         run: |
           curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
@@ -247,7 +237,7 @@ jobs:
       - name: Build Operator
         run: make bundle docker-build bundle-build
         env:
-          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+          VERSION: ${{ inputs.version }}
       - name: Setup Kind
         run: |
           go get sigs.k8s.io/kind
@@ -256,7 +246,7 @@ jobs:
         run: |
           kind create cluster --name=example-validation-cluster
           make docker-build
-          kind load docker-image "${IMG}" --name=example-validation-cluster
+          kind load docker-image "${IMAGE_TAG_BASE}:${VERSION}" --name=example-validation-cluster
           NODE_NAME="$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')"
 
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
@@ -269,19 +259,19 @@ jobs:
           K8S_CLUSTER_IP="$(kubectl get nodes "${NODE_NAME}" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')"
           echo "K8S_CLUSTER_IP=${K8S_CLUSTER_IP}" >> "${GITHUB_ENV}"
         env:
-          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+          VERSION: ${{ inputs.version }}
       - name: Validate Example
         run: |
           echo "Updating controller image tag to ${{ github.sha }}"
           docker run --workdir=/artifacts --entrypoint=/app/kustomize \
               -v "$(pwd)/config/manager:/artifacts" k8s.gcr.io/kustomize/kustomize:v3.8.7 \
-              edit set image "controller=${IMG}"
+              edit set image "controller=${IMAGE_TAG_BASE}:${VERSION}"
 
           pushd examples/${{ matrix.example }}
           ./validate.sh
           popd
         env:
-          IMG: ${{ env.IMAGE_TAG_BASE }}:${{ github.sha }}
+          VERSION: ${{ inputs.version }}
 
   build-operator:
     name: Build Operator

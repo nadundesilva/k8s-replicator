@@ -9,7 +9,13 @@
 
 A Kubernetes operator for replicating resources across namespaces, designed with extensibility and performance in mind.
 
-**Supported Resources:** 🔧 See [API Documentation](API.md#supported-resources) for currently supported resource types.
+## 🔧 Supported Resources
+
+**Currently Supported Resource Types:** See [API Documentation](API.md#supported-resources) for the complete list of supported resource types.
+
+The system was designed with an extensible architecture that allows easy addition of new resource types as needed.
+
+**Can't find the resource you're looking for?** 🚀 You can easily add support for any Kubernetes resource type! See our [Contributing Guide](CONTRIBUTING.md#extending-the-operator) for step-by-step instructions.
 
 ## Quick Start ⚡
 
@@ -29,6 +35,8 @@ metadata:
   labels:
     replicator.nadundesilva.github.io/object-type: replicated
 ```
+
+**Additional label-based capabilities**: The operator supports advanced namespace filtering, replica management, and more. See [API.md](API.md) for complete label and annotation reference.
 
 ### Uninstall
 
