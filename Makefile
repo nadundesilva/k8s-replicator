@@ -122,13 +122,13 @@ test.unit: manifests generate vet envtest
 .PHONY: test.e2e
 test.e2e:
 	$(MAKE) bundle
-	$(MAKE) docker-build bundle-build IMG=${IMAGE_TAG_BASE}:test
+	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build bundle-build
 	CONTROLLER_IMG=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
 
 .PHONY: test.benchmark
 test.benchmark:
 	$(MAKE) bundle
-	$(MAKE) docker-build bundle-build IMG=${IMAGE_TAG_BASE}:test
+	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build bundle-build
 	CONTROLLER_IMG=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
 
 .PHONY: lint

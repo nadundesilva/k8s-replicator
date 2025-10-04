@@ -6,9 +6,11 @@ labels: Type/Bug
 assignees: ""
 ---
 
+<!--
 Thanks for helping us improve K8s Replicator! 🚀 Before reporting, please check our [Troubleshooting Guide](TROUBLESHOOTING.md) to see if your issue is already documented.
 
 **Have a question instead of a bug?** Please use [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions) for questions and general inquiries! 💬
+-->
 
 ## 🐛 Bug Description
 

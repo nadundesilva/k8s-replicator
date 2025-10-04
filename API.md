@@ -57,6 +57,7 @@ The operator uses standard controller-runtime configuration:
 - **NetworkPolicies** 🛡️
 - **ServiceAccounts** 🔑
 - **Roles** 🎭
+- **RoleBindings** 🔗
 
 The system was designed with an extensible architecture that allows easy addition of new resource types as needed.
 
