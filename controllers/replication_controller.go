@@ -55,6 +55,10 @@ type ReplicationReconciler struct {
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups="",resources=serviceaccounts/finalizers,verbs=update
 
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete;escalate
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles/finalizers,verbs=update
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 func (r *ReplicationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
