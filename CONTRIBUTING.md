@@ -153,14 +153,33 @@ git add .
 git commit -m "feat: add support for YourResource type"
 ```
 
-**Commit Types:**
+**Commit Format:**
 
-- `feat:` new features
-- `fix:` bugfixes
-- `docs:` documentation
-- `test:` tests
-- `refactor:` refactoring
-- `perf:` performance
+This project uses **semantic release commit format**.
+
+**Commit Message Format:**
+
+```text
+<type>(optional scope): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+
+- `feat:` A new feature
+- `fix:` A bugfix
+- `docs:` Documentation only changes
+- `style:` Changes that do not affect the meaning of the code
+- `refactor:` A code change that neither fixes a bug nor adds a feature
+- `perf:` A code change that improves performance
+- `test:` Adding missing tests or correcting existing tests
+- `chore:` Changes to the build process or auxiliary tools
+- `ci:` Changes to our CI configuration files and scripts
+- `build:` Changes that affect the build tool or external dependencies
+- `revert:` Reverts a previous commit
 
 ### 2. Create Pull Request
 
