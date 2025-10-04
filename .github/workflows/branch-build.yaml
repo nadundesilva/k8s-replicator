@@ -15,7 +15,7 @@ jobs:
     name: Build Branch
     uses: ./.github/workflows/build.yaml
     with:
-      version: 0.0.0-${{ github.ref_name }}
+      version: 0.0.0-${{ github.sha }}
     permissions:
       contents: read
       packages: read

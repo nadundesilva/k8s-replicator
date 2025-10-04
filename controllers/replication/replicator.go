@@ -75,5 +75,6 @@ func NewReplicators() []Replicator {
 		newNetworkPolicyReplicator(),
 		newServiceAccountReplicator(),
 		newRoleReplicator(),
+		newRoleBindingReplicator(),
 	}
 }

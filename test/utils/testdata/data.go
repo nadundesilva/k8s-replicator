@@ -79,6 +79,7 @@ func GenerateResourceTestData() []Resource {
 		generateNetworkPolicyTestDatum(),
 		generateServiceAccountTestDatum(),
 		generateRoleTestDatum(),
+		generateRoleBindingTestDatum(),
 	}
 	filteredResources := []Resource{}
 	for _, resource := range resources {

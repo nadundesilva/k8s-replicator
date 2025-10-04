@@ -6,9 +6,11 @@ labels: Type/Feature
 assignees: ""
 ---
 
+<!--
 Thanks for suggesting a new feature! 🌟 We love hearing from our community. Before submitting, please check our [Architecture Guide](ARCHITECTURE.md) to understand our extensible design.
 
 **Have a question about features?** Please use [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions) for questions and general inquiries! 💬
+-->
 
 ## 🎯 Problem Description
 
@@ -33,6 +35,8 @@ Thanks for suggesting a new feature! 🌟 We love hearing from our community. Be
 
 <!-- Add any other context or screenshots about the feature request here -->
 
+<!--
 ## 🤝 Contributing
 
 Interested in implementing this feature? Check out our [Contributing Guide](CONTRIBUTING.md) for development setup and workflow! 🚀
+-->

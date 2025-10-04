@@ -6,9 +6,11 @@ labels: ""
 assignees: ""
 ---
 
+<!--
 Thanks for contributing to K8s Replicator! 🎉 We appreciate your effort in making our project better.
 
 **Have a question about contributing?** Please use [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions) for questions and general inquiries! 💬
+-->
 
 ## 📝 Description
 
@@ -50,7 +52,3 @@ Thanks for contributing to K8s Replicator! 🎉 We appreciate your effort in mak
 ## 🔍 Additional Context
 
 <!-- Add any other context about the PR here -->
-
-## 📸 Screenshots
-
-<!-- If applicable, add screenshots to help explain your changes -->
