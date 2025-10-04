@@ -73,11 +73,10 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
-  - roles
+  - rolebindings
   verbs:
   - create
   - delete
-  - escalate
   - get
   - list
   - patch
@@ -86,14 +85,30 @@ rules:
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
+  - rolebindings/finalizers
   - roles/finalizers
   verbs:
   - update
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
+  - rolebindings/status
   - roles/status
   verbs:
   - get
   - patch
   - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - bind
+  - create
+  - delete
+  - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
