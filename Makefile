@@ -120,14 +120,16 @@ test.unit: manifests generate vet envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./controllers/... -coverprofile cover.out
 
 .PHONY: test.e2e
-test.e2e: bundle docker-build bundle-build
-	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build
-	KUBERNETES_VERSION="1.26.3" CONTROLLER_IMG=${IMG} go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
+test.e2e:
+	$(MAKE) bundle
+	$(MAKE) docker-build bundle-build IMG=${IMAGE_TAG_BASE}:test
+	CONTROLLER_IMG=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
 
 .PHONY: test.benchmark
-test.benchmark: bundle docker-build bundle-build
-	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build
-	CONTROLLER_IMG=${IMG} go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
+test.benchmark:
+	$(MAKE) bundle
+	$(MAKE) docker-build bundle-build IMG=${IMAGE_TAG_BASE}:test
+	CONTROLLER_IMG=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter & yamllint

@@ -74,5 +74,6 @@ func NewReplicators() []Replicator {
 		newConfigMapReplicator(),
 		newNetworkPolicyReplicator(),
 		newServiceAccountReplicator(),
+		newRoleReplicator(),
 	}
 }
