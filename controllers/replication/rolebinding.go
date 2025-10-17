@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings/finalizers,verbs=update
+
 func newRoleBindingReplicator() *roleBindingReplicator {
 	return &roleBindingReplicator{}
 }
@@ -42,10 +46,10 @@ func (r *roleBindingReplicator) EmptyObjectList() client.ObjectList {
 }
 
 func (r *roleBindingReplicator) ObjectListToArray(list client.ObjectList) []client.Object {
-	array := []client.Object{}
 	roleBindings := list.(*rbacv1.RoleBindingList).Items
+	array := make([]client.Object, len(roleBindings))
 	for i := range roleBindings {
-		array = append(array, &roleBindings[i])
+		array[i] = &roleBindings[i]
 	}
 	return array
 }
@@ -55,9 +59,9 @@ func (r *roleBindingReplicator) Replicate(sourceObject client.Object, targetObje
 	targetRoleBinding := targetObject.(*rbacv1.RoleBinding)
 
 	// Copy RoleBinding-specific fields
-	targetRoleBinding.RoleRef = *sourceRoleBinding.RoleRef.DeepCopy()
-	targetRoleBinding.Subjects = []rbacv1.Subject{}
-	for _, subject := range sourceRoleBinding.Subjects {
-		targetRoleBinding.Subjects = append(targetRoleBinding.Subjects, *subject.DeepCopy())
+	sourceRoleBinding.RoleRef.DeepCopyInto(&targetRoleBinding.RoleRef)
+	targetRoleBinding.Subjects = make([]rbacv1.Subject, len(sourceRoleBinding.Subjects))
+	for i := range sourceRoleBinding.Subjects {
+		sourceRoleBinding.Subjects[i].DeepCopyInto(&targetRoleBinding.Subjects[i])
 	}
 }

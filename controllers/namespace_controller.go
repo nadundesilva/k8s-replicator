@@ -94,7 +94,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 					log.FromContext(ctx).V(1).Info("Removing finalizer from replica in deleted namespace")
 					err := removeFinalizer(ctx, r.Client, object)
 					if err != nil {
-						errs = append(errs, fmt.Errorf("failed to remove finalizer from replica in deleted namespace: %+w", err))
+						errs = append(errs, fmt.Errorf("failed to remove finalizer from replica in deleted namespace %s: %+w", namespaceName, err))
 					}
 				}
 				if isNamespaceIgnored {

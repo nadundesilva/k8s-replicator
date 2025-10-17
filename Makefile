@@ -120,14 +120,12 @@ test.unit: manifests generate vet envtest
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./controllers/... -coverprofile cover.out
 
 .PHONY: test.e2e
-test.e2e:
-	$(MAKE) bundle
+test.e2e: bundle
 	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build bundle-build
 	CONTROLLER_IMG=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 1h ./test/e2e/...
 
 .PHONY: test.benchmark
-test.benchmark:
-	$(MAKE) bundle
+test.benchmark: bundle
 	IMG=${IMAGE_TAG_BASE}:test $(MAKE) docker-build bundle-build
 	CONTROLLER_IMG=${IMAGE_TAG_BASE}:test go test -v -failfast -ldflags "$(GO_LDFLAGS)" -race -timeout 2h ./test/benchmark/...
 

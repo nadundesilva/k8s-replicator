@@ -114,7 +114,7 @@ The extensible architecture makes it easy to add support for any Kubernetes reso
 1. **Create Implementation**: Add new replicator in `controllers/replication/`
 2. **Implement Interface**: Implement the `Replicator` interface for your resource type
 3. **Register**: Add to `NewReplicators()` function in `controllers/replication/replicator.go`
-4. **Update RBAC**: Add kubebuilder RBAC comments in `controllers/replication_controller.go`
+4. **Update RBAC**: Add kubebuilder RBAC comments in the new replicator file in `controllers/replication/`
 5. **Update GitHub Actions**: Add new resource type to end-to-end test matrix in `.github/workflows/build.yaml`
 6. **Test & Document**: Add tests and update documentation
 7. **Update API Documentation**: Add the new resource type to the [Supported Resources](API.md#supported-resources) section in `API.md`

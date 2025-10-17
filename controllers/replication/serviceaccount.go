@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=serviceaccounts/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=serviceaccounts/finalizers,verbs=update
+
 func newServiceAccountReplicator() *serviceAccountReplicator {
 	return &serviceAccountReplicator{}
 }
@@ -42,10 +46,10 @@ func (r *serviceAccountReplicator) EmptyObjectList() client.ObjectList {
 }
 
 func (r *serviceAccountReplicator) ObjectListToArray(list client.ObjectList) []client.Object {
-	array := []client.Object{}
 	serviceAccounts := list.(*corev1.ServiceAccountList).Items
+	array := make([]client.Object, len(serviceAccounts))
 	for i := range serviceAccounts {
-		array = append(array, &serviceAccounts[i])
+		array[i] = &serviceAccounts[i]
 	}
 	return array
 }
@@ -55,13 +59,13 @@ func (r *serviceAccountReplicator) Replicate(sourceObject client.Object, targetO
 	targetServiceAccount := targetObject.(*corev1.ServiceAccount)
 
 	// Copy ServiceAccount-specific fields
-	targetServiceAccount.Secrets = []corev1.ObjectReference{}
-	for _, secret := range sourceServiceAccount.Secrets {
-		targetServiceAccount.Secrets = append(targetServiceAccount.Secrets, *secret.DeepCopy())
+	targetServiceAccount.Secrets = make([]corev1.ObjectReference, len(sourceServiceAccount.Secrets))
+	for i := range sourceServiceAccount.Secrets {
+		sourceServiceAccount.Secrets[i].DeepCopyInto(&targetServiceAccount.Secrets[i])
 	}
-	targetServiceAccount.ImagePullSecrets = []corev1.LocalObjectReference{}
-	for _, imagePullSecret := range sourceServiceAccount.ImagePullSecrets {
-		targetServiceAccount.ImagePullSecrets = append(targetServiceAccount.ImagePullSecrets, *imagePullSecret.DeepCopy())
+	targetServiceAccount.ImagePullSecrets = make([]corev1.LocalObjectReference, len(sourceServiceAccount.ImagePullSecrets))
+	for i := range sourceServiceAccount.ImagePullSecrets {
+		sourceServiceAccount.ImagePullSecrets[i].DeepCopyInto(&targetServiceAccount.ImagePullSecrets[i])
 	}
 	targetServiceAccount.AutomountServiceAccountToken = sourceServiceAccount.AutomountServiceAccountToken
 }
