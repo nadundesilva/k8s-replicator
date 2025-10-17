@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=configmaps/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=configmaps/finalizers,verbs=update
+
 func newConfigMapReplicator() *configMapReplicator {
 	return &configMapReplicator{}
 }
@@ -42,10 +46,10 @@ func (r *configMapReplicator) EmptyObjectList() client.ObjectList {
 }
 
 func (r *configMapReplicator) ObjectListToArray(list client.ObjectList) []client.Object {
-	array := []client.Object{}
 	configMaps := list.(*corev1.ConfigMapList).Items
+	array := make([]client.Object, len(configMaps))
 	for i := range configMaps {
-		array = append(array, &configMaps[i])
+		array[i] = &configMaps[i]
 	}
 	return array
 }

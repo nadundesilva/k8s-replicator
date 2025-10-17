@@ -1,6 +1,6 @@
 # K8s Replicator 🚀
 
-[![Main Branch Build](https://github.com/nadundesilva/k8s-replicator/actions/workflows/branch-build.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/branch-build.yaml)
+[![Main Branch Build](https://github.com/nadundesilva/k8s-replicator/actions/workflows/main-branch-build.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/main-branch-build.yaml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [![Release](https://img.shields.io/github/release/nadundesilva/k8s-replicator.svg?style=flat-square)](https://github.com/nadundesilva/k8s-replicator/releases/latest)

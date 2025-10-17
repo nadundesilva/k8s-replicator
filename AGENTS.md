@@ -118,7 +118,7 @@
 1. **Read**: [CONTRIBUTING.md](CONTRIBUTING.md#adding-new-resource-types) for complete guide
 2. **Create**: New replicator in `controllers/replication/`
 3. **Register**: Add to `NewReplicators()` in `controllers/replication/replicator.go`
-4. **RBAC**: Add kubebuilder comments in `controllers/replication_controller.go`
+4. **RBAC**: Add kubebuilder comments in the new replicator file in `controllers/replication/`
 5. **Test**: Create test data in `test/utils/testdata/`
 6. **Bundle**: Run `make bundle` to generate RBAC
 7. **CI/CD**: Update `.github/workflows/build.yaml` end-to-end matrix

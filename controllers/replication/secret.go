@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="",resources=secrets/finalizers,verbs=update
+
 func newSecretReplicator() *secretReplicator {
 	return &secretReplicator{}
 }
@@ -42,10 +46,10 @@ func (r *secretReplicator) EmptyObjectList() client.ObjectList {
 }
 
 func (r *secretReplicator) ObjectListToArray(list client.ObjectList) []client.Object {
-	array := []client.Object{}
 	secrets := list.(*corev1.SecretList).Items
+	array := make([]client.Object, len(secrets))
 	for i := range secrets {
-		array = append(array, &secrets[i])
+		array[i] = &secrets[i]
 	}
 	return array
 }

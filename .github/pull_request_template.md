@@ -1,16 +1,10 @@
----
-name: 🚀 Pull Request
-about: Submit your contribution to K8s Replicator
-title: ""
-labels: ""
-assignees: ""
----
-
 <!--
 Thanks for contributing to K8s Replicator! 🎉 We appreciate your effort in making our project better.
 
 **Have a question about contributing?** Please use [GitHub Discussions](https://github.com/nadundesilva/k8s-replicator/discussions) for questions and general inquiries! 💬
 -->
+
+# K8s Replicator - Pull Request
 
 ## 📝 Description
 

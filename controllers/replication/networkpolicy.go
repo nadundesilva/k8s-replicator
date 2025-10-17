@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies/finalizers,verbs=update
+
 func newNetworkPolicyReplicator() *networkPolicyReplicator {
 	return &networkPolicyReplicator{}
 }
@@ -42,10 +46,10 @@ func (r *networkPolicyReplicator) EmptyObjectList() client.ObjectList {
 }
 
 func (r *networkPolicyReplicator) ObjectListToArray(list client.ObjectList) []client.Object {
-	array := []client.Object{}
 	networkPolicies := list.(*networkingv1.NetworkPolicyList).Items
+	array := make([]client.Object, len(networkPolicies))
 	for i := range networkPolicies {
-		array = append(array, &networkPolicies[i])
+		array[i] = &networkPolicies[i]
 	}
 	return array
 }
@@ -55,5 +59,5 @@ func (r *networkPolicyReplicator) Replicate(sourceObject client.Object, targetOb
 	targetNetworkPolicy := targetObject.(*networkingv1.NetworkPolicy)
 
 	// Copy NetworkPolicy-specific fields
-	targetNetworkPolicy.Spec = *sourceNetworkPolicy.Spec.DeepCopy()
+	sourceNetworkPolicy.Spec.DeepCopyInto(&targetNetworkPolicy.Spec)
 }

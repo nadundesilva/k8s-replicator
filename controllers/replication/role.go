@@ -19,6 +19,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete;escalate;bind
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles/finalizers,verbs=update
+
 func newRoleReplicator() *roleReplicator {
 	return &roleReplicator{}
 }
@@ -42,10 +46,10 @@ func (r *roleReplicator) EmptyObjectList() client.ObjectList {
 }
 
 func (r *roleReplicator) ObjectListToArray(list client.ObjectList) []client.Object {
-	array := []client.Object{}
 	roles := list.(*rbacv1.RoleList).Items
+	array := make([]client.Object, len(roles))
 	for i := range roles {
-		array = append(array, &roles[i])
+		array[i] = &roles[i]
 	}
 	return array
 }
@@ -55,8 +59,8 @@ func (r *roleReplicator) Replicate(sourceObject client.Object, targetObject clie
 	targetRole := targetObject.(*rbacv1.Role)
 
 	// Copy Role-specific fields
-	targetRole.Rules = []rbacv1.PolicyRule{}
-	for _, rule := range sourceRole.Rules {
-		targetRole.Rules = append(targetRole.Rules, *rule.DeepCopy())
+	targetRole.Rules = make([]rbacv1.PolicyRule, len(sourceRole.Rules))
+	for i := range sourceRole.Rules {
+		sourceRole.Rules[i].DeepCopyInto(&targetRole.Rules[i])
 	}
 }
