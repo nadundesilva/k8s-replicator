@@ -40,7 +40,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - name: Generate code
         run: make bundle
       - name: Check for changes
@@ -63,7 +63,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - name: Vet Code
         run: make vet
       - name: Lint Code
@@ -94,7 +94,7 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
       - name: Lint Code Base
-        uses: super-linter/super-linter@ffde3b2b33b745cb612d787f669ef9442b1339a6 # v8.1.0
+        uses: super-linter/super-linter@7bba2eeb89d01dc9bfd93c497477a57e72c83240 # v8.2.0
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -159,7 +159,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - name: Run Unit Tests
         run: make test.unit
 
@@ -184,7 +184,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - name: Run E2E Tests
         run: make test.e2e
         env:
@@ -207,7 +207,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - name: Run Benchmark Tests
         run: make test.benchmark
         env:
@@ -235,7 +235,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - name: Build Operator
         run: make bundle docker-build bundle-build
         env:
@@ -297,7 +297,7 @@ jobs:
       - name: Setup GoLang
         uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6
         with:
-          go-version: "1.25.1"
+          go-version: "1.25.3"
       - id: generate-bundle-version
         name: Generate Bundle Version
         env:
@@ -346,7 +346,7 @@ jobs:
 
       - name: Login to the Container registry
         if: ${{ inputs.publish-artifacts == true }}
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
           username: nadunrds
           password: ${{ secrets.docker-hub-token }}
