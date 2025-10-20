@@ -118,6 +118,7 @@ The extensible architecture makes it easy to add support for any Kubernetes reso
 5. **Update GitHub Actions**: Add new resource type to end-to-end test matrix in `.github/workflows/build.yaml`
 6. **Test & Document**: Add tests and update documentation
 7. **Update API Documentation**: Add the new resource type to the [Supported Resources](API.md#supported-resources) section in `API.md`
+8. **Update Release Notes**: Add your new feature to `.github/RELEASE_NOTE` for the next release
 
 **GitHub Actions End-to-End Test Matrix Update:**
 

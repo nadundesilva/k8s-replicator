@@ -15,19 +15,43 @@ curl -L https://raw.githubusercontent.com/nadundesilva/k8s-replicator/main/insta
 ## 📝 Changelog
 
 ### ✨ New Features
-- 
+- **Role Replication**: Added support for replicating Kubernetes Roles across namespaces
+- **RoleBinding Replication**: Added support for replicating Kubernetes RoleBindings across namespaces  
+- **ServiceAccount Replication**: Added support for replicating Kubernetes ServiceAccounts across namespaces
 
 ### 🐛 Bugfixes
-- 
+- Fixed minor pipeline environment variable usages
+- Fixed GitHub superlinter issues
 
 ### 🔧 Improvements
-- 
+- Moved kubebuilder annotations to individual replicator files for better organization
+- Refactored controller structure and moved to root directory
+- Improved codebase organization and structure
+- Enhanced workflow permissions and security
+- Upgraded GoLang version to 1.24.6
+- Upgraded operator framework to v1.37.0
+- Switched from CodeQL to Trivy for security scanning
+- Improved build workflows and CI/CD processes
 
 ### 📚 Documentation
-- 
+- Added comprehensive AGENTS.md file for AI assistant navigation
+- Added detailed API.md with complete API reference
+- Added ARCHITECTURE.md with technical architecture details
+- Added CONTRIBUTING.md with development setup and workflow
+- Added TROUBLESHOOTING.md for common issues and debugging
+- Added SECURITY.md for security policies
+- Added ADOPTERS.md for project adoption tracking
+- Added CODE_OF_CONDUCT.md for community guidelines
+- Enhanced examples documentation with cert-manager use case
+- Moved replicator interface documentation to GoLang doc strings
+- Added more commit types to contribution guide
+- Improved README.md structure and content
 
 ### 🔒 Security
-- 
+- Enhanced workflow permissions
+- Switched to Trivy for security scanning
+- Pinned security action dependencies
+- Improved RBAC configuration for new resource types
 
 ## 🏗️ Architecture
 
