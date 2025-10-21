@@ -213,12 +213,16 @@ jobs:
         run: make test.benchmark
         env:
           VERSION: ${{ inputs.version }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: test/benchmark/report.md
       - name: Upload Benchmark Report
         run: |
-          curl -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
+          curl --silent -X POST https://api.github.com/repos/${{ github.repository }}/check-runs \
             -H "Accept: application/vnd.github.antiope-preview+json" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -d "{\"name\": \"Benchmark Results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
+            -d "{\"name\": \"benchmark-results\", \"head_sha\": \"${{ github.sha }}\", \"status\": \"completed\", \"completed_at\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\", \"conclusion\": \"success\", \"output\": {\"title\": \"Benchmark Results\", \"summary\": \"Benchmark test results of K8s Replicator\", \"text\": \"$(sed ':a;N;$!ba;s/\n/\\n/g' <<< cat test/benchmark/report.md)\"}}"
 
   validate-examples:
     name: Validate Examples
@@ -369,7 +373,7 @@ jobs:
           VERSION: "latest"
       - name: Pushing Controller Bundle with latest Tag
         if: ${{ inputs.publish-artifacts == true && inputs.update-latest-tag == true }}
-        run: make bundle-push
+        run: make bundle-build bundle-push
         env:
           VERSION: "latest"
 

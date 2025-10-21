@@ -47,10 +47,12 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           fetch-depth: 0
-          persist-credentials: false
+          # zizmor: ignore[artipacked] we need it to push the release tag
+          persist-credentials: true
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          artifact-ids: benchmark-artifacts
+          name: benchmark-results
+          path: test/benchmark
       - name: Commit Release Files
         run: |
           rm -f BENCHMARK.md
@@ -63,8 +65,10 @@ jobs:
       - name: Create Release Tag
         run: |
           GITHUB_TAG="v${ARTIFACTS_VERSION}"
+          echo "Creating release tag: ${GITHUB_TAG}"
           git tag "${GITHUB_TAG}"
-          git push origin "v${GITHUB_TAG}"
+          echo "Pushing release tag: ${GITHUB_TAG}"
+          git push origin "${GITHUB_TAG}"
         env:
           ARTIFACTS_VERSION: ${{ github.event.inputs.release-version }}
       - name: Prepare Release Note
