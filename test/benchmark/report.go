@@ -71,7 +71,7 @@ func (r Report) export() error {
 func (r Report) generateMarkdownReport() error {
 	content := "# K8s Replicator - Benchmark Results\n\n" +
 		"These benchmark tests are performed within GitHub Actions, with the tester as well as the Kind K8s cluster sharing " +
-		"the same GitHub action resources. These are only meant as a measure of the relative performance of the Operator over time. " +
+		"the same GitHub Action resources. These are only meant as a measure of the relative performance of the Operator over time. " +
 		"When you are running the Operator in a Kubernetes cluster with higher resources allocated to the Kube API server, " +
 		"you can expect much better performance.\n\n" +
 		"## Namespace Creation\n\n" +
