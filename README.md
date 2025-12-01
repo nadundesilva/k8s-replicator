@@ -1,5 +1,7 @@
 # K8s Replicator 🚀
 
+<img src="./images/k8s-replicator-logo-transparent.png" alt="K8s Replicator Logo" width="400"/>
+
 [![Main Branch Build](https://github.com/nadundesilva/k8s-replicator/actions/workflows/main-branch-build.yaml/badge.svg)](https://github.com/nadundesilva/k8s-replicator/actions/workflows/main-branch-build.yaml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
